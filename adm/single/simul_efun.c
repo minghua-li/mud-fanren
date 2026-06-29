@@ -13,6 +13,7 @@
 #include "/adm/simul_efun/file.c"
 #include "/adm/simul_efun/math.c"
 #include "/adm/simul_efun/tail.c"
+#include "/adm/simul_efun/telnet.c"
 
 void create()
 {

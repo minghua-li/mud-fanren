@@ -25,6 +25,88 @@ void terminal_type(string term_type)
     message("system", "终端机型态设定为 " + term_type + "。\n", this_object());
 }
 
+// ===== GMCP Support =====
+
+nosave int _gmcp_last_hp = -1, _gmcp_last_jing = -1, _gmcp_last_qi = -1;
+nosave string _gmcp_last_room = "";
+
+void gmcp_enable()
+{
+    set_temp("gmcp_enabled", 1);
+    call_out("gmcp_push_all", 2);
+}
+
+void gmcp_recv(string package, string data)
+{
+}
+
+void gmcp_push_vitals()
+{
+    int hp, jing, qi;
+
+    if(!interactive(this_object()) || !query_temp("gmcp_enabled")) return;
+
+    hp = query("qi"); jing = query("jing"); qi = query("neili");
+
+    if(hp == _gmcp_last_hp && jing == _gmcp_last_jing && qi == _gmcp_last_qi) return;
+
+    _gmcp_last_hp = hp; _gmcp_last_jing = jing; _gmcp_last_qi = qi;
+
+    send_gmcp(sprintf("Char.Vitals {\"hp\":%d,\"maxhp\":%d,\"jing\":%d,\"maxjing\":%d,\"qi\":%d,\"maxqi\":%d}",
+        hp, query("max_qi"), jing, query("max_jing"), qi, query("max_neili")));
+}
+
+void gmcp_push_status()
+{
+    if(!interactive(this_object()) || !query_temp("gmcp_enabled")) return;
+
+    send_gmcp(sprintf("Char.Status {\"level\":%d,\"exp\":%d,\"name\":\"%s\"}",
+        query("level") || 1, query("combat_exp") || 0, query("name") || ""));
+}
+
+void gmcp_push_room()
+{
+    object env;
+    mapping exits;
+    string *keys;
+    string exit_json;
+    int i;
+
+    if(!interactive(this_object()) || !query_temp("gmcp_enabled")) return;
+
+    env = environment();
+    if(!env) return;
+
+    if(file_name(env) == _gmcp_last_room) return;
+    _gmcp_last_room = file_name(env);
+
+    exits = env->query("exits");
+    if(mapp(exits) && sizeof(exits))
+    {
+        keys = keys(exits);
+        exit_json = "[";
+        for(i = 0; i < sizeof(keys); i++)
+        {
+            if(i > 0) exit_json += ",";
+            exit_json += "\"" + keys[i] + "\"";
+        }
+        exit_json += "]";
+    }
+    else exit_json = "[]";
+
+    send_gmcp(sprintf("Room.Info {\"name\":\"%s\",\"exits\":%s}",
+        env->query("short") || "", exit_json));
+}
+
+void gmcp_push_all()
+{
+    _gmcp_last_hp = -1;
+    _gmcp_last_room = "";
+    gmcp_push_status();
+    gmcp_push_vitals();
+    gmcp_push_room();
+}
+
 void reset()
 {
     if( (int)query("potential") - (int)query("learned_points") < 100 )

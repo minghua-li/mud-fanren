@@ -4,6 +4,7 @@
 
 #include <ansi.h>
 #include <dbase.h>
+#include <telnet.h>
 
 #define MAX_MSG_BUFFER 500
 
@@ -16,7 +17,12 @@ void receive_message(string msgclass, string msg)
     string subclass, *ch;
 	string pattern;
     int received_len = 0;
-    
+
+    if( msgclass == "telnet" ) {
+        receive(msg);
+        return;
+    }
+
     if( !interactive(this_object()) ) {
 	this_object()->relay_message(msgclass, msg);
 	return;
@@ -202,6 +208,16 @@ if ( wizardp(this_object()) && (query("env/prompt") == "path")  )
 			else
 				receive(("> "));
 	}
+
+    telnet_ga();
+
+    this_object()->gmcp_push_vitals();
+    this_object()->gmcp_push_room();
+}
+
+void do_ga()
+{
+    telnet_ga();
 }
 
 void receive_snoop(string msg)

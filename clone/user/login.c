@@ -5,6 +5,11 @@
 inherit F_DBASE;
 inherit F_SAVE;
 
+void do_ga()
+{
+	telnet_ga();
+}
+
 void logon(object ob)
 {
 	call_out( "time_out", LOGIN_TIMEOUT );
@@ -44,6 +49,10 @@ string query_save_file()
 
 void receive_message(string type, string str)
 {
+	if( type == "telnet" ) {
+		receive(str);
+		return;
+	}
 	if( type!= "write" ) return;
 	if(query_temp("UTF8")) str = gb_to_utf8(str);
 	receive(str);
@@ -51,7 +60,16 @@ void receive_message(string type, string str)
 
 void terminal_type(string term_type)
 {
-	set_temp("terminal_type", term_type);
+    set_temp("terminal_type", term_type);
+}
+
+void gmcp_enable()
+{
+    set_temp("gmcp_enabled", 1);
+}
+
+void gmcp_recv(string package, string data)
+{
 }
 
 // Protect login object's data against hackers.

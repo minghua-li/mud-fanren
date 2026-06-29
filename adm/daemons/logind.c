@@ -1049,6 +1049,7 @@ varargs void enter_world(object ob, object user, int silent)
 	exec(user, ob);
 	user->set_temp("ip",query_ip_number(user));
 	user->set_temp("UTF8",ob->query_temp("UTF8"));
+	user->set_temp("gmcp_enabled",ob->query_temp("gmcp_enabled"));
 	user->setup();
 
 	write("\n目前权限：" + wizhood(user) + "\n");
@@ -1345,6 +1346,7 @@ varargs void reconnect(object ob, object user, int silent)
 	exec(user, ob);
 	user->set_temp("ip",query_ip_number(user));
 	user->set_temp("UTF8",ob->query_temp("UTF8"));
+	user->set_temp("gmcp_enabled",ob->query_temp("gmcp_enabled"));
 	user->reconnect();
 	if( !silent && user->query("noDeadNetnoIdle") != "Pkuxkx") {
 		tell_room(environment(user), user->query("name") + "重新连线回到这个世界。\n",

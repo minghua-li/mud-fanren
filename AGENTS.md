@@ -1,8 +1,10 @@
-# AGENTS.md — 北大侠客行 (pkuxkx-utf8)
+# AGENTS.md
+
+项目目标是参考北大侠客行的架构与实现方式，以 ./document/凡人修仙传.txt 为剧本，创建一个凡人修仙传MUD游戏。
 
 ## 项目概况
 
-- 基于 **FluffOS v2019** 驱动的 **LPMUD**，游戏名"北大侠客行"
+- 基于 **FluffOS v2019** 驱动的 **LPMUD**，
 - 使用 **LPC** (LPMUD C) 语言，文件扩展名 `.c` / `.h`
 - 约 22,000 个 `.c` 文件，150 万行代码
 - 启动方式：`driver config.ini`（需安装 fluffos v2019）
