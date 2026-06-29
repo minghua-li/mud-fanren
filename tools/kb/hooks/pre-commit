@@ -1,0 +1,3 @@
+#!/bin/bash
+# Pre-commit hook for KB validation + index generation
+exec python3 -m tools.kb.hook
