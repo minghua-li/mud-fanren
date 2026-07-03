@@ -1,0 +1,9 @@
+.git
+.gitignore
+.claude/
+.opencode/
+.knowledge/
+.vscode/
+log/
+AGENTS.md
+SERVER_REQUIREMENTS.md
