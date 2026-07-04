@@ -82,6 +82,8 @@
 #define EXAMINE_D	"/adm/daemons/examined"
 #define BUSINESS_D  "/adm/daemons/businessd"
 #define BIWU_D		"/adm/daemons/biwud"
+#define ECONOMY_D	"/adm/daemons/economyd"
+#define INFLATION_D	"/adm/daemons/inflationd"
 //ADD BY YHZZYAHOO@2016.8.3
 #define CABIWU_D	"/adm/daemons/cabiwud"
 #define FAMILY_D		"/adm/daemons/familyd"
