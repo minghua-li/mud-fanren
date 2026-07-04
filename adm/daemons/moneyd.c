@@ -1,6 +1,184 @@
-// moneyd.c  钱的功能
-
+// moneyd.c  钱的功能 + 灵石产出总控
 // by Xiang@XKX (95/12/22)
+// 灵石经济扩展 by BCubed 团队 (#19)
+
+// 境界产出系数（基准）
+#define REALM_COEFF_QIGE     1.0    // 炼气
+#define REALM_COEFF_ZHUJI    3.0    // 筑基
+#define REALM_COEFF_JIEDAN   10.0   // 结丹
+#define REALM_COEFF_YUANYING 30.0   // 元婴
+#define REALM_COEFF_HUASHEN  80.0   // 化神+
+
+// 灵石面额换算
+#define LINGSHI_LOW_UNIT     1      // 1 下品灵石
+#define LINGSHI_MID_VALUE    100    // 1 中品灵石 = 100 下品
+#define LINGSHI_HIGH_VALUE   10000  // 1 上品灵石 = 10000 下品
+
+// 每日灵石产出追踪（进程内，重启重置）
+int daily_production;          // 今日已产出（下品灵石）
+int last_reset_day;            // 上次重置的日子
+mapping realm_player_count;    // ([ "qige": N, "zhuji": N, ... ])
+
+// 产出记录（最近24小时）
+mapping production_log;        // ([ "timestamp": count, ... ])
+mapping consumption_log;       // ([ "timestamp": count, ... ])
+
+// ---------- 内部辅助 ----------
+
+void reset_daily_counter()
+{
+        daily_production = 0;
+        production_log = ([]);
+        consumption_log = ([]);
+}
+
+void check_day_rollover()
+{
+        int today = time() / 86400;
+        if (today != last_reset_day) {
+                last_reset_day = today;
+                reset_daily_counter();
+        }
+}
+
+// ---------- 境界产出系数 ----------
+
+float query_realm_coefficient(string realm)
+{
+        switch (realm) {
+        case "qige":       return REALM_COEFF_QIGE;
+        case "zhuji":      return REALM_COEFF_ZHUJI;
+        case "jiedan":     return REALM_COEFF_JIEDAN;
+        case "yuanying":   return REALM_COEFF_YUANYING;
+        case "huashen":    return REALM_COEFF_HUASHEN;
+        default:           return REALM_COEFF_QIGE;
+        }
+}
+
+// ---------- 活跃度修正 ----------
+
+float query_activity_modifier(int online_minutes)
+{
+        if (online_minutes < 30)  return 0.3;
+        if (online_minutes < 120) return 0.8;
+        if (online_minutes < 240) return 1.0;
+        return 1.1;  // 边际递减，防挂机
+}
+
+// ---------- 日产出上限 ----------
+
+int query_daily_production_cap()
+{
+        // 全服日产出上限 = Σ(各境界在线玩家数 × 境界产出系数)
+        // 按每玩家基准 1 下品灵石/小时，日基准 = 在线人数 × 24
+        check_day_rollover();
+        int total = 0;
+        int base_per_hour = 1;  // 炼气基准 1 灵石/小时
+
+        if (!mapp(realm_player_count)) realm_player_count = ([]);
+
+        foreach (string realm, int count in realm_player_count) {
+                float coeff = query_realm_coefficient(realm);
+                total += to_int(to_float(count) * coeff * base_per_hour * 24);
+        }
+
+        return total;
+}
+
+// ---------- 更新在线玩家统计 ----------
+
+void update_realm_count(string realm, int delta)
+{
+        if (!mapp(realm_player_count))
+                realm_player_count = ([]);
+
+        int cur = realm_player_count[realm];
+        cur += delta;
+        if (cur < 0) cur = 0;
+        realm_player_count[realm] = cur;
+        // 同时通知通胀监控
+        if (find_object(INFLATION_D))
+                INFLATION_D->check_economy_health();
+}
+
+// ---------- 灵石产出记录 ----------
+
+int add_production(string source, int amount, string realm)
+{
+        check_day_rollover();
+        daily_production += amount;
+
+        if (!mapp(production_log)) production_log = ([]);
+        int now = time();
+        production_log[now] = amount;
+
+        // 通知通胀监控
+        if (find_object(INFLATION_D))
+                INFLATION_D->on_production(amount, realm);
+
+        return daily_production;
+}
+
+int add_consumption(string sink, int amount, string realm)
+{
+        if (!mapp(consumption_log)) consumption_log = ([]);
+        int now = time();
+        consumption_log[now] = amount;
+
+        // 通知通胀监控
+        if (find_object(INFLATION_D))
+                INFLATION_D->on_consumption(amount, realm);
+
+        return 1;
+}
+
+int query_daily_production()
+{
+        check_day_rollover();
+        return daily_production;
+}
+
+// ---------- 查询统计 ----------
+
+int query_total_production_last_hour()
+{
+        int now = time();
+        int cutoff = now - 3600;
+        int total = 0;
+
+        if (!mapp(production_log)) return 0;
+        foreach (int ts, int amount in production_log) {
+                if (ts >= cutoff) total += amount;
+        }
+        return total;
+}
+
+int query_total_consumption_last_hour()
+{
+        int now = time();
+        int cutoff = now - 3600;
+        int total = 0;
+
+        if (!mapp(consumption_log)) return 0;
+        foreach (int ts, int amount in consumption_log) {
+                if (ts >= cutoff) total += amount;
+        }
+        return total;
+}
+
+// ---------- 灵石面额工具 ----------
+
+string spirit_stone_str(int amount)
+{
+        // 将下品灵石数量转为可读字符串
+        if (amount >= LINGSHI_HIGH_VALUE)
+                return chinese_number(amount / LINGSHI_HIGH_VALUE) + "块上品灵石";
+        if (amount >= LINGSHI_MID_VALUE)
+                return chinese_number(amount / LINGSHI_MID_VALUE) + "块中品灵石";
+        return chinese_number(amount) + "块下品灵石";
+}
+
+// ========== 以下为原有钱币功能 ==========
 
 string money_str(int amount)
 {
