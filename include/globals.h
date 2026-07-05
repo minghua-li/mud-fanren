@@ -82,6 +82,7 @@
 #define ONLINE_D	"/adm/daemons/onlineuserd"
 #define EXAMINE_D	"/adm/daemons/examined"
 #define BUSINESS_D  "/adm/daemons/businessd"
+#define DAILY_TASK_D	"/adm/daemons/daily_task_d"
 #define BIWU_D		"/adm/daemons/biwud"
 #define ECONOMY_D	"/adm/daemons/economyd"
 #define INFLATION_D	"/adm/daemons/inflationd"
