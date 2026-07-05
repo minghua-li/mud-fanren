@@ -195,6 +195,7 @@
 #define F_SHELL			"/feature/shell.c"
 #define F_SKILL			"/feature/skill.c"
 #define F_TEAM			"/feature/team.c"
+#define F_FORMATION		"/feature/formation.c"
 #define F_TREEMAP		"/feature/treemap.c"
 #define F_VENDOR		"/feature/dealer.c"
 #define F_SSERVER		"/feature/sserver.c"
