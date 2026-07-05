@@ -21,10 +21,6 @@ nosave mapping quest_templates = ([]);
 // 任务链注册表：chain_id → mapping 链定义
 nosave mapping chain_registry = ([]);
 
-// 玩家在线状态缓存：player_id → mapping 活跃任务状态
-// 持久化通过玩家自身的 quest_chain 属性存储
-nosave mapping player_cache = ([]);
-
 // 日常任务池缓存：realm_index → ({ quest_id, ... })
 nosave mapping daily_pool_cache = ([]);
 
@@ -297,10 +293,29 @@ string get_next_chain_quest(string chain_id, string current_quest_id, mapping pl
                     if (mapp(conds) && conds[quests[i]])
                     {
                         prereqs = conds[quests[i]];
-                        // 简化检查：如果玩家有prereq条件中指定的属性则通过
-                        // 具体检查逻辑由 check_prerequisites 实现
-                        if (check_prerequisites(prereqs, 0)) // 0 = 占位，实际应有player
+                        // 使用 player_state 替代 player 对象验证前置条件
+                        // 检查 player_state 中有无标记已完成的前置任务
+                        if (mapp(prereqs) && arrayp(prereqs["quests"]))
+                        {
+                            string *req_quests = prereqs["quests"];
+                            int j, all_met = 1;
+                            for (j = 0; j < sizeof(req_quests); j++)
+                            {
+                                if (!player_state[req_quests[j]] ||
+                                    player_state[req_quests[j]] != QUEST_STATUS_COMPLETED)
+                                {
+                                    all_met = 0;
+                                    break;
+                                }
+                            }
+                            if (all_met)
+                                return quests[i];
+                        }
+                        else
+                        {
+                            // 无前置条件定义，默认可用
                             return quests[i];
+                        }
                     }
                     else
                     {
@@ -1188,7 +1203,7 @@ float calc_quality_coefficient(int quality)
 }
 
 // 获取境界基准值
-int calc_real_base(int realm_index)
+int calc_realm_base(int realm_index)
 {
     switch (realm_index)
     {
