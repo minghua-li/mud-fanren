@@ -164,6 +164,10 @@ protected mapping cond_def=
 		"type":"poison"]),
   "yf_condition"://in use
 	(["name":"玉蜂针毒",
+		"type":"poison"]),
+// 灵根系统 debuff 类型（与 root_refine_d 联动）
+  "root_debuff_dan_du":
+  (["name":"丹毒积淤",
 		"type":"poison"])]);
 
 #endif
