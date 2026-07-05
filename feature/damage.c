@@ -16,6 +16,7 @@
 #include <login.h>
 #include <move.h>
 #include <condition.h>
+#include <element.h>
 
 void remove_sg_effect(object me);
 
@@ -151,6 +152,26 @@ varargs int receive_damage(string type, int damage, mixed who)
 		if (wizardp(me))
 		tell_object(me,"剩余罡气"+query("born/Gangspirit")+"\n");
 	}
+	
+	// 五行相生减伤：攻击方元素生防御方元素时，减伤 5%
+	if (objectp(who) && damage > 0)
+	{
+		int e_att = query_character_element(who);
+		int e_def = query_character_element(me);
+		if (e_att != ELE_NONE && e_def != ELE_NONE)
+		{
+			int generated = query_element_generates(e_att);
+			if (generated == e_def)
+			{
+				int reduced = damage * 5 / 100;
+				if (reduced < 1) reduced = 1;
+				damage -= reduced;
+				tell_object(me, HIG "你的" + query_element_color(e_def) + query_element_name(e_def) + HIG "属性受" 
+					+ query_element_color(e_att) + query_element_name(e_att) + HIG "相生，减免了" + reduced + "点伤害。\n" NOR);
+			}
+		}
+	}
+	
 	val = (int)query(type) - damage;
     if (who)
     {

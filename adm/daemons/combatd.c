@@ -8,6 +8,7 @@
 #include <weapon.h>
 #include <combat.h>
 #include <localtime.h>
+#include <element.h>
 #include <pvp.h>
 
 inherit F_DBASE;

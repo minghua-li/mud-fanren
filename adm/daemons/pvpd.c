@@ -55,7 +55,7 @@ void create()
     check_season();
 
     // 启动匹配定时器（每5秒检查一次匹配队列）
-    set heartbeat(1);
+    set_heart_beat(1);
 }
 
 // 心跳 - 匹配队列处理
