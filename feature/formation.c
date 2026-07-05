@@ -109,6 +109,16 @@ nosave int    formation_setup_ticks; // 布阵进度（剩余 tick）
 nosave int    formation_tick_count; // 阵法已维持 tick 数
 nosave object *formation_members;   // 阵内成员列表
 
+// ===== 阵灵（Formation Spirit）状态 =====
+// 阵灵是阵法凝聚的灵性化身，由阵眼操控，可独立攻击/辅助
+nosave int    fs_alive;              // 阵灵是否存在
+nosave int    fs_hp;                // 阵灵当前气血
+nosave int    fs_max_hp;            // 阵灵最大气血
+nosave int    fs_attack;            // 阵灵攻击力
+nosave int    fs_defense;           // 阵灵防御力
+nosave int    fs_level;             // 阵灵修为等级（对应境界）
+nosave string fs_name;              // 阵灵名称（因阵法而异）
+
 // ===== 查询函数 =====
 
 // 查询当前阵型类型
@@ -231,6 +241,9 @@ void dismiss_formation()
     if ( formation_active )
         deactivate_formation_effects();
 
+    // 阵灵消散
+    dismiss_formation_spirit();
+
     // 通知成员
     mapping data = formation_data[formation_type];
     string formation_name = mapp(data) ? data["name"] : "未知阵法";
@@ -288,6 +301,9 @@ void activate_formation_effects()
 
     // 阵眼额外公告
     tell_object(this_object(), HIW "你作为阵眼，主持「" + formation_name + "」的运转。\n" NOR);
+
+    // 凝聚阵灵
+    summon_formation_spirit();
 }
 
 // 对单个成员应用阵法效果
@@ -430,6 +446,9 @@ void formation_tick(object me)
         this_object()->add("balance", -cost);
     }
 
+    // 阵灵每 tick 行动
+    formation_spirit_act(me);
+
     // 各类阵法的 tick 效果
     switch ( formation_type )
     {
@@ -547,6 +566,256 @@ void formation_eye_fallen()
 
     // 无人可接替，撤阵
     dismiss_formation();
+}
+
+// ===== 阵灵系统 =====
+
+// 根据阵法类型和成员修为计算阵灵基础属性
+void summon_formation_spirit()
+{
+    if ( !formation_active || !formation_type || formation_type == FORMATION_NONE )
+    {
+        fs_alive = 0;
+        return;
+    }
+
+    mapping data = formation_data[formation_type];
+    if ( !mapp(data) )
+    {
+        fs_alive = 0;
+        return;
+    }
+
+    // 计算阵灵基础属性：取决于阵法类型和成员平均修为
+    int total_realm = 0;
+    int member_count = 0;
+
+    if ( arrayp(formation_members) )
+    {
+        foreach ( object ob in formation_members )
+        {
+            if ( !objectp(ob) )
+                continue;
+            total_realm += ob->query("realm_level");
+            member_count++;
+        }
+    }
+    if ( member_count < 1 )
+        member_count = 1;
+    int avg_realm = total_realm / member_count;
+
+    // 阵灵名称依阵法类型而异
+    string *spirit_names = ({
+        "无",
+        "聚灵之灵",      // 聚灵阵
+        "颠倒幻灵",      // 颠倒五行阵
+        "北斗星灵",      // 天罡北斗阵
+        "大庚剑魄",      // 大庚剑阵
+        "三才法灵",      // 三才阵
+        "四象神兽",      // 四象阵
+        "五行元灵",      // 五行阵
+    });
+    fs_name = spirit_names[formation_type];
+
+    // 阵灵基础属性 = 成员平均修为 × 阵法类型系数
+    fs_level = avg_realm;
+    fs_max_hp = avg_realm * 100 + 500;      // 基础 500 + 修为×100
+    fs_hp = fs_max_hp;
+    fs_attack = avg_realm * 20 + 50;        // 基础 50 + 修为×20
+    fs_defense = avg_realm * 10 + 30;       // 基础 30 + 修为×10
+
+    // 阵法类型修正
+    switch ( formation_type )
+    {
+    case FORMATION_DAGENG:
+        fs_attack = fs_attack * 150 / 100;   // 剑阵攻击+50%
+        fs_defense = fs_defense * 60 / 100;  // 剑阵防御-40%
+        break;
+    case FORMATION_TIANGANG:
+        fs_defense = fs_defense * 150 / 100; // 北斗防御+50%
+        fs_attack = fs_attack * 70 / 100;    // 北斗攻击-30%
+        break;
+    case FORMATION_JULING:
+        fs_attack = fs_attack * 50 / 100;    // 聚灵阵攻击-50%
+        fs_max_hp = fs_max_hp * 200 / 100;   // 聚灵气血翻倍
+        fs_hp = fs_max_hp;
+        break;
+    case FORMATION_DIANDAO:
+        fs_defense = fs_defense * 200 / 100; // 颠倒五行防御翻倍
+        break;
+    }
+
+    fs_alive = 1;
+
+    // 通知阵眼
+    tell_object(this_object(), HIY "\n阵灵「" + fs_name + "」凝聚成形！\n" NOR);
+    tell_object(this_object(), sprintf(
+        "  ～ 修为: %d, 气血: %d/%d, 攻击: %d, 防御: %d\n",
+        fs_level, fs_hp, fs_max_hp, fs_attack, fs_defense
+    ));
+}
+
+// 阵灵消散
+void dismiss_formation_spirit()
+{
+    if ( !fs_alive )
+        return;
+
+    tell_object(this_object(), HIY "阵灵「" + fs_name + "」缓缓消散于天地之间。\n" NOR);
+
+    fs_alive = 0;
+    fs_hp = 0;
+    fs_max_hp = 0;
+    fs_attack = 0;
+    fs_defense = 0;
+    fs_level = 0;
+    fs_name = 0;
+}
+
+// 阵灵每 tick 独立行动
+void formation_spirit_act(object me)
+{
+    if ( !fs_alive || !formation_active )
+        return;
+
+    // 阵灵随阵法维持缓慢成长
+    if ( formation_tick_count % 10 == 0 && formation_tick_count > 0 )
+    {
+        // 每 10 tick 提升 1% 属性
+        fs_max_hp = fs_max_hp * 101 / 100;
+        fs_attack = fs_attack * 101 / 100;
+        fs_defense = fs_defense * 101 / 100;
+        // 补满气血
+        fs_hp = fs_max_hp;
+        tell_object(this_object(), HIW "阵灵「" + fs_name + "」吸收天地灵气，实力精进！\n" NOR);
+    }
+
+    // 阵灵攻击行为
+    object *enemies = me->query_enemy();
+    if ( !arrayp(enemies) || sizeof(enemies) < 1 )
+        return;
+
+    switch ( formation_type )
+    {
+    case FORMATION_DAGENG:
+        // 大庚剑阵的阵灵主动攻击敌人
+        {
+            foreach ( object enemy in enemies )
+            {
+                if ( !objectp(enemy) || !living(enemy) )
+                    continue;
+                int spirit_dmg = fs_attack / 2 + random(fs_attack / 2);
+                enemy->receive_damage("qi", spirit_dmg, me);
+                message_vision(
+                    HIC "「" + fs_name + "」化作一道剑光，斩向$n！\n" NOR,
+                    me, enemy
+                );
+            }
+        }
+        break;
+
+    case FORMATION_TIANGANG:
+        // 天罡北斗阵的阵灵为队友治疗
+        {
+            foreach ( object member in formation_members )
+            {
+                if ( !objectp(member) || !living(member) )
+                    continue;
+                int heal_amt = fs_attack / 3;
+                if ( member->query("qi") < member->query("max_qi") )
+                {
+                    member->add("qi", heal_amt);
+                    if ( member->query("qi") > member->query("max_qi") )
+                        member->set("qi", member->query("max_qi"));
+                    tell_object(member, HIW "「" + fs_name + "」洒下一片星光，你的伤势恢复了一些。\n" NOR);
+                }
+            }
+        }
+        break;
+
+    case FORMATION_JULING:
+        // 聚灵阵的阵灵协助恢复法力
+        {
+            foreach ( object member in formation_members )
+            {
+                if ( !objectp(member) || !living(member) )
+                    continue;
+                int mana_regen_amount = fs_level * 2;
+                member->add("neili", mana_regen_amount);
+                int max_neili = member->query("max_neili");
+                if ( member->query("neili") > max_neili )
+                    member->set("neili", max_neili);
+            }
+        }
+        break;
+
+    case FORMATION_DIANDAO:
+        // 颠倒五行阵的阵灵干扰敌人
+        {
+            foreach ( object enemy in enemies )
+            {
+                if ( !objectp(enemy) || !living(enemy) )
+                    continue;
+                // 概率性迷惑敌人（通过标记实现减速/束缚效果）
+                if ( random(100) < 30 )
+                {
+                    enemy->set_temp("formation/diandao_confused", 1);
+                    message_vision(
+                        HIM "「" + fs_name + "」射出迷幻之光，" + enemy->name() + "变得神情恍惚！\n" NOR,
+                        me, enemy
+                    );
+                }
+            }
+        }
+        break;
+
+    default:
+        // 三才/四象/五行阵的阵灵提供属性加成
+        {
+            foreach ( object member in formation_members )
+            {
+                if ( !objectp(member) || !living(member) )
+                    continue;
+                // 阵灵的属性增益
+                member->set_temp("formation/spirit_bonus", fs_attack / 10);
+            }
+        }
+        break;
+    }
+}
+
+// 阵灵受到伤害
+int formation_spirit_receive_damage(int damage)
+{
+    if ( !fs_alive )
+        return 0;
+
+    fs_hp -= damage;
+    if ( fs_hp <= 0 )
+    {
+        fs_hp = 0;
+        tell_object(this_object(), HIR "\n阵灵「" + fs_name + "」被击散了！\n" NOR);
+        fs_alive = 0;
+        return -1;  // 阵灵消散
+    }
+    return fs_hp;
+}
+
+// 查询阵灵状态
+mapping query_formation_spirit_status()
+{
+    if ( !fs_alive )
+        return 0;
+
+    return ([
+        "name"    : fs_name,
+        "alive"   : fs_alive,
+        "hp"      : fs_hp,
+        "max_hp"  : fs_max_hp,
+        "attack"  : fs_attack,
+        "defense" : fs_defense,
+        "level"   : fs_level,
+    ]);
 }
 
 // ===== 伤害/效果计算辅助 =====
