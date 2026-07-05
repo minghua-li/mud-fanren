@@ -56,6 +56,7 @@
 #define STATISTIC_D "/adm/daemons/statisticd"
 #define STORY_D		"/adm/daemons/storyd"
 #define TASK_D		"/adm/daemons/taskd"
+#define QUEST_CHAIN_D	"/adm/daemons/quest_chain_d"
 #define XYTASK_D 		"/adm/daemons/xytaskd"
 #define FEIZEI_D          "/adm/daemons/feizeid"
 #define JIAOFEI_D		"/adm/daemons/jiaofeid"
