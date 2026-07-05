@@ -92,7 +92,7 @@ nosave mixed *item_catalog = ({
   // ===================== 慕兰法士 =====================
   ({"mlf_pill1", "法士灵液", "pill", "/obj/remedy/lingye", 300, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "mulan_legalists", "慕兰法士秘制灵液", -1}),
   ({"mlf_sk1", "慕兰咒术", "skill", "/obj/skill/mulan_zhoushu", 80000, REP_LEVEL_TRUST, 1500, SHOP_TIER_ADVANCED, "mulan_legalists", "慕兰法士的独特咒术", 3}),
-]);
+});
 
 // 运行时库存（用于有限物品跟踪）
 nosave mapping runtime_stock = ([]);
