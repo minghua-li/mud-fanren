@@ -20,6 +20,7 @@ inherit F_DBASE;
 #include <combat/autofight.h>   //自动触发战斗有关的所有接口函数
 #include <combat/equip.h>       //战斗中装备特效相关的所有函数
 #include <combat/damage.h>      //战斗过程中和伤害计算相关的函数
+#include <combat/skill_combo.h> //技能组合/连招系统 + 冷却管理
 
 string  absorb_skill;
 string msg;
@@ -508,6 +509,10 @@ varargs int do_attack(object me, object victim, object weapon, int attack_type, 
 		
 		if (damage>0)
 		{
+			// 阵法伤害修正（如颠倒五行阵的五行减伤、天罡北斗阵的分摊）
+			if ( victim->formation_damage_modify )
+				damage = victim->formation_damage_modify(victim, damage, 0);
+
 			damage = victim->receive_damage("qi", damage, me );
 
 			if( random(damage) > (int)victim->query_temp("apply/armor")
@@ -669,6 +674,9 @@ varargs int do_attack(object me, object victim, object weapon, int attack_type, 
 			do_attack(victim, me, victim->query_temp("weapon"), TYPE_RIPOSTE);
 		}
 	}
+
+	// 清除连招临时数据
+	clear_combo_temp(me);
 	
 	return damage;
 }
@@ -738,6 +746,18 @@ void fight(object me, object victim)
 	if( !me->visible(victim) )
 		return;
 	
+	// 冷却递减
+	tick_cooldowns(me);
+	tick_cooldowns(victim);
+
+	// 阵法每 tick 效果
+	if ( me->query_formation_type )
+	{
+		int ftype = me->query_formation_type();
+		if ( ftype )
+			me->formation_tick(me);
+	}
+
 	hubo=is_hubo(me);
 	hubei=is_hubei(me);
 	weapon=me->query_temp("weapon");
