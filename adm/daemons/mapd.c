@@ -1,6 +1,7 @@
 //掌管侠客行的地图。各个任务使用这里的接口分配随机的地点。
 #include <map.h>
 #include <mansion.h>
+#include <teleport.h>
 
 object random_room(string,int);
 object random_place();
@@ -61,6 +62,52 @@ int is_mansion_entry(string room_path)
 }
 
 // ================================================================
+
+// ======== 传送阵入口注册 ==========================================
+
+// 传送阵入口注册表 node_id -> 房间路径
+nosave mapping teleport_entries = ([]);
+
+// 注册传送阵入口房间
+// 由传送阵房间文件在 create() 时调用
+int set_teleport_entry(string node_id, string room_path)
+{
+    if (!stringp(node_id) || !stringp(room_path))
+        return 0;
+
+    if (!mapp(teleport_entries))
+        teleport_entries = ([]);
+
+    teleport_entries[node_id] = room_path;
+    return 1;
+}
+
+// 查询传送阵入口
+string query_teleport_entry(string node_id)
+{
+    if (!mapp(teleport_entries))
+        return 0;
+
+    return teleport_entries[node_id];
+}
+
+// 查询某房间是否为传送阵入口
+string query_teleport_node(string room_path)
+{
+    string *nids;
+    int i;
+
+    if (!mapp(teleport_entries))
+        return 0;
+
+    nids = keys(teleport_entries);
+    for (i = 0; i < sizeof(nids); i++)
+    {
+        if (teleport_entries[nids[i]] == room_path)
+            return nids[i];
+    }
+    return 0;
+}
 
 int dbg()
 {
