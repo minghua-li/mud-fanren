@@ -75,6 +75,9 @@
 #define SPECIAL_D(x)		("/kungfu/special/" + x)
 #define CONDITION_D(x)	("/kungfu/condition/" + x)
 #define MUSIC_D(x)	("/kungfu/music/" + x)
+// Main Quest Framework (#40)
+#define MAIN_QUEST_D            "/adm/daemons/main_quest_d"
+
 //add for quest
 #define AQUEST_D(x)	("/quest/aquest/aquest" + x)
 #define BQUEST_D(x)	("/quest/bquest/bquest" + x)
