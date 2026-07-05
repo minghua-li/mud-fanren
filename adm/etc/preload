@@ -22,3 +22,4 @@
 /adm/daemons/economyd
 /adm/daemons/inflationd
 /adm/daemons/bandwidthd
+/adm/daemons/teleport_d
