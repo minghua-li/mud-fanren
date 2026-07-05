@@ -50,6 +50,8 @@ void create()
                 set("stats", ([]));
         if (!mapp(query("production")))
                 set("production", ([]));
+        if (!mapp(query("consumption")))
+                set("consumption", ([]));
         if (!mapp(query("events")))
                 set("events", ([]));
 
@@ -154,13 +156,13 @@ void on_production(int amount, string realm)
 // 由 moneyd.c 调用：记录灵石消耗
 void on_consumption(int amount, string realm)
 {
-        mapping consumption = query("production");  // 复用 production mapping 存储
+        mapping consumption = query("consumption");
         if (!mapp(consumption)) consumption = ([]);
 
         string key = "consumed_" + realm;
         consumption["consumed_total"] += amount;
         consumption[key] += amount;
-        set("production", consumption);
+        set("consumption", consumption);
 
         // 更新总统计
         add("stats/total_consumption", amount);
