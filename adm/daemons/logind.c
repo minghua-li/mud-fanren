@@ -11,6 +11,7 @@
 #include <command.h>
 #include <login.h>
 #include <localtime.h>
+#include <spirit_root.h>
 
 #define HELPNEW_LST "/log/helpnew/helpnew_lst"
 #define HELPNEW_BAD_LST "/log/helpnew/helpnew_bad_lst"
@@ -242,16 +243,39 @@ void new_password(string pass, object ob)
 }
 
 /*
-创建用户第四步：再次输入密码并设置天赋
+创建用户第四步：再次输入密码并设置天赋（加点机制）
+四项主属性（膂力/悟性/根骨/身法）采用点分配制：
+  基础值 10，可分配总点数 = INIT_ATTR_POINTS - 40（四项基础值之和），
+  每项上限 30。
+福缘/容貌采用随机值 10+random(21)。
 */
 void fix_gift(mapping my)
 {
-	my["str"] = 20;
-	my["int"] = 20;	
-	my["con"] = 20;
-	my["dex"] = 20;
-	my["kar"] = 20;
-	my["per"] = 20;
+	int point_pool = INIT_ATTR_POINTS - 40;  // 40 = 4*10 基础值
+	int remain = point_pool;
+	int *attrs = allocate(4);
+	int i;
+	
+	// 先均匀分配，余数随机加
+	for (i = 0; i < 4; i++)
+		attrs[i] = point_pool / 4;  // 平分
+	remain = point_pool % 4;
+	
+	// 将余数随机分配到不同属性
+	for (i = 0; i < remain; i++) {
+		int idx;
+		do {
+			idx = random(4);
+		} while (attrs[idx] >= INIT_ATTR_MAX - 10);
+		attrs[idx]++;
+	}
+	
+	my["str"] = INIT_ATTR_BASE + attrs[0];
+	my["int"] = INIT_ATTR_BASE + attrs[1];
+	my["con"] = INIT_ATTR_BASE + attrs[2];
+	my["dex"] = INIT_ATTR_BASE + attrs[3];
+	my["kar"] = 10 + random(21);
+	my["per"] = 10 + random(21);
 }
 
 void confirm_password(string pass, object ob)
@@ -269,8 +293,10 @@ void confirm_password(string pass, object ob)
 	my = ([]);
 	fix_gift(my);
 
-	write("系统为您分配了如下属性：膂力20， 悟性20， 根骨20， 身法20\n");
-    write("天赋在进入游戏之后还可以修改，建议注册完毕之后立即打help start查看相关帮助。\n");
+	write(sprintf("系统为您分配了如下天赋属性：\n"));
+	write(sprintf("  膂力[%d]  悟性[%d]  根骨[%d]  身法[%d]  福缘[%d]  容貌[%d]\n",
+		my["str"], my["int"], my["con"], my["dex"], my["kar"], my["per"]));
+    	write("天赋在进入游戏之后还可以修改，建议注册完毕之后立即打help start查看相关帮助。\n");
 
 	write("\n您的电子邮件地址（请填写真实常用的email地址，以便在密码丢失或忘记时确认你的身份）：");
 	input_to( (:get_email:), ob, my);

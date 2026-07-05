@@ -63,6 +63,14 @@ void setup_human(object ob)
         if (undefinedp(my["per"])) my["per"] = 10 + random(21);
         if (undefinedp(my["kar"])) my["kar"] = 10 + random(21);
 
+        // 对玩家角色生成灵根
+        if (userp(ob) && undefinedp(ob->query(SPIRIT_ROOT_DATA)))
+        {
+                mapping sr = ob->generate_spirit_root();
+                if (mapp(sr))
+                        ob->set(SPIRIT_ROOT_DATA, sr);
+        }
+
         if(stringp(force = ob->query_skill_mapped("force")))
 		    {
 			      sep_force = (int)ob->query_skill(force, 1);

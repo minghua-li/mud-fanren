@@ -3,6 +3,7 @@
 
 #include <ansi.h>
 #include <combat.h>
+#include <spirit_root.h>
 
 inherit F_CLEAN_UP;
 
@@ -200,6 +201,33 @@ string get_gift(object ob,mapping my,string arg)
 		);
 	}
 	line += temp;
+	
+	// 显示灵根信息
+	if (userp(ob))
+	{
+		mapping sr = ob->query(SPIRIT_ROOT_DATA);
+		if (mapp(sr))
+		{
+			string quality = sr[SR_QUALITY];
+			string *elements = sr[SR_ELEMENTS];
+			string variant = sr[SR_VARIANT];
+			int strength = sr[SR_STRENGTH];
+			int purity = sr[SR_PURITY];
+			
+			line += sprintf(" 灵根：%s", quality);
+			if (variant)
+				line += sprintf("（%s）", variant);
+			
+			line += "  [";
+			for (int i = 0; i < sizeof(elements); i++)
+			{
+				if (i > 0) line += " ";
+				line += elements[i];
+			}
+			line += sprintf("]  强度：%d  纯度：%d%%\n", strength, purity);
+		}
+	}
+	
 	return line;
 }
 string get_family(object ob,mapping my,string str)
