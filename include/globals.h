@@ -87,6 +87,7 @@
 //ADD BY YHZZYAHOO@2016.8.3
 #define CABIWU_D	"/adm/daemons/cabiwud"
 #define FAMILY_D		"/adm/daemons/familyd"
+#define REPUTATION_D	"/adm/daemons/reputation_d"
 #define REWARD_D		"/adm/daemons/rewardd"
 #define LAXIANG_D		"/adm/daemons/laxiangd"
 #define ZQUEST_D "/obj/quest.c"
