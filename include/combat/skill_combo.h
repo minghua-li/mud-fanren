@@ -169,7 +169,7 @@ void tick_cooldowns(object me)
 // 检查技能组合/连招
 // me: 施法者, target: 目标, skill_id: 当前释放的技能 ID
 // 返回值: 命中组合的描述 mapping（若无组合返回 0）
-mapping check_combo(object me, object target, string skill_id)
+mixed check_combo(object me, object target, string skill_id)
 {
     string *history;
     string last_skill;
