@@ -173,11 +173,6 @@ nosave mapping realm_base_reward = ([
     "大乘期" : 1000000,
 ]);
 
-// 函数声明
-void auto_save_activity();
-void daily_refresh();
-void weekly_refresh();
-
 // 创建守护进程
 void create()
 {
@@ -193,12 +188,10 @@ void create()
 void heart_beat()
 {
     mixed *lt;
-    int current_hour, current_day, current_month;
+    int current_hour;
 
     lt = localtime(time());
     current_hour = lt[LT_HOUR];
-    current_day = lt[LT_MDAY];
-    current_month = lt[LT_MON] + 1;
 
     // 每日 0:00 刷新
     if (current_hour == 0 && lt[LT_MIN] < 5)
@@ -221,13 +214,6 @@ int get_epoch_day()
     return time() / 86400;
 }
 
-// 获取当前是一周中的第几天（1=周一, 7=周日）
-int get_week_day()
-{
-    mixed *lt = localtime(time());
-    return lt[LT_WDAY];
-}
-
 // 检测是否需要日重置
 int is_daily_reset(object player)
 {
@@ -248,7 +234,7 @@ int is_weekly_reset(object player)
     if (!objectp(player))
         return 0;
 
-    current_week = get_week_day();
+    current_week = get_epoch_day() / 7;
     return (player->query(ACT_DBASE_KEY "/weekly/week") != current_week);
 }
 
@@ -279,7 +265,7 @@ void weekly_reset_player(object player)
     if (!objectp(player))
         return;
 
-    current_week = get_week_day();
+    current_week = get_epoch_day() / 7;
 
     // 保存上周活跃度到历史记录
     player->set(ACT_DBASE_KEY "/last_week", player->query(ACT_DBASE_KEY "/weekly/score"));
