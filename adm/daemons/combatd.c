@@ -8,6 +8,7 @@
 #include <weapon.h>
 #include <combat.h>
 #include <localtime.h>
+#include <element.h>
 
 inherit F_DBASE;
 #include <combat/message.h>     //战斗信息显示有关的所有设定

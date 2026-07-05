@@ -165,6 +165,33 @@ mixed calc_damage(object me,object victim,object weapon,mapping my,mapping your,
     	damage=(damage-defatk)*(100+deepj)/100*(100-weekj-absweekj)/100;
     }
     
+    // ===== 五行克制修正 =====
+    // 基于设计文档 2.1 节: 五行系数 (克制 1.5x / 被克 0.7x / 变异 1.2~2.0x)
+    {
+        int att_elem = query_character_element(me);
+        int def_elem = query_character_element(victim);
+        
+        if (att_elem != ELE_NONE && def_elem != ELE_NONE)
+        {
+            float elem_mod = calc_element_modifier(att_elem, def_elem);
+            damage = to_int(damage * elem_mod);
+            
+            string att_c = query_element_color(att_elem);
+            string def_c = query_element_color(def_elem);
+            string att_n = query_element_name(att_elem);
+            string def_n = query_element_name(def_elem);
+            
+            if (elem_mod >= 1.4)
+                result += HIR "【五行克制】" + att_c + att_n + NOR "克制" + def_c + def_n + NOR "，伤害大增！\n" NOR;
+            else if (elem_mod <= 0.75)
+                result += HIC "【五行被克】" + att_c + att_n + NOR "被" + def_c + def_n + NOR "克制，伤害大减！\n" NOR;
+            else if (elem_mod > 1.01)
+                result += HIY "【五行小优】" + att_c + att_n + NOR "对" + def_c + def_n + NOR "有微弱优势。\n" NOR;
+            else if (elem_mod < 0.99)
+                result += CYN "【五行小劣】" + att_c + att_n + NOR "被" + def_c + def_n + NOR "略微压制。\n" NOR;
+        }
+    }
+    
     damage=special_armor_effect(victim,me,damage);
     //whuan,这里注意，调用对手的盔甲特效
     if( damage < 0 ) 

@@ -8,6 +8,7 @@
 #include <origin.h>
 #include <skill.h>
 #include <combat.h>
+#include <element.h>
 
 #define MAX_OPPONENT	4
 
@@ -103,6 +104,16 @@ void fight_ob(object ob)
 	  {
 	  	set("last_attack_info/absorb/skill" , "douzhuan-xingyi");
 	  	set("last_attack_info/absorb/level" , ob->query_skill("douzhuan-xingyi") );
+	  }
+	  
+	  // 记录双方五行元素用于战斗伤害计算
+	  {
+	  	int e_me = query_character_element(this_object());
+	  	int e_ob = query_character_element(ob);
+	  	if (e_me != ELE_NONE)
+	  		set_temp("combat/element", e_me);
+	  	if (e_ob != ELE_NONE)
+	  		ob->set_temp("combat/element", e_ob);
 	  }
 	}
 //通知被攻击者。可以给npc实现一些智能。
