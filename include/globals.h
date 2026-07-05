@@ -61,6 +61,7 @@
 #define FEIZEI_D          "/adm/daemons/feizeid"
 #define JIAOFEI_D		"/adm/daemons/jiaofeid"
 #define DISGUISE_D "/adm/daemons/disguised"
+#define PVP_D		"/adm/daemons/pvpd"
 
 #define VIRTUAL_D	"/adm/daemons/virtuald"
 #define WEAPON_D	"/adm/daemons/weapond"
