@@ -1,5 +1,6 @@
 //掌管侠客行的地图。各个任务使用这里的接口分配随机的地点。
 #include <map.h>
+#include <secret_realm.h>
 
 object random_room(string,int);
 object random_place();
@@ -13,6 +14,53 @@ mapping map_cache = ([]);
 mapping area_complexity=([]);//区域的复杂程度，like "/d/city/":150,记录区域内房间数量。
 nosave mapping quest_reg;     //匿名任务区域注册表
 nosave int qreg_serial;       //匿名任务区域注册最大序列号
+nosave mapping secret_realm_entries; //秘境入口注册表 realm_id -> entry_path
+
+// ======== 秘境入口注册 ========================================
+
+// 注册秘境入口房间
+// 由秘境入口房间文件在 create() 时调用
+int set_secret_realm_entry(string realm_id, string entry_path)
+{
+    if (!stringp(realm_id) || !stringp(entry_path))
+        return 0;
+    
+    if (!mapp(secret_realm_entries))
+        secret_realm_entries = ([]);
+    
+    secret_realm_entries[realm_id] = entry_path;
+    return 1;
+}
+
+// 查询秘境入口路径
+string query_secret_realm_entry(string realm_id)
+{
+    if (!stringp(realm_id) || !mapp(secret_realm_entries))
+        return 0;
+    
+    return secret_realm_entries[realm_id];
+}
+
+// 判断房间路径是否为秘境入口
+int is_secret_realm_entry(string room_path)
+{
+    string *ids;
+    int i;
+    
+    if (!mapp(secret_realm_entries))
+        return 0;
+    
+    ids = keys(secret_realm_entries);
+    for (i = 0; i < sizeof(ids); i++)
+    {
+        if (secret_realm_entries[ids[i]] == room_path)
+            return 1;
+    }
+    
+    return 0;
+}
+
+// ==============================================================
 
 int dbg()
 {
