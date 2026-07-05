@@ -1,5 +1,6 @@
 //掌管侠客行的地图。各个任务使用这里的接口分配随机的地点。
 #include <map.h>
+#include <mansion.h>
 
 object random_room(string,int);
 object random_place();
@@ -13,6 +14,53 @@ mapping map_cache = ([]);
 mapping area_complexity=([]);//区域的复杂程度，like "/d/city/":150,记录区域内房间数量。
 nosave mapping quest_reg;     //匿名任务区域注册表
 nosave int qreg_serial;       //匿名任务区域注册最大序列号
+nosave mapping mansion_entries;  //洞府入口注册表 player_id -> entry_path
+
+// ======== 洞府入口注册 ==========================================
+
+// 注册洞府入口房间
+// 由洞府入口房间文件在 create() 时调用
+int set_mansion_entry(string player_id, string entry_path)
+{
+    if (!stringp(player_id) || !stringp(entry_path))
+        return 0;
+
+    if (!mapp(mansion_entries))
+        mansion_entries = ([]);
+
+    mansion_entries[player_id] = entry_path;
+    return 1;
+}
+
+// 查询洞府入口路径
+string query_mansion_entry(string player_id)
+{
+    if (!stringp(player_id) || !mapp(mansion_entries))
+        return 0;
+
+    return mansion_entries[player_id];
+}
+
+// 判断房间路径是否为洞府入口
+int is_mansion_entry(string room_path)
+{
+    string *ids;
+    int i;
+
+    if (!mapp(mansion_entries))
+        return 0;
+
+    ids = keys(mansion_entries);
+    for (i = 0; i < sizeof(ids); i++)
+    {
+        if (mansion_entries[ids[i]] == room_path)
+            return 1;
+    }
+
+    return 0;
+}
+
+// ================================================================
 
 int dbg()
 {

@@ -224,6 +224,9 @@
 #define F_TAOZHUANG "/feature/taozhuang.c"
 #define F_UNIOBJ "/feature/uniobj.c"
 
+//洞府经营系统
+#define MANSION_D               "/adm/daemons/mansion_d"
+
 //生活技能系统
 #define PROFESSION_D(x)	("/kungfu/profession/" + x)
 
