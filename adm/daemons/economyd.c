@@ -164,15 +164,15 @@ float calculate_price_ratio(string type)
 
         float price_ratio = 1.0 + demand_ratio - supply_ratio;
 
-        // 价格波动边界
+        // 区域物价修正（先乘区域修正系数，再钳制边界）
+        float region_mod = info["region_modifier"];
+        price_ratio = price_ratio * region_mod;
+
+        // 价格波动边界（相对基准价 ±50%）
         if (price_ratio < PRICE_FLOOR_RATIO)
                 price_ratio = PRICE_FLOOR_RATIO;
         if (price_ratio > PRICE_CEIL_RATIO)
                 price_ratio = PRICE_CEIL_RATIO;
-
-        // 区域物价修正
-        float region_mod = info["region_modifier"];
-        price_ratio = price_ratio * region_mod;
 
         return price_ratio;
 }
