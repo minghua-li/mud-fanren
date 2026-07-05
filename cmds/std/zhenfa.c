@@ -52,6 +52,17 @@ int main(object me, string arg)
         write(sprintf("║ 阵眼    ： %-26s ║\n", eye_id));
     }
 
+    // 阵灵信息
+    mapping spirit = me->query_formation_spirit_status();
+    if ( mapp(spirit) && spirit["alive"] )
+    {
+        write(sprintf("║ 阵灵    ： %-26s ║\n", spirit["name"]));
+        write(sprintf("║ 灵气血  ： %-26s ║\n",
+            sprintf("%d/%d", spirit["hp"], spirit["max_hp"])));
+        write(sprintf("║ 灵力    ： 攻击 %-3d 防御 %-3d 修为 %-3d ║\n",
+            spirit["attack"], spirit["defense"], spirit["level"]));
+    }
+
     // 成员信息
     object *members = me->query_formation_members();
     if ( arrayp(members) && sizeof(members) > 1 )
