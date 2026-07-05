@@ -2,6 +2,7 @@
 #include <map.h>
 #include <mansion.h>
 #include <teleport.h>
+#include <secret_realm.h>
 
 object random_room(string,int);
 object random_place();
@@ -108,6 +109,57 @@ string query_teleport_node(string room_path)
     }
     return 0;
 }
+
+// ================================================================
+
+// ======== 秘境入口注册 ==========================================
+
+// 秘境入口注册表 realm_id -> 房间路径
+nosave mapping secret_realm_entries;
+
+// 注册秘境入口房间
+// 由秘境入口房间文件在 create() 时调用
+int set_secret_realm_entry(string realm_id, string entry_path)
+{
+    if (!stringp(realm_id) || !stringp(entry_path))
+        return 0;
+
+    if (!mapp(secret_realm_entries))
+        secret_realm_entries = ([]);
+
+    secret_realm_entries[realm_id] = entry_path;
+    return 1;
+}
+
+// 查询秘境入口路径
+string query_secret_realm_entry(string realm_id)
+{
+    if (!stringp(realm_id) || !mapp(secret_realm_entries))
+        return 0;
+
+    return secret_realm_entries[realm_id];
+}
+
+// 判断房间路径是否为秘境入口
+int is_secret_realm_entry(string room_path)
+{
+    string *ids;
+    int i;
+
+    if (!mapp(secret_realm_entries))
+        return 0;
+
+    ids = keys(secret_realm_entries);
+    for (i = 0; i < sizeof(ids); i++)
+    {
+        if (secret_realm_entries[ids[i]] == room_path)
+            return 1;
+    }
+
+    return 0;
+}
+
+// ================================================================
 
 int dbg()
 {
