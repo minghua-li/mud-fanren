@@ -96,9 +96,13 @@ void update_realm_count(string realm, int delta)
         cur += delta;
         if (cur < 0) cur = 0;
         realm_player_count[realm] = cur;
-        // 同时通知通胀监控
-        if (find_object(INFLATION_D))
-                INFLATION_D->check_economy_health();
+        // 更新通胀监控的在线玩家统计
+        if (find_object(INFLATION_D)) {
+                int total = 0;
+                foreach (string r, int cnt in realm_player_count)
+                        total += cnt;
+                INFLATION_D->update_active_players(total);
+        }
 }
 
 // ---------- 灵石产出记录 ----------
