@@ -193,7 +193,7 @@ varargs int buy_item(object player, string item_id, int quantity)
     if (level < req_level) return -1;
 
     // 2. 检查死敌
-    float discount = REPUTATION_D->query_discount(faction);
+    float discount = REPUTATION_D->query_discount(faction, player);
     if (discount < 0) return -5;
 
     // 3. 检查库存

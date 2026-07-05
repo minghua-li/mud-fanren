@@ -225,7 +225,7 @@ int show_faction_detail(object me, string arg)
     // 折扣信息
     if (level >= REP_LEVEL_NEUTRAL)
     {
-        float discount = REPUTATION_D->query_discount(target_id);
+        float discount = REPUTATION_D->query_discount(target_id, me);
         output += sprintf(HIW "  商店折扣" NOR ": %.0f%%\n", (1 - discount) * 100);
     }
     else if (level <= REP_LEVEL_HOSTILE)
@@ -318,7 +318,7 @@ int show_shop(object me, string arg)
         int stock = SHOP_D->query_stock(item_id);
 
         // 计算折扣价
-        float discount = REPUTATION_D->query_discount(target_id);
+        float discount = REPUTATION_D->query_discount(target_id, me);
         int final_price = to_int(price * discount);
 
         string type_str;

@@ -152,62 +152,6 @@ nosave mixed *mutex_relations = ({
 // -------- 势力繁荣度（可运行时调整） --------
 nosave mapping faction_prosperity = ([]);
 
-// -------- 商店物品定义 --------
-// 每项: item_id, name, type, file, price (灵石), rep_req (所需声望等级),
-//        rep_cost (消耗声望), tier (商店层级), desc
-nosave mixed *shop_items = ({
-  // === 黄枫谷 ===
-  // 基础商店 (中立)
-  ({"hfg_blood_pill", "止血草", "pill", "/obj/remedy/blood_pill", 100, 0, 0, SHOP_TIER_BASIC, "huangfeng_valley", "基础疗伤丹药"}),
-  ({"hfg_talisman", "低阶符箓", "item", "/obj/item/talisman_low", 200, 0, 0, SHOP_TIER_BASIC, "huangfeng_valley", "低阶攻击符箓"}),
-  ({"hfg_qi_pill", "聚气丹", "pill", "/obj/remedy/qi_pill", 300, 0, 0, SHOP_TIER_BASIC, "huangfeng_valley", "恢复灵力的丹药"}),
-  // 中级商店 (友善)
-  ({"hfg_sword", "黄枫制式长剑", "weapon", "/obj/weapon/huangfeng_sword", 5000, REP_LEVEL_FRIENDLY, 100, SHOP_TIER_INTERMEDIATE, "huangfeng_valley", "黄枫谷弟子标配法器"}),
-  ({"hfg_robe", "黄枫法袍", "armor", "/obj/armor/huangfeng_robe", 5000, REP_LEVEL_FRIENDLY, 100, SHOP_TIER_INTERMEDIATE, "huangfeng_valley", "黄枫谷制式法袍"}),
-  ({"hfg_building_foundation", "筑基丹", "pill", "/obj/remedy/foundation_pill", 8000, REP_LEVEL_FRIENDLY, 200, SHOP_TIER_INTERMEDIATE, "huangfeng_valley", "筑基突破辅助丹药"}),
-  // 高级商店 (信任)
-  ({"hfg_spirit_sword", "中阶飞剑", "weapon", "/obj/weapon/spirit_sword", 30000, REP_LEVEL_TRUST, 500, SHOP_TIER_ADVANCED, "huangfeng_valley", "中阶法器飞剑"}),
-  ({"hfg_skill_book", "黄枫剑诀残篇", "skill", "/obj/skill/huangfeng_sword_skill", 50000, REP_LEVEL_TRUST, 800, SHOP_TIER_ADVANCED, "huangfeng_valley", "黄枫谷剑法残篇"}),
-  ({"hfg_mana_crystal", "灵晶", "item", "/obj/item/mana_crystal", 20000, REP_LEVEL_TRUST, 300, SHOP_TIER_ADVANCED, "huangfeng_valley", "蕴含精纯灵力的水晶"}),
-  // 核心宝库 (尊敬)
-  ({"hfg_secret_manual", "大衍诀残篇", "skill", "/obj/skill/dayan_manual", 200000, REP_LEVEL_RESPECT, 5000, SHOP_TIER_CORE, "huangfeng_valley", "黄枫谷镇派功法残篇"}),
-  ({"hfg_geng_essence", "庚精", "item", "/obj/item/geng_essence", 150000, REP_LEVEL_RESPECT, 3000, SHOP_TIER_CORE, "huangfeng_valley", "稀有炼器材料"}),
-  ({"hfg_scroll", "秘境传送卷", "item", "/obj/item/secret_scroll", 100000, REP_LEVEL_RESPECT, 2000, SHOP_TIER_CORE, "huangfeng_valley", "通往黄枫谷秘境的卷轴"}),
-  // 秘密仓库 (崇拜)
-  ({"hfg_legacy_sword", "大衍神剑", "weapon", "/obj/weapon/dayan_sword", 500000, REP_LEVEL_ADORE, 20000, SHOP_TIER_SECRET, "huangfeng_valley", "大衍神君传承飞剑"}),
-  ({"hfg_teleport_key", "古传送阵秘钥", "item", "/obj/item/teleport_key", 300000, REP_LEVEL_ADORE, 10000, SHOP_TIER_SECRET, "huangfeng_valley", "黄枫谷古传送阵通行密钥"}),
-
-  // === 掩月宗 ===
-  ({"yy_herb", "月华草", "pill", "/obj/remedy/moon_herb", 100, 0, 0, SHOP_TIER_BASIC, "yanyue_sect", "掩月宗特产灵草"}),
-  ({"yy_moon_pill", "月华丹", "pill", "/obj/remedy/moon_pill", 5000, REP_LEVEL_FRIENDLY, 100, SHOP_TIER_INTERMEDIATE, "yanyue_sect", "掩月宗秘制丹药"}),
-  ({"yy_moon_blade", "月华刃", "weapon", "/obj/weapon/moon_blade", 40000, REP_LEVEL_TRUST, 500, SHOP_TIER_ADVANCED, "yanyue_sect", "蕴含月华之力的法器"}),
-  ({"yy_moon_manual", "掩月心法", "skill", "/obj/skill/moon_manual", 250000, REP_LEVEL_RESPECT, 5000, SHOP_TIER_CORE, "yanyue_sect", "掩月宗核心功法"}),
-
-  // === 灵兽山 ===
-  ({"ls_beast_pill", "灵兽丸", "pill", "/obj/remedy/beast_pill", 150, 0, 0, SHOP_TIER_BASIC, "lingshou_mountain", "驯兽用灵丹"}),
-  ({"ls_beast_ring", "御兽环", "item", "/obj/item/beast_ring", 6000, REP_LEVEL_FRIENDLY, 150, SHOP_TIER_INTERMEDIATE, "lingshou_mountain", "控制灵兽的法器"}),
-  ({"ls_beast_armor", "灵兽甲", "armor", "/obj/armor/beast_armor", 35000, REP_LEVEL_TRUST, 500, SHOP_TIER_ADVANCED, "lingshou_mountain", "以妖兽皮所制法袍"}),
-
-  // === 星宫 ===
-  ({"sp_star_pill", "星辰丹", "pill", "/obj/remedy/star_pill", 200, 0, 0, SHOP_TIER_BASIC, "star_palace", "引星辰之力炼制的丹药"}),
-  ({"sp_nav_compass", "星罗盘", "item", "/obj/item/nav_compass", 8000, REP_LEVEL_FRIENDLY, 200, SHOP_TIER_INTERMEDIATE, "star_palace", "乱星海导航法器"}),
-  ({"sp_star_sword", "星辰剑", "weapon", "/obj/weapon/star_sword", 50000, REP_LEVEL_TRUST, 800, SHOP_TIER_ADVANCED, "star_palace", "引星辰之力祭炼的飞剑"}),
-  ({"sp_star_manual", "周天星斗诀", "skill", "/obj/skill/star_manual", 300000, REP_LEVEL_RESPECT, 6000, SHOP_TIER_CORE, "star_palace", "星宫镇派功法"}),
-
-  // === 逆星盟 ===
-  ({"ra_stealth_pill", "匿息丹", "pill", "/obj/remedy/stealth_pill", 250, 0, 0, SHOP_TIER_BASIC, "rebel_alliance", "隐藏气息的丹药"}),
-  ({"ra_shadow_dagger", "暗影匕", "weapon", "/obj/weapon/shadow_dagger", 45000, REP_LEVEL_TRUST, 600, SHOP_TIER_ADVANCED, "rebel_alliance", "逆星盟刺客专用匕首"}),
-
-  // === 广源斋 ===
-  ({"gp_transfer_token", "传送符", "item", "/obj/item/transfer_token", 5000, 0, 0, SHOP_TIER_BASIC, "guangyuan_pavilion", "广源斋各分号免费传送凭证"}),
-  ({"gp_spirit_stone", "灵石袋", "item", "/obj/item/spirit_bag", 10000, REP_LEVEL_FRIENDLY, 0, SHOP_TIER_INTERMEDIATE, "guangyuan_pavilion", "额外存储灵石的空间袋"}),
-  ({"gp_auction_token", "拍卖令", "item", "/obj/item/auction_token", 50000, REP_LEVEL_TRUST, 500, SHOP_TIER_ADVANCED, "guangyuan_pavilion", "广源斋高级拍卖会入场券"}),
-  ({"gp_teleport_orb", "虚空珠", "item", "/obj/item/void_orb", 300000, REP_LEVEL_RESPECT, 5000, SHOP_TIER_CORE, "guangyuan_pavilion", "可跨界传送的稀世珍宝"}),
-]);
-
-// -------- 商店物品查找索引 --------
-nosave mapping shop_index;
-
 void create()
 {
     seteuid(getuid());
@@ -219,23 +163,6 @@ void create()
         string *factions = keys(faction_info);
         foreach (string f in factions)
             faction_prosperity[f] = PROSPERITY_PEAK;
-    }
-
-    // 构建商店索引
-    rebuild_shop_index();
-}
-
-// 重建商店索引
-void rebuild_shop_index()
-{
-    shop_index = ([]);
-    for (int i = 0; i < sizeof(shop_items); i++)
-    {
-        mixed *item = shop_items[i];
-        string faction = item[8]; // faction field
-        if (!mapp(shop_index[faction]))
-            shop_index[faction] = ([]);
-        shop_index[faction][item[0]] = i; // item_id -> index
     }
 }
 
@@ -378,11 +305,9 @@ string *apply_mutex(object player, string faction, int amount)
         int current = player->query(REP_PATH_FACTION + "/" + target);
         int new_val = current - mutex_amount;
 
-        // 不低于死敌下限，不把正声望扣成负的
+        // 不低于死敌下限
         if (new_val < REP_VALUE_DEADLY)
             new_val = REP_VALUE_DEADLY;
-        else if (current > 0 && new_val <= 0)
-            new_val = 1; // 保护正声望不被直接扣到负
 
         if (new_val != current)
         {
@@ -396,12 +321,12 @@ string *apply_mutex(object player, string faction, int amount)
 // ======== 折扣计算 ========
 
 // 查询该势力当前折扣率
-float query_discount(string faction)
+float query_discount(string faction, object player)
 {
     int level;
 
-    if (!this_player()) return 1.0;
-    level = query_reputation_level(this_player(), faction);
+    if (!player) return 1.0;
+    level = query_reputation_level(player, faction);
 
     float base;
     switch (level)
@@ -551,90 +476,6 @@ string *get_all_factions()
 mapping get_faction_info(string faction_id)
 {
     return faction_info[faction_id];
-}
-
-// ======== 商店系统 API ========
-
-// 获取玩家在指定势力可用的商店物品列表
-mixed *query_available_shop_items(object player, string faction)
-{
-    int level = query_reputation_level(player, faction);
-    mixed *available = ({});
-    mapping faction_items = shop_index[faction];
-
-    if (!mapp(faction_items)) return ({});
-
-    string *item_ids = keys(faction_items);
-    for (int i = 0; i < sizeof(item_ids); i++)
-    {
-        int idx = faction_items[item_ids[i]];
-        mixed *item = shop_items[idx];
-        int req_level = item[5];  // rep_req
-
-        if (level >= req_level)
-            available += ({ item });
-    }
-
-    return available;
-}
-
-// 获取指定势力单个商店物品信息
-mixed *get_shop_item(string faction, string item_id)
-{
-    if (!mapp(shop_index[faction])) return 0;
-    int idx = shop_index[faction][item_id];
-    if (idx < 0 || idx >= sizeof(shop_items)) return 0;
-    return shop_items[idx];
-}
-
-// 计算购买物品实际价格
-int calculate_price(mixed *item, object player)
-{
-    string faction = item[8];
-    float discount = query_discount(faction);
-    int base_price = item[4];  // price
-
-    if (discount < 0) return -1; // 无法交易
-    return to_int(base_price * discount);
-}
-
-// 购买物品
-varargs int purchase_item(object player, string faction, string item_id, int quantity)
-{
-    mixed *item = get_shop_item(faction, item_id);
-    if (!item) return 0;
-
-    if (quantity < 1) quantity = 1;
-
-    int level = query_reputation_level(player, faction);
-    int req_level = item[5];  // rep_req
-
-    if (level < req_level) return -1; // 声望不足
-
-    // 检查死敌
-    float discount = query_discount(faction);
-    if (discount < 0) return -2; // 无法交易
-
-    // 检查声望消耗
-    int rep_cost = item[6] * quantity;  // rep_cost * quantity
-    int current_rep = player->query(REP_PATH_FACTION + "/" + faction);
-
-    if (current_rep < rep_cost) return -3; // 声望不足支付
-
-    // 计算灵石价格
-    int total_price = calculate_price(item, player) * quantity;
-    int player_money = player->query("balance");
-
-    if (player_money < total_price) return -4; // 灵石不足
-
-    // 扣除声望和灵石
-    player->add(REP_PATH_FACTION + "/" + faction, -rep_cost);
-    player->add("balance", -total_price);
-    player->set(REP_PATH_LAST_INTERACT + "/" + faction, time());
-
-    // 生成物品（实际游戏中需调用对应克隆函数）
-    // 这里返回成功状态，由调用方执行具体物品生成
-    return 1;
 }
 
 // ======== 声望衰减 ========
