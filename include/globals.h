@@ -90,6 +90,7 @@
 #define REPUTATION_D	"/adm/daemons/reputation_d"
 #define REWARD_D		"/adm/daemons/rewardd"
 #define LAXIANG_D		"/adm/daemons/laxiangd"
+#define ACHIEVEMENT_D       "/adm/daemons/achievement_d"
 #define ZQUEST_D "/obj/quest.c"
 #define ROOT_REFINE_D   "/adm/daemons/root_refine_d"
 #define AREA_INFO "/inherit/char/area_info.c"
