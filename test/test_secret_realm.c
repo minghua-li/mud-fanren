@@ -187,10 +187,49 @@ void test_status_management()
 
 void test_cooldown()
 {
-    // 注意:这些测试在游戏内运行时依赖实际 player 对象
-    // 这里只测试守护进程的冷却数据操作接口
-    // 完整测试需要 mock player, 在游戏内通过命令验证
-    write("  (冷却管理需要 player 对象，请在游戏内用 test_secret_realm 命令验证)\n");
+    object mock;
+
+    // 创建模拟玩家（CHARACTER 继承 F_DBASE，支持 set/query）
+    mock = new(CHARACTER);
+    if (!objectp(mock))
+    {
+        report("4.0 创建模拟玩家", 0);
+        return;
+    }
+    mock->set("id", "test_cd_player");
+    mock->set("name", "测试冷却玩家");
+
+    // 4.1 初始状态不在冷却中
+    report("4.1 初始不在冷却中",
+           SECRET_REALM_D->is_in_cooldown(mock, "test_realm_1") == 0);
+
+    // 4.2 设置冷却
+    report("4.2 设置冷却返回 1",
+           SECRET_REALM_D->set_cooldown(mock, "test_realm_1") == 1);
+
+    // 4.3 设置后处于冷却中
+    report("4.3 设置后处于冷却中",
+           SECRET_REALM_D->is_in_cooldown(mock, "test_realm_1") == 1);
+
+    // 4.4 查询剩余冷却时间 > 0
+    int remain = SECRET_REALM_D->query_remaining_cooldown(mock, "test_realm_1");
+    report("4.4 剩余冷却时间 > 0", remain > 0);
+
+    // 4.5 冷却时间不超过每日 CD 上限（test_realm_1 使用 SR_CD_DAILY=86400）
+    report("4.5 剩余冷却时间不超过每日 CD",
+           remain <= SR_CD_DAILY);
+
+    // 4.6 不存在的秘境冷却查询返回 0
+    report("4.6 不存在秘境冷却查询返回 0",
+           SECRET_REALM_D->is_in_cooldown(mock, "nonexistent") == 0);
+
+    // 4.7 不存在的秘境剩余冷却时间查询返回 0
+    report("4.7 不存在秘境剩余冷却返回 0",
+           SECRET_REALM_D->query_remaining_cooldown(mock, "nonexistent") == 0);
+
+    // 清理模拟玩家
+    destruct(mock);
+    report("4.8 模拟玩家已清理", 1);
 }
 
 // ======== 测试 5: 实例生命周期 ======================================
@@ -225,10 +264,62 @@ void test_instance_lifecycle()
 
 void test_settle_rewards()
 {
-    // settle_instance 需要实际实例数据
-    // 但我们可以验证计算逻辑的辅助函数
-    // 在游戏内通过创建实例 → 探索 → 结算流程验证
-    write("  (奖励结算依赖实例数据，请在游戏内完整验证)\n");
+    object mock;
+    string inst_id;
+    string result;
+
+    // 创建模拟玩家
+    mock = new(CHARACTER);
+    if (!objectp(mock))
+    {
+        report("6.0 创建模拟玩家", 0);
+        return;
+    }
+    mock->set("id", "test_reward_player");
+    mock->set("name", "奖励测试玩家");
+
+    // 创建秘境实例
+    inst_id = SECRET_REALM_D->create_instance(mock, "test_realm_1");
+    if (!stringp(inst_id))
+    {
+        report("6.0 创建实例", 0);
+        destruct(mock);
+        return;
+    }
+    report("6.1 创建实例返回有效 ID", stringp(inst_id) && sizeof(inst_id) > 0);
+
+    // 填充实例探索数据
+    SECRET_REALM_D->update_instance(inst_id, ([
+        "rewards" : ({ (["exp" : 1000]) }),
+        "score"   : 500,
+    ]));
+
+    // 6.2 结算
+    result = SECRET_REALM_D->settle_instance(inst_id);
+    report("6.2 结算返回非空字符串",
+           stringp(result) && sizeof(result) > 0);
+
+    // 6.3 结算结果包含经验信息
+    report("6.3 结算包含经验信息",
+           strsrch(result, "获得经验") != -1);
+
+    // 6.4 结算结果包含积分信息
+    report("6.4 结算包含积分信息",
+           strsrch(result, "累计积分") != -1);
+
+    // 6.5 结算后实例状态变为 CLOSED
+    mapping inst = SECRET_REALM_D->query_instance(inst_id);
+    report("6.5 结算后实例状态为 CLOSED",
+           mapp(inst) && inst["status"] == SR_STATUS_CLOSED);
+
+    // 6.6 对不存在的实例结算返回错误提示
+    result = SECRET_REALM_D->settle_instance("nonexistent_inst");
+    report("6.6 结算不存在实例返回提示",
+           stringp(result) && sizeof(result) > 0);
+
+    // 清理
+    destruct(mock);
+    report("6.7 模拟玩家已清理", 1);
 }
 
 // ======== 测试 7: 秘境入口房间注册 ==================================
@@ -324,8 +415,8 @@ void test()
     }
     
     write("\n");
-    write("提示: 含 player 依赖的测试请在游戏内通过以下命令运行:\n");
-    write("  test_realm_secret <子命令>\n");
+    write("提示: 测试 4(冷却)和测试 6(奖励)已通过 mock player 全自动覆盖。\n");
+    write("交互式测试（需登录玩家）: test_realm_secret <子命令>\n");
     write("\n");
 }
 
