@@ -9,6 +9,7 @@
 #include <combat.h>
 #include <localtime.h>
 #include <element.h>
+#include <pvp.h>
 
 inherit F_DBASE;
 #include <combat/message.h>     //战斗信息显示有关的所有设定
@@ -677,6 +678,40 @@ varargs int do_attack(object me, object victim, object weapon, int attack_type, 
 //	This is called in the attack() defined in F_ATTACK, which handles fighting
 //	in the heart_beat() of all livings. Be sure to optimize it carefully.
 //
+// 检查PVP竞技场战斗结束
+void check_pvp_arena(object me, object victim)
+{
+	if (!objectp(me) || !objectp(victim))
+		return;
+
+	if (!userp(me) || !userp(victim))
+		return;
+
+	if (!me->query_temp(PVP_TEMP_IN_ARENA) &&
+	    !victim->query_temp(PVP_TEMP_IN_ARENA))
+		return;
+
+	// 有一方已经死亡或昏迷
+	if (!living(victim) && living(me))
+	{
+		// 不让系统直接处理死亡
+		victim->remove_all_enemy();
+		me->remove_all_enemy();
+		me->stop_busy();
+		PVP_D->end_arena_fight(me, victim);
+		return;
+	}
+
+	if (!living(me) && living(victim))
+	{
+		me->remove_all_enemy();
+		victim->remove_all_enemy();
+		victim->stop_busy();
+		PVP_D->end_arena_fight(victim, me);
+		return;
+	}
+}
+
 void fight(object me, object victim)
 {
 	object weapon, focus, room;
@@ -685,6 +720,10 @@ void fight(object me, object victim)
 	
 	if( !living(me) || me->query_temp("combat_yield"))
 		return;
+
+	// PVP竞技场检测
+	if (userp(me) || userp(victim))
+		check_pvp_arena(me, victim);
 	
 // 让NPC可以通过定义 choose_offensive_target() 函数来自主确定他的攻击目标  lordstar 20180511
 	if (!userp(me) && objectp(focus = me->choose_offensive_target()))
