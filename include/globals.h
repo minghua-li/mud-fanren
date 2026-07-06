@@ -242,6 +242,10 @@
 //传送网络系统
 #define TELEPORT_D             "/adm/daemons/teleport_d"
 
+//秘境副本系统
+#define SECRET_REALM_D        "/adm/daemons/secret_realm_d"
+
+
 //生活技能系统
 #define PROFESSION_D(x)	("/kungfu/profession/" + x)
 
