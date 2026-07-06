@@ -87,6 +87,10 @@ int register_realm(mapping realm_def)
     realms[id] = realm_def;
     realms[id][SR_FIELD_STATUS] = SR_STATUS_CLOSED;
     
+    // 将秘境入口注册到地图守护进程
+    if (stringp(realm_def[SR_FIELD_ENTRY]))
+        MAP_D->set_secret_realm_entry(id, realm_def[SR_FIELD_ENTRY]);
+    
     return 1;
 }
 
@@ -183,7 +187,8 @@ int check_entry_condition(object me, string realm_id)
         parts = explode(item_req, ":");
         if (sizeof(parts) >= 2)
         {
-            item_count = me->query_amount(parts[0]);
+            object item_ob = present(parts[0], me);
+            item_count = item_ob ? item_ob->query_amount() : 0;
             if (item_count < to_int(parts[1]))
                 return 20;  // 缺少物品
         }
@@ -310,7 +315,6 @@ string create_instance(object me, string realm_id)
     mapping realm, inst;
     string inst_id;
     string *members = ({});
-    object team_leader;
     object *team;
     int i;
     
@@ -323,10 +327,9 @@ string create_instance(object me, string realm_id)
     // 检查组队情况
     if (realm[SR_FIELD_TEAM_REQ] > 1)
     {
-        team_leader = me->query_team_leader();
-        if (objectp(team_leader))
+        if (me->is_team_leader())
         {
-            team = team_leader->query_team_members();
+            team = me->query_team();
             for (i = 0; i < sizeof(team); i++)
             {
                 if (objectp(team[i]) && userp(team[i]))
@@ -670,7 +673,7 @@ varargs string settle_instance(string inst_id, int forced)
     total_exp = total_exp * inst["layer"] / inst["max_layers"];
     
     // 难度加成
-    total_exp = total_exp * (1 + realm[SR_FIELD_DIFFICULTY] * 0.5);
+    total_exp = to_int(total_exp * (1 + realm[SR_FIELD_DIFFICULTY] * 0.5));
     
     total_score = inst["score"];
     
