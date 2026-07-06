@@ -1,0 +1,45 @@
+=== #29 技能组合与阵法系统 — 验收检查 ===
+OK: include/combat/skill_combo.h exists
+OK: feature/formation.c exists
+OK: cmds/std/buzhen.c exists
+OK: cmds/std/chezhen.c exists
+OK: cmds/std/zhenfa.c exists
+OK: F_FORMATION in globals.h
+OK: char.c inherits F_FORMATION
+OK: combatd.c includes skill_combo.h
+OK: 6 combos defined (>=3)
+OK: COOLDOWN_PUBLIC defined
+OK: COOLDOWN_INDIE defined
+OK: COOLDOWN_COMBO defined
+OK: CD_PUBLIC_DEFAULT defined
+OK: CD_BASIC_SPELL defined
+OK: CD_MID_SPELL defined
+OK: CD_HIGH_SPELL defined
+OK: CD_ULTIMATE_SPELL defined
+OK: combatd.c function tick_cooldowns() exists
+OK: combatd.c function clear_combo_temp() exists
+OK: FORMATION_NONE defined
+OK: FORMATION_JULING defined
+OK: FORMATION_DIANDAO defined
+OK: FORMATION_TIANGANG defined
+OK: FORMATION_DAGENG defined
+OK: FORMATION_SANCAI defined
+OK: FORMATION_SIXIANG defined
+OK: FORMATION_WUXING defined
+OK: formation effect defense_bonus exists
+OK: formation effect damage_share exists
+OK: formation effect mana_regen exists
+OK: formation effect sword_damage exists
+OK: formation effect front_share exists
+OK: formation effect back_bonus exists
+OK: formation eye mechanism
+OK: combatd integrates formation damage modify
+OK: combatd integrates formation tick
+OK: command buzhen exists
+OK: command chezhen exists
+OK: command zhenfa exists
+OK: feature/formation.c brace balance (      89/      89)
+OK: cmds/std/buzhen.c brace balance (      12/      12)
+OK: cmds/std/chezhen.c brace balance (       2/       2)
+OK: cmds/std/zhenfa.c brace balance (      11/      11)
+=== 结果: 0 个错误 ===
