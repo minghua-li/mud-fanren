@@ -670,7 +670,7 @@ varargs string settle_instance(string inst_id, int forced)
     total_exp = total_exp * inst["layer"] / inst["max_layers"];
     
     // 难度加成
-    total_exp = total_exp * (1 + realm[SR_FIELD_DIFFICULTY] * 0.5);
+    total_exp = total_exp * (2 + realm[SR_FIELD_DIFFICULTY]) / 2;
     
     total_score = inst["score"];
     
