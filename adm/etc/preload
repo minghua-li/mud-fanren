@@ -24,3 +24,4 @@
 /adm/daemons/daily_task_d
 /adm/daemons/bandwidthd
 /adm/daemons/teleport_d
+/adm/daemons/activity_d

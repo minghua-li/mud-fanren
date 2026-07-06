@@ -91,6 +91,7 @@
 #define FAMILY_D		"/adm/daemons/familyd"
 #define REPUTATION_D	"/adm/daemons/reputation_d"
 #define REWARD_D		"/adm/daemons/rewardd"
+#define ACTIVITY_D              "/adm/daemons/activity_d"
 #define LAXIANG_D		"/adm/daemons/laxiangd"
 #define ACHIEVEMENT_D       "/adm/daemons/achievement_d"
 #define SHOP_D			"/adm/daemons/shop_d"
