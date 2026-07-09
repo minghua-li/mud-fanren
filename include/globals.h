@@ -194,6 +194,7 @@
 #define F_MASTER		"/inherit/char/master.c"
 #define F_MAILQUEST             "/inherit/char/mailquest.c"
 #define F_MESSAGE		"/feature/message.c"
+#define F_MONSTER_AI	"/feature/monster_ai.c"
 #define F_MORE			"/feature/more.c"
 #define F_MOVE			"/feature/move.c"
 #define F_MUSIC			"/feature/music.c"

@@ -399,6 +399,33 @@ varargs int do_attack(object me, object victim, object weapon, int attack_type, 
         damage = foo[0];
         result += foo[1];
     }
+    
+    // ===== 连招判定 =====
+    // 检查当前攻击是否触发技能组合/连招效果
+    {
+        string skill_id = martial_skill;
+        if (!stringp(skill_id) && objectp(weapon))
+            skill_id = weapon->query("skill_type");
+        if (stringp(skill_id))
+        {
+            mixed combo = check_combo(me, victim, skill_id);
+            if (mapp(combo))
+            {
+                // 连招名称显示
+                string combo_name = me->query_temp("last_combo");
+                if (stringp(combo_name))
+                {
+                    result += HIY "【连招触发】" + combo_name + "！\n" NOR;
+                }
+                
+                // 应用连招加成到伤害
+                damage = apply_combo_bonus(me, victim, damage, combo, skill_id);
+                
+                // 连招冷却减免已由 set_skill_cooldown 处理
+            }
+        }
+    }
+    
     if (strwidth(result))
     {
         /* 分段显示战斗信息 */
@@ -509,6 +536,23 @@ varargs int do_attack(object me, object victim, object weapon, int attack_type, 
 		
 		if (damage>0)
 		{
+			// 技能冷却管理
+			if (stringp(martial_skill) && atype != TYPE_REGULAR)
+			{
+				// 为使用技能的冷却赋值
+				// 注：普攻 (TYPE_REGULAR) 不触发冷却
+				int cd_ticks = CD_PUBLIC_DEFAULT;
+				// 检查技能类型
+				if (action["skill_type"] == "ultimate")
+					cd_ticks = CD_ULTIMATE_SPELL;
+				else if (action["skill_type"] == "high")
+					cd_ticks = CD_HIGH_SPELL;
+				else if (action["skill_type"] == "mid")
+					cd_ticks = CD_MID_SPELL;
+				// 设置冷却
+				set_skill_cooldown(me, martial_skill, cd_ticks, COOLDOWN_COMBO);
+			}
+			
 			// 阵法伤害修正（如颠倒五行阵的五行减伤、天罡北斗阵的分摊）
 			if ( victim->formation_damage_modify )
 				damage = victim->formation_damage_modify(victim, damage, 0);

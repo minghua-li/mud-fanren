@@ -12,6 +12,7 @@ inherit F_DBASE;
 inherit F_EDIT;
 inherit F_FINANCE;
 inherit F_FORMATION;
+inherit F_MONSTER_AI;
 inherit F_MESSAGE;
 inherit F_MORE;
 inherit F_MOVE;
