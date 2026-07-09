@@ -262,7 +262,9 @@
 //=============================================================================
 // 属性键路径（用于 dbase set/query）
 //=============================================================================
-#define ROOT_PROP_QUALITY       "spirit_root/quality"
+#define ROOT_PROP_QUALITY       "spirit_root/quality"       // SPIRIT_ROOT_* 整数枚举（供 daemon 使用）
+#define ROOT_PROP_QUALITY_NAME  "spirit_root/quality_name"  // 品质中文名（供显示使用）
+#define ROOT_PROP_QUALITY_IDX   "spirit_root/quality_idx"   // 旧品质索引 0-4（0=最佳，兼容旧代码）
 #define ROOT_PROP_STRENGTH      "spirit_root/strength"
 #define ROOT_PROP_PURITY        "spirit_root/purity"
 #define ROOT_PROP_ELEMENTS      "spirit_root/elements"

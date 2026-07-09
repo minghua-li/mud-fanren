@@ -31,6 +31,9 @@ mapping global_alias = ([
        "gre":    "recitewords gre",
        "cet4":    "recitewords cet4",
        "cet6":    "recitewords cet6",
+// 灵根系统命令
+        "linggen": "root_test",
+        "root": "root_test",
 //skill cmds
         "cha":    "skills",
         "sk":    "skills",

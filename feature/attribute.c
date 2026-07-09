@@ -1046,7 +1046,8 @@ int query_veinbuff()
 // ===== 灵根系统 =====
 
 // 用千分比随机生成灵根数据
-// 返回 mapping: ([ "quality": ..., "quality_idx": ..., "elements": ({...}), "variant": ..., "strength": ..., "purity": ... ])
+// 同时存储旧格式（SR_* 显示用）和新格式（ROOT_PROP_* daemon 用）
+// 返回 mapping 包含所有键，set_spirit_root() 负责写入 dbase
 // 此函数无副作用,不写入 dbase
 mapping generate_spirit_root()
 {
@@ -1064,40 +1065,64 @@ mapping generate_spirit_root()
 	string *all_elements = ({ ROOT_METAL, ROOT_WOOD, ROOT_WATER, ROOT_FIRE, ROOT_EARTH });
 	string *variant_types = ({ ROOT_VAR_THUNDER, ROOT_VAR_ICE, ROOT_VAR_WIND, ROOT_VAR_DARK });
 	
+	// 旧ROOT_QUALITY_T* → SPIRIT_ROOT_* 枚举映射
+	// ROOT_QUALITY_T0(0,天灵根) → SPIRIT_ROOT_HEAVENLY(5)
+	// ROOT_QUALITY_T1(1,变异灵根) → SPIRIT_ROOT_VARIANT(4)
+	// ROOT_QUALITY_T2(2,真灵根) → SPIRIT_ROOT_TRUE(3)
+	// ROOT_QUALITY_T3(3,假灵根) → SPIRIT_ROOT_FAKE(2)
+	// ROOT_QUALITY_T4(4,伪灵根) → SPIRIT_ROOT_PSEUDO(1)
+	int *t2s_map = ({
+		SPIRIT_ROOT_HEAVENLY,
+		SPIRIT_ROOT_VARIANT,
+		SPIRIT_ROOT_TRUE,
+		SPIRIT_ROOT_FAKE,
+		SPIRIT_ROOT_PSEUDO
+	});
+	
 	// 1. 按概率抽取品质
 	roll = random(total_prob);
+	int quality_idx;
 	if (roll < ROOT_PROB_T0) {
-		root[SR_QUALITY_IDX] = ROOT_QUALITY_T0;
+		quality_idx = ROOT_QUALITY_T0;
 	} else if (roll < ROOT_PROB_T0 + ROOT_PROB_T1) {
-		root[SR_QUALITY_IDX] = ROOT_QUALITY_T1;
+		quality_idx = ROOT_QUALITY_T1;
 	} else if (roll < ROOT_PROB_T0 + ROOT_PROB_T1 + ROOT_PROB_T2) {
-		root[SR_QUALITY_IDX] = ROOT_QUALITY_T2;
+		quality_idx = ROOT_QUALITY_T2;
 	} else if (roll < ROOT_PROB_T0 + ROOT_PROB_T1 + ROOT_PROB_T2 + ROOT_PROB_T3) {
-		root[SR_QUALITY_IDX] = ROOT_QUALITY_T3;
+		quality_idx = ROOT_QUALITY_T3;
 	} else {
-		root[SR_QUALITY_IDX] = ROOT_QUALITY_T4;
+		quality_idx = ROOT_QUALITY_T4;
 	}
 	
-	root[SR_QUALITY] = qualities[root[SR_QUALITY_IDX]];
+	// 旧格式（显示用，score.c 等旧代码通过 SR_* 读取）
+	root[SR_QUALITY] = qualities[quality_idx];
+	root[SR_QUALITY_IDX] = quality_idx;
+	
+	// 新格式键（显示用，query_spirit_root_display 通过 ROOT_PROP_QUALITY_NAME 读取）
+	root[ROOT_PROP_QUALITY_NAME] = qualities[quality_idx];
+	root[ROOT_PROP_QUALITY_IDX] = quality_idx;
+	
+	// 新格式（daemon 用）
+	root[ROOT_PROP_QUALITY] = t2s_map[quality_idx];
 	
 	// 2. 根据品质生成五行属性
-	switch (root[SR_QUALITY_IDX]) {
+	switch (quality_idx) {
 	case ROOT_QUALITY_T0:  // 天灵根：单属性
-		root[SR_ELEMENTS] = ({ all_elements[random(ROOT_ELEMENT_TOTAL)] });
+		root[ROOT_PROP_ELEMENTS] = ({ all_elements[random(ROOT_ELEMENT_TOTAL)] });
 		break;
 		
-	case ROOT_QUALITY_T1: { // 变异灵根：变异属性 + 1个基础属性
+	case ROOT_QUALITY_T1: { // 变异灵根：变异属性 + 基础属性
 		string var = variant_types[random(sizeof(variant_types))];
 		root[SR_VARIANT] = var;
 		// 变异灵根也有对应的基础五行属性
 		if (var == ROOT_VAR_THUNDER)
-			root[SR_ELEMENTS] = ({ ROOT_METAL, ROOT_WATER });
+			root[ROOT_PROP_ELEMENTS] = ({ ROOT_METAL, ROOT_WATER });
 		else if (var == ROOT_VAR_ICE)
-			root[SR_ELEMENTS] = ({ ROOT_WATER, ROOT_EARTH });
+			root[ROOT_PROP_ELEMENTS] = ({ ROOT_WATER, ROOT_EARTH });
 		else if (var == ROOT_VAR_WIND)
-			root[SR_ELEMENTS] = ({ all_elements[random(ROOT_ELEMENT_TOTAL)] });
+			root[ROOT_PROP_ELEMENTS] = ({ all_elements[random(ROOT_ELEMENT_TOTAL)] });
 		else // 暗灵根
-			root[SR_ELEMENTS] = ({ all_elements[random(ROOT_ELEMENT_TOTAL)] });
+			root[ROOT_PROP_ELEMENTS] = ({ all_elements[random(ROOT_ELEMENT_TOTAL)] });
 		break;
 	}
 		
@@ -1110,7 +1135,7 @@ mapping generate_spirit_root()
 			selected += ({ pool[idx] });
 			pool -= ({ pool[idx] });
 		}
-		root[SR_ELEMENTS] = selected;
+		root[ROOT_PROP_ELEMENTS] = selected;
 		break;
 	}
 		
@@ -1123,7 +1148,7 @@ mapping generate_spirit_root()
 			selected += ({ pool[idx] });
 			pool -= ({ pool[idx] });
 		}
-		root[SR_ELEMENTS] = selected;
+		root[ROOT_PROP_ELEMENTS] = selected;
 		break;
 	}
 		
@@ -1132,7 +1157,7 @@ mapping generate_spirit_root()
 		int count = 4 + random(2); // 4 or 5
 		// 伪灵根随机可能全属性
 		if (count >= 5) {
-			root[SR_ELEMENTS] = all_elements;
+			root[ROOT_PROP_ELEMENTS] = all_elements;
 		} else {
 			string *pool = copy(all_elements);
 			string *selected = ({});
@@ -1141,27 +1166,35 @@ mapping generate_spirit_root()
 				selected += ({ pool[idx] });
 				pool -= ({ pool[idx] });
 			}
-			root[SR_ELEMENTS] = selected;
+			root[ROOT_PROP_ELEMENTS] = selected;
 		}
 		break;
 	}
 	}
 	
 	// 3. 设定主属性（数组第一个）
-	if (sizeof(root[SR_ELEMENTS]) > 0)
-		root[SR_MAIN_ELEMENT] = root[SR_ELEMENTS][0];
+	if (sizeof(root[ROOT_PROP_ELEMENTS]) > 0)
+		root[ROOT_PROP_MAIN_ELEMENT] = root[ROOT_PROP_ELEMENTS][0];
 	else
-		root[SR_MAIN_ELEMENT] = "";
+		root[ROOT_PROP_MAIN_ELEMENT] = "";
 	
 	// 4. 初始灵根强度和精纯度
-	switch (root[SR_QUALITY_IDX]) {
-	case ROOT_QUALITY_T0: root[SR_STRENGTH] = 98; root[SR_PURITY] = 95; break;
-	case ROOT_QUALITY_T1: root[SR_STRENGTH] = 90; root[SR_PURITY] = 85; break;
-	case ROOT_QUALITY_T2: root[SR_STRENGTH] = 75; root[SR_PURITY] = 70; break;
-	case ROOT_QUALITY_T3: root[SR_STRENGTH] = 55; root[SR_PURITY] = 50; break;
-	case ROOT_QUALITY_T4: root[SR_STRENGTH] = 35; root[SR_PURITY] = 30; break;
-	default:              root[SR_STRENGTH] = 0;  root[SR_PURITY] = 0;  break;
+	switch (quality_idx) {
+	case ROOT_QUALITY_T0: root[ROOT_PROP_STRENGTH] = 98; root[ROOT_PROP_PURITY] = 95; break;
+	case ROOT_QUALITY_T1: root[ROOT_PROP_STRENGTH] = 90; root[ROOT_PROP_PURITY] = 85; break;
+	case ROOT_QUALITY_T2: root[ROOT_PROP_STRENGTH] = 75; root[ROOT_PROP_PURITY] = 70; break;
+	case ROOT_QUALITY_T3: root[ROOT_PROP_STRENGTH] = 55; root[ROOT_PROP_PURITY] = 50; break;
+	case ROOT_QUALITY_T4: root[ROOT_PROP_STRENGTH] = 35; root[ROOT_PROP_PURITY] = 30; break;
+	default:              root[ROOT_PROP_STRENGTH] = 0;  root[ROOT_PROP_PURITY] = 0;  break;
 	}
+	
+	// 5. 初始化 daemon 需要的新字段
+	root[ROOT_PROP_LEVEL] = 1;
+	root[ROOT_PROP_EXP] = 0;
+	root[ROOT_PROP_BREAK_COUNT] = 0;
+	root[ROOT_PROP_REFINE_COUNT] = 0;
+	root[ROOT_PROP_FAIL_STREAK] = 0;
+	root[ROOT_PROP_QUALITY_SOURCE] = "innate";
 	
 	return root;
 }
@@ -1178,14 +1211,26 @@ int query_spirit_root_speed()
 		ROOT_SPEED_T3, ROOT_SPEED_T4, ROOT_SPEED_T5
 	});
 	
-	int idx = root[SR_QUALITY_IDX];
+	// 兼容旧格式 quality_idx 和新格式 quality_enum
+	int idx = root[ROOT_PROP_QUALITY_IDX];
+	if (undefinedp(idx))
+	{
+		// 新格式（SPIRIT_ROOT_* 枚举，5=最佳, 1=最差），需转换
+		int quality_enum = root[ROOT_PROP_QUALITY];
+		// SPIRIT_ROOT_HEAVENLY(5)→ROOT_QUALITY_T0(0), SPIRIT_ROOT_PSEUDO(1)→T4(4)
+		// 对于 SPIRIT_ROOT_NONE(0) → ROOT_QUALITY_T5(5)
+		int *s2t_map = ({ ROOT_QUALITY_T5, ROOT_QUALITY_T4, ROOT_QUALITY_T3,
+		                  ROOT_QUALITY_T2, ROOT_QUALITY_T1, ROOT_QUALITY_T0 });
+		if (quality_enum < 0 || quality_enum > 5) return ROOT_SPEED_T4;
+		idx = s2t_map[quality_enum];
+	}
 	if (idx < 0 || idx >= ROOT_QUALITY_TOTAL)
 		return ROOT_SPEED_T4;
 	
 	int base_speed = speed_table[idx];
 	
 	// 灵根强度修正：强度每高1点，速度+0.5%（万分位+50）
-	int strength = root[SR_STRENGTH];
+	int strength = root[ROOT_PROP_STRENGTH];
 	base_speed += strength * 50;
 	
 	return base_speed;
@@ -1198,12 +1243,35 @@ string query_spirit_root_display()
 	mapping root = query(SPIRIT_ROOT_DATA);
 	if (!mapp(root)) return "尚未检测灵根。\n";
 	
-	string quality = root[SR_QUALITY];
-	string *elements = root[SR_ELEMENTS];
+	// 兼容旧格式（SR_* 旧存储）和新格式（ROOT_PROP_* 新存储）
+	string quality = root[ROOT_PROP_QUALITY_NAME];
+	if (undefinedp(quality))
+		quality = root[SR_QUALITY];
+	if (undefinedp(quality))
+		quality = "未知";
+	
+	string *elements = root[ROOT_PROP_ELEMENTS];
+	if (undefinedp(elements))
+		elements = root[SR_ELEMENTS];
+	if (undefinedp(elements))
+		elements = ({});
+	
 	string variant = root[SR_VARIANT];
-	int strength = root[SR_STRENGTH];
-	int purity = root[SR_PURITY];
-	string main_el = root[SR_MAIN_ELEMENT];
+	int strength = root[ROOT_PROP_STRENGTH];
+	if (undefinedp(strength))
+		strength = root[SR_STRENGTH];
+	if (undefinedp(strength))
+		strength = 0;
+	
+	int purity = root[ROOT_PROP_PURITY];
+	if (undefinedp(purity))
+		purity = root[SR_PURITY];
+	if (undefinedp(purity))
+		purity = 50;
+	
+	string main_el = root[ROOT_PROP_MAIN_ELEMENT];
+	if (undefinedp(main_el))
+		main_el = root[SR_MAIN_ELEMENT];
 	
 	string line;
 	line = HIC "═══ 灵根面板 ═══" NOR "\n";
@@ -1213,18 +1281,22 @@ string query_spirit_root_display()
 	if (variant)
 		line += sprintf("（%s）", variant);
 	
-	// 星级
-	int quality_idx = root[SR_QUALITY_IDX];
-	int star_max = 6;
-	int star_count = star_max - quality_idx;
-	line += "（";
-	for (int i = 0; i < star_max; i++) {
-		if (i < star_count)
-			line += HIY "★" NOR;
-		else
-			line += CYN "☆" NOR;
-	}
-	line += "）\n";
+	// 星级 — 从品质名映射到星级
+	string stars;
+	if (quality == ROOT_T0)      stars = "★★★★★★";
+	else if (quality == ROOT_T1) stars = "★★★★★☆";
+	else if (quality == ROOT_T2) stars = "★★★★☆☆";
+	else if (quality == ROOT_T3) stars = "★★★☆☆☆";
+	else if (quality == ROOT_T4) stars = "★★☆☆☆☆";
+	else if (quality == ROOT_T5) stars = "★☆☆☆☆☆";
+	else                         stars = "☆☆☆☆☆☆";
+	line += sprintf("（%s%s%s%s%s%s）\n",
+		quality == ROOT_T0 ? HIY "★" NOR : CYN "☆" NOR,
+		(quality == ROOT_T0 || quality == ROOT_T1) ? HIY "★" NOR : CYN "☆" NOR,
+		(quality == ROOT_T0 || quality == ROOT_T1 || quality == ROOT_T2) ? HIY "★" NOR : CYN "☆" NOR,
+		(quality == ROOT_T0 || quality == ROOT_T1 || quality == ROOT_T2 || quality == ROOT_T3) ? HIY "★" NOR : CYN "☆" NOR,
+		(quality == ROOT_T0 || quality == ROOT_T1 || quality == ROOT_T2 || quality == ROOT_T3 || quality == ROOT_T4) ? HIY "★" NOR : CYN "☆" NOR,
+		HIY "★" NOR);
 	
 	// 属性显示
 	line += " 属性：";
@@ -1245,7 +1317,30 @@ string query_spirit_root_display()
 	line += sprintf(" 灵根强度：%d/100\n", strength);
 	line += sprintf(" 灵根精纯度：%d%%\n", purity);
 	
+	// 显示灵根等级和经验（新系统信息）
+	int level = root[ROOT_PROP_LEVEL];
+	if (!undefinedp(level) && level > 0)
+		line += sprintf(" 灵根等级：Lv.%d\n", level);
+	
 	// 下一级突破需求
+	int quality_idx = root[ROOT_PROP_QUALITY_IDX];
+	if (undefinedp(quality_idx))
+	{
+		// 从新格式转换
+		int qe = root[ROOT_PROP_QUALITY];
+		if (!undefinedp(qe))
+		{
+			switch (qe) {
+			case SPIRIT_ROOT_HEAVENLY: quality_idx = ROOT_QUALITY_T0; break;
+			case SPIRIT_ROOT_VARIANT:  quality_idx = ROOT_QUALITY_T1; break;
+			case SPIRIT_ROOT_TRUE:     quality_idx = ROOT_QUALITY_T2; break;
+			case SPIRIT_ROOT_FAKE:     quality_idx = ROOT_QUALITY_T3; break;
+			case SPIRIT_ROOT_PSEUDO:   quality_idx = ROOT_QUALITY_T4; break;
+			default:                   quality_idx = ROOT_QUALITY_T4; break;
+			}
+		}
+	}
+	
 	int next_strength_req;
 	switch (quality_idx) {
 	case ROOT_QUALITY_T4: next_strength_req = ROOT_STRENGTH_T3_MIN; break;
@@ -1263,8 +1358,24 @@ string query_spirit_root_display()
 }
 
 // 设置灵根数据（仅创建时调用一次）
+// 如缺少 daemon 需要的字段，自动补上默认值
 void set_spirit_root(mapping root_data)
 {
 	if (!mapp(root_data)) return;
+	
+	// 确保 daemon 所需的字段存在
+	if (undefinedp(root_data[ROOT_PROP_LEVEL]))
+		root_data[ROOT_PROP_LEVEL] = 1;
+	if (undefinedp(root_data[ROOT_PROP_EXP]))
+		root_data[ROOT_PROP_EXP] = 0;
+	if (undefinedp(root_data[ROOT_PROP_BREAK_COUNT]))
+		root_data[ROOT_PROP_BREAK_COUNT] = 0;
+	if (undefinedp(root_data[ROOT_PROP_REFINE_COUNT]))
+		root_data[ROOT_PROP_REFINE_COUNT] = 0;
+	if (undefinedp(root_data[ROOT_PROP_FAIL_STREAK]))
+		root_data[ROOT_PROP_FAIL_STREAK] = 0;
+	if (undefinedp(root_data[ROOT_PROP_QUALITY_SOURCE]))
+		root_data[ROOT_PROP_QUALITY_SOURCE] = "innate";
+	
 	set(SPIRIT_ROOT_DATA, root_data);
 }
