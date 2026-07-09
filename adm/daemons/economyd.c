@@ -1,5 +1,5 @@
-// economyd.c  动态定价系统
-// by BCubed 团队 (#19)
+// economyd.c  动态定价系统 + 区域经济
+// by BCubed 团队 (#19, #22)
 // 基于供需关系自动调整物价，防止经济膨胀/紧缩
 //
 // 核心公式：
@@ -7,12 +7,18 @@
 //   需求系数 = 最近 24h 该商品总购买量 / 该商品基准周转量
 //   供给系数 = 最近 24h 该商品上架量 / 该商品基准周转量
 //   价格波动边界: 基准价的 50% ~ 150%
+//
+// 区域经济扩展（#22）：
+//   区域物价差异（高阶区域物价更高）
+//   区域特产系统（特产在原产地溢价销售）
+//   贸易路线利润计算（跨区域跑商收益）
 
 inherit F_DBASE;
 inherit F_SAVE;
 
 #include <ansi.h>
 #include <localtime.h>
+#include <region_economy.h>
 
 // 价格波动边界
 #define PRICE_FLOOR_RATIO  0.50   // 最低为基准价的 50%
@@ -47,6 +53,9 @@ void create()
         // 如果没有初始化数据，设置默认
         if (!mapp(query("goods")))
                 set("goods", ([]));
+
+        // 初始化区域物价修正
+        init_region_modifiers();
 
         // 启动定时保存
         remove_call_out("auto_save");
@@ -279,6 +288,192 @@ void cleanup_old_data()
         // 每小时运行一次
         remove_call_out("cleanup_old_data");
         call_out("cleanup_old_data", 3600);
+}
+
+// ======== 区域经济系统（对应设计文档 §5.2 + §6.5）==================
+
+// 获取指定区域的物价修正系数
+// 高阶区域物价更高，低阶区域物价更低
+float query_region_modifier(string region_id)
+{
+        mapping mods = REGION_PRICE_MODIFIER;
+
+        if (undefinedp(mods[region_id]))
+                return 1.0;
+
+        return mods[region_id];
+}
+
+// 获取某商品在指定区域的当前价格（含区域修正 + 供需波动）
+// 这是商店 NPC 定价的推荐接口
+int query_region_price(string region_id, string goods_type)
+{
+        mapping goods = query("goods");
+        if (!mapp(goods)) return 0;
+
+        mapping info = goods[goods_type];
+        if (!mapp(info)) return 0;
+
+        float ratio = calculate_price_ratio(goods_type);
+
+        // 叠加区域物价修正（在动态供需之上再乘区域系数）
+        float region_mod = query_region_modifier(region_id);
+        ratio = ratio * region_mod;
+
+        // 如果是特产在原产地，额外享受溢价
+        if (is_region_special(region_id, goods_type))
+                ratio = ratio * SPECIAL_SOURCE_BONUS;
+
+        return to_int(to_float(info["base_price"]) * ratio);
+}
+
+// 批量初始化所有区域的商品物价修正
+// 由系统启动时调用，确保各区域的物价差异生效
+void init_region_modifiers()
+{
+        mapping mods = REGION_PRICE_MODIFIER;
+        string *regions;
+        string *specials;
+        int i, j;
+
+        regions = keys(mods);
+        for (i = 0; i < sizeof(regions); i++)
+        {
+                specials = query_region_specials(regions[i]);
+                for (j = 0; j < sizeof(specials); j++)
+                {
+                        // 为特产设置较高的基准价（体现区域价值）
+                        set_region_modifier(specials[j], mods[regions[i]]);
+                }
+        }
+}
+
+// 获取指定区域的特色商品列表
+// 返回 string 数组
+string *query_region_specials(string region_id)
+{
+        mapping specials = REGION_SPECIAL_PRODUCTS;
+
+        if (undefinedp(specials[region_id]))
+                return ({});
+
+        return specials[region_id];
+}
+
+// 判断某商品是否为指定区域的特产
+int is_region_special(string region_id, string goods_type)
+{
+        string *specials;
+
+        specials = query_region_specials(region_id);
+        if (sizeof(specials) == 0)
+                return 0;
+
+        return (member_array(goods_type, specials) != -1);
+}
+
+// 获取特产在原产地的出售价格（含溢价）
+// 在原产地的商店：售价 × SPECIAL_SOURCE_BONUS
+int query_special_price(string region_id, string goods_type)
+{
+        int base_price;
+        float modifier;
+
+        base_price = query_base_price(goods_type);
+        if (base_price <= 0)
+                return 0;
+
+        // 只有特产才有溢价
+        if (!is_region_special(region_id, goods_type))
+                return base_price;
+
+        modifier = REGION_PRICE_MODIFIER[region_id];
+        if (modifier < 0.1) modifier = 1.0;
+
+        return to_int(to_float(base_price) * modifier * SPECIAL_SOURCE_BONUS);
+}
+
+// 计算两地贸易路线的利润系数
+// 从 src_region 购买特产，运到 dest_region 出售
+// 返回利润系数（>1.0 有利润，<1.0 亏损）
+float calculate_trade_profit(string src_region, string dest_region, string goods_type)
+{
+        float src_price, dest_price, ratio;
+        string route_key;
+
+        // 检查商品是否为 src 区域特产
+        if (!is_region_special(src_region, goods_type))
+                return 0.8;  // 非特产，跨区域利润率低
+
+        // 获取两地价格
+        src_price = REGION_PRICE_MODIFIER[src_region];
+        dest_price = REGION_PRICE_MODIFIER[dest_region];
+
+        if (src_price <= 0 || dest_price <= 0)
+                return 1.0;
+
+        // 利润 = 目的地价格 / 来源地价格
+        ratio = dest_price / src_price;
+
+        // 检查是否有预设的贸易路线加成
+        route_key = src_region + "->" + dest_region;
+        if (!undefinedp(TRADE_ROUTE_PROFIT[route_key]))
+        {
+                ratio = ratio * TRADE_ROUTE_PROFIT[route_key];
+        }
+
+        // 特产在原产地买入有溢价，所以在原产地买特产更贵
+        // 这是为了平衡：特产在原产地价值高，利润空间在贸易中体现
+        ratio = ratio * 1.0 / SPECIAL_SOURCE_BONUS;
+
+        return ratio;
+}
+
+// 获取区域经济报告
+string query_region_report(string region_id)
+{
+        string result;
+        string *specials;
+        float modifier;
+        int i;
+
+        modifier = query_region_modifier(region_id);
+        specials = query_region_specials(region_id);
+
+        result = sprintf(
+                HIW "╔════════════════════════════════╗\n" NOR
+                HIW "║  " HIC "【区域经济】%s" HIW "              ║\n" NOR
+                HIW "╚════════════════════════════════╝\n" NOR
+                "\n"
+                "区域名称 ：%s\n"
+                "物价水平 ：×%.2f（%s）\n"
+                "\n"
+                "【区域特产】\n",
+                REGION_NAME[region_id],
+                REGION_NAME[region_id],
+                modifier,
+                (modifier < 0.8) ? "物价低廉" :
+                (modifier < 1.0) ? "物价偏低" :
+                (modifier < 1.2) ? "物价适中" :
+                (modifier < 1.6) ? "物价偏高" :
+                "物价昂贵"
+        );
+
+        if (sizeof(specials) == 0)
+        {
+                result += "  （该区域无特别特产）\n";
+        }
+        else
+        {
+                for (i = 0; i < sizeof(specials); i++)
+                {
+                        result += sprintf("  · %s（溢价 ×%.0f%%）\n",
+                                          specials[i],
+                                          (SPECIAL_SOURCE_BONUS - 1.0) * 100);
+                }
+        }
+
+        return result;
 }
 
 // 强制保存
