@@ -47,11 +47,11 @@
 #define CHAPTER_4_MIN_REALM  REALM_DACHENG
 
 // ── 每章节节点数量 ───────────────────────────────
-#define CHAPTER_0_NODES      4     // 凡人篇节点数
-#define CHAPTER_1_NODES      4     // 越国篇节点数
-#define CHAPTER_2_NODES      3     // 乱星海篇节点数
-#define CHAPTER_3_NODES      3     // 灵界篇节点数
-#define CHAPTER_4_NODES      2     // 飞升篇节点数
+#define CHAPTER_0_NODES      11    // 凡人篇节点数
+#define CHAPTER_1_NODES      13    // 越国篇节点数
+#define CHAPTER_2_NODES      10    // 乱星海篇节点数
+#define CHAPTER_3_NODES      10    // 灵界篇节点数
+#define CHAPTER_4_NODES      6     // 飞升篇节点数
 
 // ── 奖励系数 ─────────────────────────────────────
 #define CHAPTER_0_BASE       100   // 凡人篇基础奖励

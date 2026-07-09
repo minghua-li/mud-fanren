@@ -26,3 +26,5 @@
 /adm/daemons/teleport_d
 /adm/daemons/activity_d
 /adm/daemons/main_quest_d
+/adm/daemons/side_quest_d
+/adm/daemons/encounter_d

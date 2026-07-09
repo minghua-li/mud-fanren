@@ -65,12 +65,14 @@ void create()
 
         // 初始化任务模板池
         init_task_templates();
+        init_weekly_templates();
 
         // 计算到下次 0 点的时间，注册每日重置 call_out
         schedule_daily_reset();
+        schedule_weekly_reset();
 
         CHANNEL_D->do_channel(this_object(), "sys",
-                "日常任务系统已经启动。\n");
+                "日常/周常任务系统已经启动。\n");
 }
 
 // ──────────────────────────────────────────────
@@ -390,6 +392,327 @@ void init_task_templates()
                         "coin_ratio": 300
                 ])
         ]);
+}
+
+// ──────────────────────────────────────────────
+// 周常任务模板定义
+// ──────────────────────────────────────────────
+
+// 周常任务使用与日常任务相同的 daemon，但刷新周期为每周
+// 周常模板存放在 weekly_task_templates 映射中
+
+nosave mapping weekly_task_templates = ([]);
+
+void init_weekly_templates()
+{
+        // ---- 1. 门派守卫战 ----
+        weekly_task_templates["weekly_guard_1"] = ([
+                "id":         "weekly_guard_1",
+                "name":       "门派守卫战",
+                "type":       TASK_KILL,
+                "quality":    QUALITY_GOOD,
+                "min_realm":  REALM_ZHU_LOW,
+                "max_realm":  REALM_YING_HIGH,
+                "desc":       "参与每周一次的门派防御事件，抵御来犯之敌。",
+                "time_limit": 86400,
+                "objectives": ([
+                        "target": "入侵敌人",
+                        "amount": 20
+                ]),
+                "rewards":    ([
+                        "exp_ratio":  500,
+                        "coin_ratio": 400
+                ])
+        ]);
+
+        // ---- 2. 势力任务周常 ----
+        weekly_task_templates["weekly_faction_1"] = ([
+                "id":         "weekly_faction_1",
+                "name":       "势力任务周常",
+                "type":       TASK_KILL,
+                "quality":    QUALITY_NORMAL,
+                "min_realm":  REALM_QI_LOW,
+                "max_realm":  REALM_DA,
+                "desc":       "完成所属势力发布的多个任务，提升势力声望。",
+                "time_limit": 604800,
+                "objectives": ([
+                        "target": "势力任务",
+                        "amount": 5
+                ]),
+                "rewards":    ([
+                        "exp_ratio":  300,
+                        "coin_ratio": 300
+                ])
+        ]);
+
+        // ---- 3. 炼丹/炼器周常 ----
+        weekly_task_templates["weekly_craft_1"] = ([
+                "id":         "weekly_craft_1",
+                "name":       "炼丹/炼器周常",
+                "type":       TASK_DONATE,
+                "quality":    QUALITY_GOOD,
+                "min_realm":  REALM_ZHU_LOW,
+                "max_realm":  REALM_DA,
+                "desc":       "提交指定数量和品质的丹药或法器，获得丰厚奖励。",
+                "time_limit": 604800,
+                "objectives": ([
+                        "target": "成品",
+                        "amount": 3
+                ]),
+                "rewards":    ([
+                        "exp_ratio":  400,
+                        "coin_ratio": 500
+                ])
+        ]);
+
+        // ---- 4. 资金周常 ----
+        weekly_task_templates["weekly_fund_1"] = ([
+                "id":         "weekly_fund_1",
+                "name":       "资金周常",
+                "type":       TASK_DONATE,
+                "quality":    QUALITY_NORMAL,
+                "min_realm":  REALM_QI_LOW,
+                "max_realm":  REALM_DA,
+                "desc":       "通过交易/跑商完成一定灵石流通量。",
+                "time_limit": 604800,
+                "objectives": ([
+                        "target": "灵石流通",
+                        "amount": 10000
+                ]),
+                "rewards":    ([
+                        "exp_ratio":  200,
+                        "coin_ratio": 600
+                ])
+        ]);
+
+        // ---- 5. 战斗周常 ----
+        weekly_task_templates["weekly_pvp_1"] = ([
+                "id":         "weekly_pvp_1",
+                "name":       "战斗周常",
+                "type":       TASK_KILL,
+                "quality":    QUALITY_GOOD,
+                "min_realm":  REALM_ZHU_LOW,
+                "max_realm":  REALM_DA,
+                "desc":       "在PVP/切磋中取得一定场次的胜利。",
+                "time_limit": 604800,
+                "objectives": ([
+                        "target": "胜利",
+                        "amount": 10
+                ]),
+                "rewards":    ([
+                        "exp_ratio":  350,
+                        "coin_ratio": 300
+                ])
+        ]);
+
+        // ---- 6. 收集周常 ----
+        weekly_task_templates["weekly_collect_1"] = ([
+                "id":         "weekly_collect_1",
+                "name":       "收集周常",
+                "type":       TASK_COLLECT,
+                "quality":    QUALITY_GOOD,
+                "min_realm":  REALM_QI_LOW,
+                "max_realm":  REALM_DA,
+                "desc":       "提交指定种类的灵药/材料。",
+                "time_limit": 604800,
+                "objectives": ([
+                        "target": "材料",
+                        "amount": 20
+                ]),
+                "rewards":    ([
+                        "exp_ratio":  250,
+                        "coin_ratio": 350
+                ])
+        ]);
+
+        // ---- 7. 秘境周常 ----
+        weekly_task_templates["weekly_dungeon_1"] = ([
+                "id":         "weekly_dungeon_1",
+                "name":       "秘境周常",
+                "type":       TASK_DUNGEON,
+                "quality":    QUALITY_RARE,
+                "min_realm":  REALM_ZHU_LOW,
+                "max_realm":  REALM_DA,
+                "desc":       "完成指定秘境副本，获取稀有奖励。",
+                "time_limit": 604800,
+                "objectives": ([
+                        "target": "秘境",
+                        "amount": 1
+                ]),
+                "rewards":    ([
+                        "exp_ratio":  800,
+                        "coin_ratio": 600
+                ])
+        ]);
+}
+
+// ═══════════════════════════════════════════
+// 周常任务函数
+// ═══════════════════════════════════════════
+
+// 获取周常任务模板列表
+mapping query_all_weekly_templates()
+{
+        return weekly_task_templates;
+}
+
+// 计算到下周一的秒数
+int seconds_to_next_monday()
+{
+        mixed *tm;
+        int days_till_monday;
+
+        tm = localtime(time());
+        // LT_WDAY: 0=周日, 1=周一, ..., 6=周六
+        // 目标：下周一 0:00
+        if (tm[LT_WDAY] == 0)
+                days_till_monday = 1;  // 周日->周一
+        else if (tm[LT_WDAY] == 1)
+                days_till_monday = 7;  // 周一->下周一
+        else
+                days_till_monday = 8 - tm[LT_WDAY];
+
+        return days_till_monday * 86400
+               - tm[LT_HOUR] * 3600
+               - tm[LT_MIN] * 60
+               - tm[LT_SEC];
+}
+
+void schedule_weekly_reset()
+{
+        int delay;
+
+        delay = seconds_to_next_monday();
+        if (delay < 60)
+                delay += 604800;
+
+        remove_call_out("weekly_reset");
+        call_out("weekly_reset", delay);
+}
+
+void weekly_reset()
+{
+        set("last_weekly_reset", get_today_date_weekly());
+
+        log_file("daily_task", sprintf("[%s] 周常任务已重置。\n", ctime(time())));
+
+        schedule_weekly_reset();
+}
+
+int get_today_date_weekly()
+{
+        mixed *tm;
+        int year, week_num;
+
+        tm = localtime(time());
+        year = tm[LT_YEAR];
+        // 粗略计算周数（ISO风格的简化版）
+        week_num = (tm[LT_YDAY] / 7) + 1;
+        return year * 100 + week_num;
+}
+
+// 获取玩家周常任务数据
+mapping get_weekly_player_data(object player)
+{
+        mapping data;
+
+        data = player->query("weekly_task");
+        if (!mapp(data))
+        {
+                data = ([
+                        "tasks":          ({}),
+                        "reset_week":     0,
+                        "completed_ids":  ({}),
+                ]);
+                player->set("weekly_task", data);
+        }
+        return data;
+}
+
+void save_weekly_player_data(object player, mapping data)
+{
+        player->set("weekly_task", data);
+}
+
+// 获取某境界可用的周常任务模板
+string *get_available_weekly_templates(int realm_index)
+{
+        string *available;
+        string id;
+
+        available = ({});
+        foreach (id, mapping tmpl in weekly_task_templates)
+        {
+                if (realm_index >= tmpl["min_realm"] &&
+                    realm_index <= tmpl["max_realm"])
+                {
+                        available += ({ id });
+                }
+        }
+        return available;
+}
+
+// 刷新玩家周常任务
+int refresh_weekly_player_tasks(object player)
+{
+        mapping data;
+        int week_num, realm;
+        string *available, *selected, task_id;
+        int max_weekly = 4;  // 每周4个周常
+
+        data = get_weekly_player_data(player);
+        week_num = get_today_date_weekly();
+
+        if (data["reset_week"] == week_num)
+                return 0;
+
+        data["tasks"] = ({});
+        data["completed_ids"] = ({});
+        data["reset_week"] = week_num;
+
+        realm = estimate_realm_index(player);
+        available = get_available_weekly_templates(realm);
+
+        // 随机选最多4个
+        selected = select_random_tasks(available, max_weekly);
+
+        foreach (task_id in selected)
+        {
+                mapping tmpl = weekly_task_templates[task_id];
+                if (!mapp(tmpl)) continue;
+
+                mapping task_entry = ([
+                        "id":           task_id,
+                        "name":         tmpl["name"],
+                        "type":         tmpl["type"],
+                        "quality":      tmpl["quality"],
+                        "desc":         tmpl["desc"],
+                        "time_limit":   tmpl["time_limit"],
+                        "deadline":     time() + tmpl["time_limit"],
+                        "progress":     ([
+                                "current":  0,
+                                "target":   tmpl["objectives"]["amount"]
+                        ]),
+                        "status":       TASK_STATUS_ACTIVE,
+                        "reward_ratio": tmpl["rewards"],
+                        "objective":    tmpl["objectives"]["target"]
+                ]);
+
+                data["tasks"] += ({ task_entry });
+        }
+
+        save_weekly_player_data(player, data);
+        return 1;
+}
+
+// 查询玩家周常任务
+mapping *query_weekly_player_tasks(object player)
+{
+        mapping data;
+
+        refresh_weekly_player_tasks(player);
+        data = get_weekly_player_data(player);
+        return data["tasks"];
 }
 
 // ──────────────────────────────────────────────

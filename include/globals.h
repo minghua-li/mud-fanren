@@ -78,6 +78,12 @@
 // Main Quest Framework (#40)
 #define MAIN_QUEST_D            "/adm/daemons/main_quest_d"
 
+// Side Quest System (#24)
+#define SIDE_QUEST_D            "/adm/daemons/side_quest_d"
+
+// Encounter/Hidden Quest System (#24)
+#define ENCOUNTER_D             "/adm/daemons/encounter_d"
+
 //add for quest
 #define AQUEST_D(x)	("/quest/aquest/aquest" + x)
 #define BQUEST_D(x)	("/quest/bquest/bquest" + x)
