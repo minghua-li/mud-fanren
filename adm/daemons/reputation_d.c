@@ -357,6 +357,121 @@ float query_discount(string faction, object player)
     return base * mod;
 }
 
+// ======== 声望效率曲线 ========
+
+// 计算声望获取效率修正系数
+// 根据玩家当前声望等级应用效率递减
+// 设计文档 8.1 节
+float query_efficiency_mod(object player, string faction)
+{
+    int level = query_reputation_level(player, faction);
+
+    // 等级效率修正（以「友善→信任」阶段为1.0基准）
+    switch (level)
+    {
+    case REP_LEVEL_DEADLY:
+    case REP_LEVEL_HOSTILE:
+    case REP_LEVEL_COLD:
+    case REP_LEVEL_NEUTRAL:
+        return 2.0;     // 中立→友善: 2.0 快速入门
+    case REP_LEVEL_FRIENDLY:
+        return 1.0;     // 友善→信任: 1.0 平稳阶段
+    case REP_LEVEL_TRUST:
+        return 0.6;     // 信任→尊敬: 0.6 减速区
+    case REP_LEVEL_RESPECT:
+        return 0.3;     // 尊敬→崇拜: 0.3 深度区
+    case REP_LEVEL_ADORE:
+    case REP_LEVEL_LEGENDARY:
+        return 0.1;     // 崇拜以上: 0.1 瓶颈区
+    default:
+        return 1.0;
+    }
+}
+
+// 计算任务重复惩罚系数
+// 同一任务连续做，收益递减
+// 设计文档 8.1 节
+float query_repeat_penalty(object player, string faction, string task_type)
+{
+    int repeat_count = player->query("task_repeat/" + faction + "/" + task_type);
+
+    if (repeat_count >= 5) return 0.3;
+    if (repeat_count >= 4) return 0.5;
+    if (repeat_count >= 3) return 0.7;
+    if (repeat_count >= 2) return 0.9;
+    return 1.0;
+}
+
+// 记录任务完成次数（用于重复惩罚）
+void record_task_completion(object player, string faction, string task_type)
+{
+    string path = "task_repeat/" + faction + "/" + task_type;
+    int count = player->query(path);
+    player->set(path, count + 1);
+
+    // 记录任务日期，用于冷却判断
+    player->set("task_repeat/" + faction + "/" + task_type + "_date", time() / 86400);
+}
+
+// 检查任务是否在冷却中（隔一天不做恢复正常）
+int is_task_cooled_down(object player, string faction, string task_type)
+{
+    int last_date = player->query("task_repeat/" + faction + "/" + task_type + "_date");
+    if (!last_date) return 1; // 从未做过
+
+    int today = time() / 86400;
+    return (today - last_date) >= 2;  // 隔天冷却
+}
+
+// 重置任务重复计数（每日或冷却后）
+void reset_task_repeat(object player, string faction)
+{
+    player->delete("task_repeat/" + faction);
+}
+
+// 计算完整的声望获取量（含效率修正和重复惩罚）
+int calc_reputation_gain(object player, string faction, string task_type, int base_amount)
+{
+    float mod = 1.0;
+
+    // 等级效率修正
+    mod *= query_efficiency_mod(player, faction);
+
+    // 重复惩罚
+    if (!is_task_cooled_down(player, faction, task_type))
+        mod *= query_repeat_penalty(player, faction, task_type);
+
+    // 活动加成
+    if (is_festival(faction))    mod *= 2.0;
+    if (is_wartime(faction))     mod *= 1.5;
+
+    // 首次完成奖励（检查成就）
+    string first_key = "task_first_done/" + faction + "/" + task_type;
+    if (!player->query(first_key))
+    {
+        mod *= 3.0;
+        player->set(first_key, 1);
+    }
+
+    int result = to_int(base_amount * mod);
+    return result > 0 ? result : 1;
+}
+
+// 判断势力是否处于节日状态
+int is_festival(string faction)
+{
+    // 可通过 FACTION_D 查询，简化版
+    return 0;
+}
+
+// 判断势力是否处于战争状态
+int is_wartime(string faction)
+{
+    // 通过 WAR_D 查询活跃战争
+    // 简化版
+    return 0;
+}
+
 // ======== 每日声望上限 ========
 
 int query_daily_cap(object player)

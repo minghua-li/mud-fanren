@@ -354,6 +354,47 @@ void set_achievements()
         30, "ach_check_all_quests", 1,
         ([ "title": HBRED "完美道标" NOR, "attr_all_stats": 2 ]));
 
+    // ---------- 声望成就 (10) ----------
+    set_achievement("ach_reput_01", "广结善缘", ACH_CAT_SOCIAL, "任一势力声望达到友善",
+        10, "ach_check_reputation_level", ({ FACTION_TYPE_RIGHTEOUS, REP_LEVEL_FRIENDLY }),
+        ([ "title": HIG "善缘" NOR, "attr_heal_rate": 5 ]));
+
+    set_achievement("ach_reput_02", "值得信赖", ACH_CAT_SOCIAL, "任一势力声望达到信任",
+        15, "ach_check_reputation_level", ({ FACTION_TYPE_RIGHTEOUS, REP_LEVEL_TRUST }),
+        ([ "title": HIC "可靠" NOR, "attr_trade_tax": -1 ]));
+
+    set_achievement("ach_reput_03", "德高望重", ACH_CAT_SOCIAL, "任一势力声望达到尊敬",
+        20, "ach_check_reputation_level", ({ FACTION_TYPE_RIGHTEOUS, REP_LEVEL_RESPECT }),
+        ([ "title": HIM "尊者" NOR, "attr_practice_speed": 3 ]));
+
+    set_achievement("ach_reput_04", "万民景仰", ACH_CAT_SOCIAL, "任一势力声望达到崇拜",
+        25, "ach_check_reputation_level", ({ FACTION_TYPE_RIGHTEOUS, REP_LEVEL_ADORE }),
+        ([ "title": HIY "圣人" NOR, "attr_max_hp": 5 ]));
+
+    set_achievement("ach_reput_05", "千古传奇", ACH_CAT_SOCIAL, "任一势力声望达到传说",
+        30, "ach_check_reputation_level", ({ FACTION_TYPE_RIGHTEOUS, REP_LEVEL_LEGENDARY }),
+        ([ "title": HIC "不朽" NOR, "attr_unique_effect": 1 ]));
+
+    set_achievement("ach_reput_06", "八面玲珑", ACH_CAT_SOCIAL, "3个势力声望同时达到崇拜",
+        30, "ach_check_multi_reputation", 3,
+        ([ "title": HIY "外交大师" NOR, "attr_rep_rate": 10 ]));
+
+    set_achievement("ach_reput_07", "万人嫌", ACH_CAT_SOCIAL, "3个势力声望同时达到敌对",
+        15, "ach_check_multi_hostile", 3,
+        ([ "title": HIR "天煞孤星" NOR, "attr_pvp_damage": 5 ]));
+
+    set_achievement("ach_reput_08", "阵营先锋", ACH_CAT_SOCIAL, "正魔大战功勋达100000",
+        25, "ach_check_war_merit", 100000,
+        ([ "title": HIY "战争英雄" NOR, "attr_war_merit_rate": 20 ]));
+
+    set_achievement("ach_reput_09", "种族使者", ACH_CAT_SOCIAL, "3个灵界种族声望达到尊敬",
+        25, "ach_check_race_reputation", 3,
+        ([ "title": HIG "和平使者" NOR, "attr_cross_trade_discount": 5 ]));
+
+    set_achievement("ach_reput_10", "莫逆之交", ACH_CAT_SOCIAL, "好友亲密达到莫逆之交",
+        20, "ach_check_intimate_level", FRIEND_INTIMATE_CLOSE,
+        ([ "title": HIY "生死之交" NOR, "attr_team_bonus": 3 ]));
+
     // 构建分类索引
     rebuild_index();
 }
@@ -1208,6 +1249,96 @@ void on_social_action(object player)
 void on_skill_upgrade(object player)
 {
     check_category(player, ACH_CAT_LIFE);
+}
+
+// ======== 声望成就检查函数 ========
+
+// 检查声望等级成就
+int ach_check_reputation_level(object player, mixed target)
+{
+    int faction_type = target[0];  // FACTION_TYPE_RIGHTEOUS etc.
+    int required_level = target[1];
+
+    string *factions = REPUTATION_D->get_all_factions();
+    for (int i = 0; i < sizeof(factions); i++)
+    {
+        mapping info = REPUTATION_D->get_faction_info(factions[i]);
+        if (info["type"] != faction_type) continue;
+
+        int level = REPUTATION_D->query_reputation_level(player, factions[i]);
+        if (level >= required_level) return 1;
+    }
+    return 0;
+}
+
+// 检查多个势力崇拜
+int ach_check_multi_reputation(object player, mixed target)
+{
+    int required = target;
+    int count = 0;
+
+    string *factions = REPUTATION_D->get_all_factions();
+    for (int i = 0; i < sizeof(factions); i++)
+    {
+        int level = REPUTATION_D->query_reputation_level(player, factions[i]);
+        if (level >= REP_LEVEL_ADORE)
+            count++;
+    }
+    return count >= required;
+}
+
+// 检查多个势力敌对
+int ach_check_multi_hostile(object player, mixed target)
+{
+    int required = target;
+    int count = 0;
+
+    string *factions = REPUTATION_D->get_all_factions();
+    for (int i = 0; i < sizeof(factions); i++)
+    {
+        int level = REPUTATION_D->query_reputation_level(player, factions[i]);
+        if (level <= REP_LEVEL_HOSTILE)
+            count++;
+    }
+    return count >= required;
+}
+
+// 检查战功成就
+int ach_check_war_merit(object player, mixed target)
+{
+    int required = target;
+    int total = WAR_D->query_total_merit(player->query("id"));
+    return total >= required;
+}
+
+// 检查种族声望
+int ach_check_race_reputation(object player, mixed target)
+{
+    int required = target;
+    int count = 0;
+
+    string *races = REPUTATION_D->get_all_races();
+    for (int i = 0; i < sizeof(races); i++)
+    {
+        int level = REPUTATION_D->query_race_relation_level(player, races[i]);
+        if (level >= REP_LEVEL_RESPECT)
+            count++;
+    }
+    return count >= required;
+}
+
+// 检查亲密等级
+int ach_check_intimate_level(object player, mixed target)
+{
+    int required_level = target;
+
+    string *friends = player->query_friends();
+    for (int i = 0; i < sizeof(friends); i++)
+    {
+        int level = player->query_intimate_level(friends[i]);
+        if (level >= required_level) return 1;
+    }
+    return 0;
 }
 
 // ==================== 调试与管理 ====================
