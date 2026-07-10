@@ -1,5 +1,5 @@
-// inflationd.c  通胀控制与经济健康监控
-// by BCubed 团队 (#19)
+// inflationd.c  通胀控制与经济健康监控 + 六大循环监控
+// by BCubed 团队 (#19, #48)
 //
 // 职责：
 //   1. 监控全服灵石总量，计算人均持有量
@@ -17,6 +17,7 @@ inherit F_SAVE;
 
 #include <ansi.h>
 #include <localtime.h>
+#include <economy_circulation.h>
 
 // ---------- 经济阈值（下品灵石） ----------
 #define THRESHOLD_SAFE     300   // 基准税率
@@ -175,6 +176,20 @@ void on_consumption(int amount, string realm)
 void update_active_players(int count)
 {
         set("stats/active_players", count);
+}
+
+// 记录税收回收（由 moneyd.c 的市场税/拍卖手续费接口调用）
+void on_tax_collected(int amount)
+{
+        if (amount <= 0) return;
+
+        mapping stats = query("stats");
+        if (!mapp(stats)) return;
+
+        add("stats/tax_collected", amount);
+
+        // 税收本身就是消耗（灵石从玩家流向系统）
+        // 注意：此处不能重复扣除 total_spirit_stones（已在 moneyd 层扣除）
 }
 
 // ---------- 经济事件检查 ----------
@@ -545,6 +560,100 @@ string query_balance_report()
         }
 
         msg += "\n" + query_full_report();
+
+        return msg;
+}
+
+// ======== P3 集成 A：六大循环监控 ===========================================
+
+// 获取六大循环的整体健康评分（0-100）
+// 根据产出/消耗比、各循环均衡度等指标综合计算
+int query_circulation_health_score()
+{
+        float ratio = query_output_consumption_ratio();
+        mapping stats = query("stats");
+
+        // 产出/消耗比（权重40%）
+        float ratio_score;
+        if (ratio >= 0.95 && ratio <= 1.05)
+                ratio_score = 100.0;
+        else if (ratio >= 0.90 && ratio <= 1.10)
+                ratio_score = 70.0;
+        else if (ratio >= 0.80 && ratio <= 1.20)
+                ratio_score = 40.0;
+        else
+                ratio_score = 10.0;
+
+        // 人均灵石存量（权重30%）
+        int per_capita = query_per_capita();
+        float capita_score;
+        if (per_capita <= 300)
+                capita_score = 100.0;
+        else if (per_capita <= 500)
+                capita_score = 70.0;
+        else if (per_capita <= 800)
+                capita_score = 40.0;
+        else
+                capita_score = 10.0;
+
+        // 系统回收/产出比（权重30%）
+        int total_production = stats["total_production"];
+        int tax_collected = stats["tax_collected"];
+        float recovery_score = 50.0;  // 默认中等
+        if (total_production > 0 && tax_collected > 0) {
+                float recovery_ratio = to_float(tax_collected) / to_float(total_production);
+                if (recovery_ratio >= 0.40 && recovery_ratio <= 0.60)
+                        recovery_score = 100.0;
+                else if (recovery_ratio >= 0.20 && recovery_ratio <= 0.80)
+                        recovery_score = 60.0;
+                else
+                        recovery_score = 20.0;
+        }
+
+        int score = to_int(ratio_score * 0.4 + capita_score * 0.3 + recovery_score * 0.3);
+        if (score < 0) score = 0;
+        if (score > 100) score = 100;
+
+        return score;
+}
+
+// 查询六大循环中消耗占比最高的类型
+// 返回: ({ "sink_type", 消耗量, 占比 }) 或 ({}) 无数据
+mixed *query_top_circulation_consumption()
+{
+        // 预留接口：待 moneyd.c 的 consumption_log 按类型分类后挂接
+        // 当前返回空数组表示尚未实现详细分类
+        return ({});
+}
+
+// 查询六大循环通胀风险报告
+string query_circulation_risk_report()
+{
+        string msg = HIY "═══ 六大经济循环风险报告 ═══\n" NOR;
+        int score = query_circulation_health_score();
+        float ratio = query_output_consumption_ratio();
+        int per_capita = query_per_capita();
+
+        msg += sprintf("经济循环健康评分：%d/100\n", score);
+        msg += sprintf("产出/消耗比：%.2f（健康区间 0.95-1.05）\n", ratio);
+        msg += sprintf("人均灵石存量：%d（安全线 ≤300，警戒线 ≤500，危险线 ≥800）\n", per_capita);
+
+        // 各循环消耗占比简要评估
+        msg += "\n【六大循环运行状态】\n";
+        msg += "  A1 修炼循环：灵石灌注 + 聚灵阵消耗 — 基础消耗通道\n";
+        msg += "  A2 战斗循环：阵法维持 + 装备维修 + PVP + 比武 — 弹性消耗\n";
+        msg += "  A3 区域循环：传送 + 秘境 + 洞府 + 宗门 — 刚性+弹性混合\n";
+        msg += "  A4 任务循环：任务奖励注入（产出）+ 失败惩罚（回收）— 主产出通道\n";
+        msg += "  A5 声望循环：势力任务 + 声望门槛 + 产业税收 — 高阶产出/回收\n";
+        msg += "  A6 自身循环：动态定价 + 税率调节 + 回收通道 — 自动稳定器\n";
+
+        // 风险提示
+        if (score >= 80)
+                msg += HIG "\n✓ 经济循环健康，各通道运行正常。\n" NOR;
+        else if (score >= 60)
+                msg += HIY "\n△ 经济循环轻度预警，建议关注各通道消耗平衡。\n" NOR;
+        else
+                msg += HIR "\n✗ 经济循环风险高，需检查产出/消耗比和回收效率！\n" NOR;
 
         return msg;
 }

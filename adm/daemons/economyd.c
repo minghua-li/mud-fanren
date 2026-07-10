@@ -1,5 +1,5 @@
-// economyd.c  动态定价系统 + 区域经济
-// by BCubed 团队 (#19, #22)
+// economyd.c  动态定价系统 + 区域经济 + 六大循环商品定价
+// by BCubed 团队 (#19, #22, #48)
 // 基于供需关系自动调整物价，防止经济膨胀/紧缩
 //
 // 核心公式：
@@ -19,6 +19,7 @@ inherit F_SAVE;
 #include <ansi.h>
 #include <localtime.h>
 #include <region_economy.h>
+#include <economy_circulation.h>
 
 // 价格波动边界
 #define PRICE_FLOOR_RATIO  0.50   // 最低为基准价的 50%
@@ -64,6 +65,9 @@ void create()
         // 启动过期数据清理
         remove_call_out("cleanup_old_data");
         call_out("cleanup_old_data", 3600);
+
+        // 注册六大循环商品（如果尚未注册）
+        init_circulation_goods();
 }
 
 string query_save_file()
@@ -480,4 +484,122 @@ string query_region_report(string region_id)
 void force_save()
 {
         save();
+}
+
+// ======== P3 集成 A：六大循环商品定价 =======================================
+
+// 初始化/注册六大循环涉及的商品与服务到动态定价系统
+// 在 create() 时自动调用
+void init_circulation_goods()
+{
+        // A1 修炼循环商品
+        register_goods("service:poly_array", 1, 1000);         // 聚灵阵（基准 1 灵石/时辰）
+        register_goods("service:spirit_infuse", 10, 500);      // 灵石灌注（基准 10 修为/灵石）
+
+        // A2 战斗循环商品
+        register_goods("service:formation", 2, 2000);          // 阵法维持（基准 2 灵石/回合）
+        register_goods("service:equip_repair", 100, 500);      // 装备维修（基准 100 灵石）
+        register_goods("service:arena_fee_low", 50, 200);      // 比武报名-低阶
+        register_goods("service:arena_fee_mid", 500, 100);     // 比武报名-中阶
+        register_goods("service:arena_fee_high", 5000, 20);    // 比武报名-高阶
+
+        // A3 区域循环商品
+        register_goods("service:teleport_city", 50, 1000);     // 城内传送
+        register_goods("service:teleport_intercity", 100, 500);// 城际传送
+        register_goods("service:teleport_crossborder", 1000, 100); // 跨境传送
+        register_goods("service:teleport_crosscont", 100000, 10);  // 跨大陆传送
+        register_goods("service:secret_realm_low", 50, 200);   // 秘境门票-低
+        register_goods("service:secret_realm_mid", 500, 100);  // 秘境门票-中
+        register_goods("service:secret_realm_high", 2000, 50); // 秘境门票-高
+        register_goods("service:secret_realm_top", 10000, 10); // 秘境门票-顶
+        register_goods("service:mansion_upkeep_lv1", 100, 500); // 洞府维护-初级
+        register_goods("service:mansion_upkeep_lv2", 500, 200); // 洞府维护-中级
+        register_goods("service:mansion_upkeep_lv3", 2000, 50); // 洞府维护-高级
+        register_goods("service:mansion_upkeep_lv4", 10000, 10);// 洞府维护-顶级
+        register_goods("service:sect_hq_upkeep_small", 1000, 100); // 宗门维护-小型
+        register_goods("service:sect_hq_upkeep_medium", 5000, 50); // 宗门维护-中型
+        register_goods("service:sect_hq_upkeep_large", 20000, 10); // 宗门维护-大型
+        register_goods("service:sect_hq_upkeep_legendary", 100000, 5); // 宗门维护-传奇
+
+        // A4 任务循环商品
+        register_goods("goods:quest_reward_qi", 5, 1000);      // 任务奖励-炼气基准
+        register_goods("goods:quest_reward_zhu", 20, 500);     // 任务奖励-筑基基准
+        register_goods("goods:quest_reward_jie", 80, 200);     // 任务奖励-结丹基准
+        register_goods("goods:quest_reward_ying", 300, 50);    // 任务奖励-元婴基准
+        register_goods("goods:quest_reward_hua", 1000, 20);    // 任务奖励-化神基准
+
+        // A5 声望循环商品
+        register_goods("service:faction_task_neutral", 10, 500);// 势力任务-中立
+        register_goods("service:faction_task_friendly", 30, 300); // 势力任务-友善
+        register_goods("service:faction_task_trust", 80, 200); // 势力任务-信任
+        register_goods("service:faction_task_respect", 200, 100); // 势力任务-尊敬
+        register_goods("service:faction_task_adore", 500, 50); // 势力任务-崇拜
+        register_goods("service:faction_task_legendary", 1500, 10); // 势力任务-传说
+
+        // A6 经济自身循环
+        register_goods("service:market_tax", 50, 10000);       // 交易税基准率 5%
+        register_goods("service:auction_fee", 10, 5000);       // 拍卖手续费 10%
+}
+
+// 获取六大循环商品在动态定价系统中的当前价格
+// 参数: service_type - 服务类型字符串（如 "service:poly_array"）
+// 返回: 当前动态价格（下品灵石），0 表示未注册
+int query_circulation_price(string service_type)
+{
+        return query_current_price(service_type);
+}
+
+// 为六大循环商品记录一次消费（影响动态定价）
+// 参数: service_type - 服务类型
+//       amount - 消费量
+// 返回: 更新后的价格倍率
+float record_circulation_consumption(string service_type, int amount)
+{
+        if (amount <= 0) return 1.0;
+        return record_purchase(service_type, amount);
+}
+
+// 为六大循环商品记录一次供给（影响动态定价）
+// 参数: service_type - 服务类型
+//       amount - 供给量
+// 返回: 更新后的价格倍率
+float record_circulation_supply(string service_type, int amount)
+{
+        if (amount <= 0) return 1.0;
+        return record_sale(service_type, amount);
+}
+
+// 获取所有六大循环商品的定价报告
+string query_circulation_price_report()
+{
+        string msg;
+        string *circulation_types = ({
+                "service:poly_array",
+                "service:spirit_infuse",
+                "service:formation",
+                "service:equip_repair",
+                "service:teleport_city",
+                "service:teleport_intercity",
+                "service:secret_realm_mid",
+                "service:arena_fee_mid",
+                "service:mansion_upkeep_lv2",
+                "service:faction_task_friendly",
+                "service:market_tax",
+                "service:auction_fee",
+        });
+
+        msg = HIY "═══ 六大经济循环商品定价报告 ═══\n" NOR;
+
+        foreach (string type in circulation_types) {
+                int price = query_current_price(type);
+                mapping goods = query("goods");
+                if (mapp(goods) && mapp(goods[type])) {
+                        int base = goods[type]["base_price"];
+                        float ratio = calculate_price_ratio(type);
+                        msg += sprintf("  %-40s 基准:%5d  当前:%5d  (×%.2f)\n",
+                                       type, base, price, ratio);
+                }
+        }
+
+        return msg;
 }
