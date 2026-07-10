@@ -19,6 +19,7 @@ inherit F_SAVE;
 #include <ansi.h>
 #include <localtime.h>
 #include <region_economy.h>
+#include <economy_lifecycle.h>
 
 // 价格波动边界
 #define PRICE_FLOOR_RATIO  0.50   // 最低为基准价的 50%
@@ -288,6 +289,193 @@ void cleanup_old_data()
         // 每小时运行一次
         remove_call_out("cleanup_old_data");
         call_out("cleanup_old_data", 3600);
+}
+
+// ======== A6 经济自身循环系统 =======================================
+// 整合以下子能力：
+//   1. 产出总量控制查询（对接 MONEY_D 的日产出上限）
+//   2. 回收通道监控（对接 INFLATION_D 的消耗记录）
+//   3. 全服通胀感知动态调价
+//   4. 经济生命周期验证
+// ==================================================================
+
+// 记录购买并联动通胀监控
+// 覆写原有 record_purchase 以增加通胀联动
+float record_purchase_with_inflation(string type, int amount, string realm)
+{
+        float ratio = record_purchase(type, amount);
+
+        // 记录消耗到通胀监控
+        if (find_object(MONEY_D))
+                MONEY_D->add_consumption("market_purchase_" + type, amount, realm);
+
+        return ratio;
+}
+
+// 记录上架并联动产出监控
+float record_sale_with_inflation(string type, int amount, string realm)
+{
+        float ratio = record_sale(type, amount);
+
+        // 记录产出到通胀监控
+        if (find_object(MONEY_D))
+                MONEY_D->add_production("market_sale_" + type, amount, realm);
+
+        return ratio;
+}
+
+// 获取通胀感知价格（在动态定价基础上叠加通胀附加税）
+// 通胀严重时自动加价，抑制过度消费
+int query_inflation_adjusted_price(string type, string region_id)
+{
+        int base_price = query_region_price(region_id, type);
+        if (base_price <= 0) return 0;
+
+        // 获取通胀附加税系数
+        if (find_object(INFLATION_D))
+        {
+                int add_tax = INFLATION_D->get_additional_tax_modifier();
+                // 附加税 = 基准价 × 附加税率
+                int surcharge = to_int(to_float(base_price) * to_float(add_tax) / 1000.0);
+                base_price += surcharge;
+        }
+
+        return base_price;
+}
+
+// 验证经济闭环状态
+// 返回 mapping，包含各环节的状态
+mapping verify_economy_lifecycle()
+{
+        mapping result = ([
+                "status": "pass",
+                "checks": ([]),
+        ]);
+        mapping checks = ([]);
+
+        // 1. 产出总量控制
+        if (find_object(MONEY_D))
+        {
+                int cap = MONEY_D->query_daily_production_cap();
+                int prod = MONEY_D->query_daily_production();
+                if (cap > 0)
+                {
+                        float util = to_float(prod) / to_float(cap);
+                        checks["production_control"] = ([
+                                "status":   util <= 1.0 ? "pass" : "warn",
+                                "message":  sprintf("日产出利用率 %.0f%% (上限 %d, 已用 %d)", util * 100.0, cap, prod),
+                                "current":  prod,
+                                "expected": cap,
+                        ]);
+                }
+        }
+
+        // 2. 动态定价有效
+        mapping goods = query("goods");
+        if (mapp(goods) && sizeof(goods) > 0)
+        {
+                int within_bounds = 1;
+                foreach (string type, mapping info in goods)
+                {
+                        float ratio = calculate_price_ratio(type);
+                        if (ratio < PRICE_FLOOR_RATIO || ratio > PRICE_CEIL_RATIO)
+                        {
+                                within_bounds = 0;
+                                break;
+                        }
+                }
+                checks["dynamic_pricing"] = ([
+                        "status":   within_bounds ? "pass" : "warn",
+                        "message":  sprintf("动态定价在 [%.0f%%, %.0f%%] 边界内运行",
+                                            PRICE_FLOOR_RATIO * 100.0, PRICE_CEIL_RATIO * 100.0),
+                        "current":  sizeof(goods),
+                        "expected": ">0",
+                ]);
+        }
+
+        // 3. 回收通道可用
+        if (find_object(INFLATION_D))
+        {
+                float ratio = INFLATION_D->query_output_consumption_ratio();
+                checks["recycling_channels"] = ([
+                        "status":   (ratio >= 0.8 && ratio <= 1.2) ? "pass" : "warn",
+                        "message":  sprintf("产出/消耗比 %.2f (目标区间 [0.80, 1.20])", ratio),
+                        "current":  ratio,
+                        "expected": 1.0,
+                ]);
+        }
+
+        // 4. 通胀监控有效
+        if (find_object(INFLATION_D))
+        {
+                int per_capita = INFLATION_D->query_per_capita();
+                string health = INFLATION_D->query_economy_health();
+                checks["inflation_monitoring"] = ([
+                        "status":   "pass",
+                        "message":  sprintf("通胀监控运行中: 人均灵石 %d, 状态 %s", per_capita, health),
+                        "current":  per_capita,
+                        "expected": "<" + ECON_WARNING_MAX,
+                ]);
+        }
+
+        // 汇总
+        string overall = "pass";
+        foreach (string key, mapping check in checks)
+        {
+                if (check["status"] == "fail") overall = "fail";
+                else if (check["status"] == "warn" && overall == "pass") overall = "warn";
+        }
+        result["status"] = overall;
+        result["checks"] = checks;
+
+        return result;
+}
+
+// 生成经济生命周期报告
+string query_lifecycle_report()
+{
+        mapping vresult = verify_economy_lifecycle();
+        mapping checks = vresult["checks"];
+        string status_str = vresult["status"] == "pass" ? HIW "通过" NOR :
+                            vresult["status"] == "warn" ? HIY "警告" NOR :
+                            HIR "失败" NOR;
+
+        string msg = sprintf(
+                HIC "╔════════════════════════════════╗\n" NOR
+                HIC "║  " HIW "【经济生命周期报告】" HIC "                ║\n" NOR
+                HIC "╚════════════════════════════════╝\n" NOR
+                "\n"
+                "总体状态：%s\n\n",
+                status_str
+        );
+
+        foreach (string key, mapping check in checks)
+        {
+                string s = check["status"] == "pass" ? HIW "✓" NOR :
+                           check["status"] == "warn" ? HIY "△" NOR :
+                           HIR "✗" NOR;
+                msg += sprintf("%s [%s] %s\n", s, key, check["message"]);
+        }
+
+        // 附加通胀监控信息
+        if (find_object(INFLATION_D))
+        {
+                msg += "\n" + INFLATION_D->get_economy_adjustment_message();
+        }
+
+        // 附加区域物价概览
+        mapping mods = REGION_PRICE_MODIFIER;
+        if (mapp(mods) && sizeof(mods) > 0)
+        {
+                msg += "\n【区域物价概览】\n";
+                foreach (string rid, float mod in mods)
+                {
+                        string rname = REGION_NAME[rid];
+                        msg += sprintf("  %-12s ×%.2f\n", rname, mod);
+                }
+        }
+
+        return msg;
 }
 
 // ======== 区域经济系统（对应设计文档 §5.2 + §6.5）==================

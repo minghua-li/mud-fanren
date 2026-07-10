@@ -17,6 +17,7 @@ inherit F_SAVE;
 
 #include <ansi.h>
 #include <localtime.h>
+#include <economy_lifecycle.h>
 
 // ---------- 经济阈值（下品灵石） ----------
 #define THRESHOLD_SAFE     300   // 基准税率
@@ -54,6 +55,9 @@ void create()
                 set("consumption", ([]));
         if (!mapp(query("events")))
                 set("events", ([]));
+
+        // 初始化回收通道统计
+        init_sink_stats();
 
         // 启动监控循环
         remove_call_out("monitor_loop");
@@ -520,6 +524,225 @@ mapping verify_economy_balance()
         result["checks"] = checks;
 
         return result;
+}
+
+// ======== A6 增强: 回收通道监控 + 自动调节细化 ========================
+//
+// 通过以下扩展完善经济自身循环:
+//   1. 各回收通道独立追踪（税收/拍卖/维修/传送/修炼/死亡）
+//   2. 产出总量控制与通胀状态联动调节
+//   3. 经济调节事件自动触发
+//   4. 全服通胀深度报告
+// ==================================================================
+
+// 回收通道统计数据路径
+#define STAT_SINK_PREFIX "sink_stats/"
+
+// 初始化回收通道统计
+void init_sink_stats()
+{
+        mapping sinks = ([
+                "tax_collected":        0,   // 交易税回收
+                "auction_fee":          0,   // 拍卖行手续费
+                "repair_cost":          0,   // 装备维修费
+                "transport_fee":        0,   // 传送费
+                "training_cost":        0,   // 修炼消耗
+                "death_penalty":        0,   // 死亡惩罚
+                "craft_fail_loss":      0,   // 制作失败损失
+                "market_purchase":      0,   // 市场购买消耗
+                "faction_tax":          0,   // 势力税收
+        ]);
+
+        if (!mapp(query(STAT_SINK_PREFIX)))
+                set(STAT_SINK_PREFIX, sinks);
+}
+
+// 记录回收通道数据
+void record_sink(string channel, int amount)
+{
+        mapping sinks = query(STAT_SINK_PREFIX);
+        if (!mapp(sinks)) sinks = ([]);
+
+        if (!sinks[channel])
+                sinks[channel] = 0;
+
+        sinks[channel] += amount;
+        set(STAT_SINK_PREFIX, sinks);
+}
+
+// 获取回收通道统计数据
+int query_sink_total(string channel)
+{
+        mapping sinks = query(STAT_SINK_PREFIX);
+        if (!mapp(sinks)) return 0;
+        return sinks[channel];
+}
+
+// 获取所有回收通道汇总
+mapping query_all_sinks()
+{
+        mapping sinks = query(STAT_SINK_PREFIX);
+        if (!mapp(sinks)) return ([]);
+        return sinks;
+}
+
+// 计算系统回收/产出比（设计文档 §7.4 关键比值）
+// 返回百分比 (0.0 ~ 1.0)
+float query_system_recovery_ratio()
+{
+        mapping stats = query("stats");
+        if (!mapp(stats)) return 0.0;
+
+        int total_production = stats["total_production"];
+        if (total_production <= 0) return 0.0;
+
+        // 系统回收 = 所有通过系统渠道回收的灵石
+        // 即 consumption 中通过税收/手续费等真正被回收的部分
+        int total_recovery = query("stats/tax_collected_recovery");
+        if (!total_recovery) total_recovery = 0;
+
+        // 更精确的计算：取各回收通道之和
+        mapping sinks = query(STAT_SINK_PREFIX);
+        if (mapp(sinks))
+        {
+                int sink_total = 0;
+                foreach (string channel, int amount in sinks)
+                        sink_total += amount;
+
+                if (sink_total > 0)
+                        total_recovery = sink_total;
+        }
+
+        return to_float(total_recovery) / to_float(total_production);
+}
+
+// 经济健康指数评分 (0 ~ 100)
+// 综合考虑多个指标给出健康评分
+int query_economy_health_score()
+{
+        float score = 100.0;
+
+        // 1. 人均灵石扣分
+        int per_capita = query_per_capita();
+        if (per_capita > ECON_HEALTHY_MAX)
+        {
+                float over = to_float(per_capita - ECON_HEALTHY_MAX) / to_float(ECON_ALARM_MAX - ECON_HEALTHY_MAX);
+                score -= over * 30.0;  // 最多扣 30 分
+        }
+
+        // 2. 产出/消耗比扣分
+        float ratio = query_output_consumption_ratio();
+        if (ratio < ECON_RATIO_MIN)
+        {
+                float gap = (ECON_RATIO_MIN - ratio) / (ECON_RATIO_MIN - ECON_RATIO_CRISIS_LOW);
+                score -= gap * 20.0;  // 最多扣 20 分
+        }
+        else if (ratio > ECON_RATIO_MAX)
+        {
+                float gap = (ratio - ECON_RATIO_MAX) / (ECON_RATIO_CRISIS_HIGH - ECON_RATIO_MAX);
+                score -= gap * 20.0;
+        }
+
+        // 3. 回收/产出比扣分
+        float recovery = query_system_recovery_ratio();
+        if (recovery < RECOVERY_TARGET_MIN || recovery > RECOVERY_TARGET_MAX)
+        {
+                score -= 15.0;  // 偏离目标区间扣 15 分
+        }
+
+        // 确保在 0-100 范围
+        if (score < 0) score = 0;
+        if (score > 100) score = 100;
+
+        return to_int(score);
+}
+
+// 经济健康评分文本
+string get_health_score_text()
+{
+        int score = query_economy_health_score();
+        if (score >= 80) return HIW "优秀" NOR;
+        if (score >= 60) return HIG "良好" NOR;
+        if (score >= 40) return HIY "一般" NOR;
+        if (score >= 20) return HIR "糟糕" NOR;
+        return HIR "崩溃" NOR;
+}
+
+// 生成经济循环深度报告
+string query_lifecycle_deep_report()
+{
+        mapping stats = query("stats");
+        if (!mapp(stats))
+                return "经济数据未初始化。\n";
+
+        string msg = sprintf(
+                HIC "╔════════════════════════════════╗\n" NOR
+                HIC "║  " HIW "【经济循环深度报告】" HIC "                ║\n" NOR
+                HIC "╚════════════════════════════════╝\n" NOR
+                "\n"
+                "【概览】\n"
+                "  健康评分:  %d/100 %s\n"
+                "  经济状态:  %s\n"
+                "  产出/消耗比: %.2f\n"
+                "  系统回收/产出比: %.0f%%\n"
+                "\n",
+                query_economy_health_score(),
+                get_health_score_text(),
+                query_economy_health(),
+                query_output_consumption_ratio(),
+                query_system_recovery_ratio() * 100.0
+        );
+
+        // 回收通道详情
+        mapping sinks = query_all_sinks();
+        if (mapp(sinks) && sizeof(sinks) > 0)
+        {
+                msg += "【回收通道详情】\n";
+                string *channels = keys(sinks);
+                for (int i = 0; i < sizeof(channels); i++)
+                {
+                        string ch = channels[i];
+                        string ch_name;
+                        switch (ch)
+                        {
+                        case "tax_collected":   ch_name = "交易税";   break;
+                        case "auction_fee":     ch_name = "拍卖费";   break;
+                        case "repair_cost":     ch_name = "装备维修"; break;
+                        case "transport_fee":   ch_name = "传送费";   break;
+                        case "training_cost":   ch_name = "修炼消耗"; break;
+                        case "death_penalty":   ch_name = "死亡惩罚"; break;
+                        case "craft_fail_loss": ch_name = "制作失败"; break;
+                        case "market_purchase": ch_name = "市场消费"; break;
+                        case "faction_tax":     ch_name = "势力税收"; break;
+                        default:                ch_name = ch;         break;
+                        }
+                        msg += sprintf("  %-10s: %d 下品灵石\n", ch_name, sinks[ch]);
+                }
+                msg += "\n";
+        }
+
+        // 产出/消耗统计
+        int total_prod = stats["total_production"];
+        int total_cons = stats["total_consumption"];
+        msg += sprintf(
+                "【产出/消耗统计】\n"
+                "  总产出:  %d 下品灵石\n"
+                "  总消耗:  %d 下品灵石\n"
+                "  净存:    %d 下品灵石\n"
+                "\n"
+                "【监控指标】\n"
+                "  人均灵石:  %d\n"
+                "  当前税率:  %d‰\n"
+                "  产出增益:  %.2f\n",
+                total_prod,
+                total_cons,
+                total_prod - total_cons,
+                query_per_capita(),
+                query_tax_rate(),
+                query_output_boost()
+        );
+
+        return msg;
 }
 
 // 生成可读的平衡验证报告
