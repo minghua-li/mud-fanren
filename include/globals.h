@@ -89,6 +89,9 @@
 #define BIWU_D		"/adm/daemons/biwud"
 #define ECONOMY_D	"/adm/daemons/economyd"
 #define INFLATION_D	"/adm/daemons/inflationd"
+#define QUEST_ECONOMY_D         "/adm/daemons/quest_economy_d"
+#define FACTION_ECONOMY_D       "/adm/daemons/faction_economy_d"
+#define ECONOMY_BRIDGE_D "/adm/daemons/economy_bridge_d"
 //ADD BY YHZZYAHOO@2016.8.3
 #define CABIWU_D	"/adm/daemons/cabiwud"
 #define FAMILY_D		"/adm/daemons/familyd"
