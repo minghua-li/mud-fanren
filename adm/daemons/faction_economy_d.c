@@ -97,17 +97,19 @@ void check_day_rollover()
 // 获取当前适用的税率修正系数（基于通胀状态）
 float query_tax_modifier()
 {
-  if (!find_object(INFLATION_D))
-    return 1.0;
-
-  string health = INFLATION_D->query_economy_health();
-  switch (health)
+  float tax_mod = TAX_MOD_HEALTHY;
+  if (find_object(INFLATION_D))
   {
-  case "healthy":  return TAX_MOD_HEALTHY;
-  case "warning":  return TAX_MOD_WARNING;
-  case "critical": return TAX_MOD_CRITICAL;
-  default:         return TAX_MOD_HEALTHY;
+    string health = INFLATION_D->query_economy_health();
+    switch (health)
+    {
+    case "healthy":  tax_mod = TAX_MOD_HEALTHY;  break;
+    case "warning":  tax_mod = TAX_MOD_WARNING;  break;
+    case "critical": tax_mod = TAX_MOD_CRITICAL; break;
+    default:         tax_mod = TAX_MOD_HEALTHY;  break;
+    }
   }
+  return tax_mod;
 }
 
 // 计算某笔交易的税额
@@ -229,7 +231,7 @@ int collect_tax(string faction_id, string industry_type, int transaction_amount,
 int check_repurchase_threshold(object player, string faction, int shop_tier)
 {
   if (!find_object(REPUTATION_D))
-    return 1;  // 无声望系统则默认通过
+    return 0;  // REPUTATION_D 未加载属系统错误，拒绝通过
 
   int required_level;
   switch (shop_tier)
@@ -250,10 +252,10 @@ int check_repurchase_threshold(object player, string faction, int shop_tier)
 // 返回: 折扣乘数 (0.6=6折, 1.0=原价, 3.0=3倍价)
 float query_faction_discount(object player, string faction)
 {
-  if (!find_object(REPUTATION_D))
-    return 1.0;
+  if (find_object(REPUTATION_D))
+    return REPUTATION_D->query_discount(faction, player);
 
-  return REPUTATION_D->query_discount(faction, player);
+  return 1.0;
 }
 
 //=============================================================================

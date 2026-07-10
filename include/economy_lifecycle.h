@@ -17,6 +17,13 @@
 // 任务灵石产出占全服总产出的比例上限（按设计文档 §6.3）
 #define QUEST_COIN_PCT_CAP   0.45    // 任务灵石占总产出 ≤45%
 
+// 每日预算分配比例（按境界）
+#define BUDGET_ALLOC_QIGE      0.25   // 炼气期占 25%
+#define BUDGET_ALLOC_ZHUJI     0.30   // 筑基期占 30%
+#define BUDGET_ALLOC_JIEDAN    0.25   // 结丹期占 25%
+#define BUDGET_ALLOC_YUANYING  0.15   // 元婴期占 15%
+#define BUDGET_ALLOC_HUASHEN   0.05   // 化神期+占 5%
+
 // 各渠道任务奖励占比（相对任务灵石总量）
 #define QUEST_DAILY_COIN_PCT   0.40   // 日常任务 ≤40%
 #define QUEST_MAIN_COIN_PCT    0.20   // 主线任务 ≤20%
@@ -123,7 +130,7 @@
 #define SINK_TRANSPORT_WEIGHT    10     // 传送费 10%
 #define SINK_TRAINING_WEIGHT     20     // 修炼消耗 20%
 #define SINK_DEATH_PENALTY       5      // 死亡惩罚 5%
-#define SINK_CRRAFT_FAIL         5      // 制作失败 5%
+#define SINK_CRAFT_FAIL          5      // 制作失败 5%
 
 // 系统回收/产出比目标（设计文档 §7.4）
 #define RECOVERY_TARGET_MIN      0.40   // 最低 40%

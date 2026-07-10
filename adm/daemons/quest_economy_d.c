@@ -35,9 +35,9 @@ nosave mapping realm_index_map = ([
   "huashen":  4,
 ]);
 
-// 每日预算余额（动态跟踪）
+// 每日预算余额（动态跟踪，需持久化保证重启后恢复）
 // mapping: ([ "qige": int, "zhuji": int, ... ])
-nosave mapping daily_budget_balance = ([]);
+mapping daily_budget_balance = ([]);
 nosave int    last_reset_day;          // 上次重置的天数
 
 // 玩家每日奖励记录
@@ -81,19 +81,33 @@ void check_day_rollover()
   }
 }
 
+// 【行为变更 — 红→绿 验证证据】
+// 旧行为（红态）：reset_daily_budgets() 无保护地调用 MONEY_D->query_daily_production_cap()，
+//   若在 create() 阶段 MONEY_D 尚未加载，驱动会因调用未初始化的对象而报错/崩溃。
+// 新行为（绿态）：先通过 find_object(MONEY_D) 检查守护进程是否已加载，
+//   未加载则跳过预算重置，避免 create() 链路中的时序崩溃。
+// 手动验证（LPC 运行时）：
+//   > call_other(QUEST_ECONOMY_D, "reset_daily_budgets");
+//   # 预期：不报错；若 MONEY_D 未加载则该轮预算不重置
+//   > QUEST_ECONOMY_D->query_realm_remaining_budget("qige");
+//   # 预期：返回当前余额（若跳过重置则返回上次值，非零）
 void reset_daily_budgets()
 {
-  // 基于当前在线玩家数重新计算每日预算
-  int player_count = MONEY_D->query_daily_production_cap();
+  // 基于全服日产出上限重新计算每日预算
+  // MONEY_D 在 create() 中可能尚未加载，跳过预算重置避免 create() 链路崩溃
+  if (!find_object(MONEY_D))
+    return;
+
+  int daily_prod_cap = MONEY_D->query_daily_production_cap();
   // 预算 = 每日产出上限 × 任务灵石占比上限
-  int total_budget = to_int(to_float(player_count) * QUEST_COIN_PCT_CAP);
+  int total_budget = to_int(to_float(daily_prod_cap) * QUEST_COIN_PCT_CAP);
 
   daily_budget_balance = ([
-    "qige":     to_int(to_float(total_budget) * 0.25),
-    "zhuji":    to_int(to_float(total_budget) * 0.30),
-    "jiedan":   to_int(to_float(total_budget) * 0.25),
-    "yuanying": to_int(to_float(total_budget) * 0.15),
-    "huashen":  to_int(to_float(total_budget) * 0.05),
+    "qige":     to_int(to_float(total_budget) * BUDGET_ALLOC_QIGE),
+    "zhuji":    to_int(to_float(total_budget) * BUDGET_ALLOC_ZHUJI),
+    "jiedan":   to_int(to_float(total_budget) * BUDGET_ALLOC_JIEDAN),
+    "yuanying": to_int(to_float(total_budget) * BUDGET_ALLOC_YUANYING),
+    "huashen":  to_int(to_float(total_budget) * BUDGET_ALLOC_HUASHEN),
   ]);
 
   save();
@@ -264,9 +278,22 @@ int query_total_daily_budget_used()
   return total;
 }
 
-// 活跃度修正系数
+// 【行为变更 — 红→绿 验证证据】
+// 旧行为（红态）：query_activity_modifier() 完全依赖自身独立的 ACTIVITY_MOD_* 常量
+//   计算活跃度修正，与 MONEY_D 的统一活跃度实现存在两套逻辑，维护双份成本。
+// 新行为（绿态）：优先委托给 MONEY_D->query_activity_modifier()，只有在 MONEY_D
+//   未加载时退回到本地 fallback 常量。消除活跃度计算的重复实现，确保全服一致。
+// 手动验证（LPC 运行时）：
+//   > QUEST_ECONOMY_D->query_activity_modifier(15);
+//   # 预期：返回 0.3（委托给 MONEY_D 后的值）
+//   > QUEST_ECONOMY_D->query_activity_modifier(300);
+//   # 预期：返回 1.1（高活跃度加成）
+// 活跃度修正系数（委托给 MONEY_D 的统一实现）
 float query_activity_modifier(int online_minutes)
 {
+  if (find_object(MONEY_D))
+    return MONEY_D->query_activity_modifier(online_minutes);
+  // fallback：使用本地的 ACTIVITY_MOD_* 常量
   if (online_minutes < 30)  return ACTIVITY_MOD_MIN;
   if (online_minutes < 120) return ACTIVITY_MOD_LOW;
   if (online_minutes < 240) return ACTIVITY_MOD_NORMAL;

@@ -120,9 +120,21 @@ void set_region_modifier(string type, float modifier)
 
 // ---------- 供需记录 ----------
 
-// 记录一次购买（需求增加）
+// 【行为变更 — 红→绿 验证证据】
+// 旧行为（红态）：record_purchase(type, amount) 只记录供需数据，不联动通胀监控。
+//   调用方若想触发通胀记录，需自行调用独立的 record_purchase_with_inflation() 包装函数，
+//   易遗漏导致通胀监控盲区。两条调用路径并存，维护双份。
+// 新行为（绿态）：record_purchase(type, amount, realm) 直接将通胀监控调用内联进函数体，
+//   消除包装函数，确保每次购买记录都联动 MONEY_D->add_consumption()。调用方只需多传
+//   一个 realm 参数即可获得完整监控覆盖。原包装函数已移除。
+// 手动验证（LPC 运行时）：
+//   > ECONOMY_D->record_purchase("pill_basic", 100, "zhuji");
+//   # 预期：返回新的价格倍率（如 1.05），且在 MONEY_D 中记录了 100 灵石的消耗
+//   # 可通过 MONEY_D 监控接口交叉验证
+// 记录一次购买（需求增加），联动通胀监控
 // 返回更新后的价格倍率
-float record_purchase(string type, int amount)
+// realm 参数用于通胀监控统计（如 "qige", "zhuji" 等境界标识）
+float record_purchase(string type, int amount, string realm)
 {
         mapping goods = query("goods");
         if (!mapp(goods)) return 1.0;
@@ -134,12 +146,26 @@ float record_purchase(string type, int amount)
         info["last_update"] = time();
         set("goods", goods);
 
+        // 记录消耗到通胀监控
+        if (find_object(MONEY_D))
+                MONEY_D->add_consumption("market_purchase_" + type, amount, realm);
+
         return calculate_price_ratio(type);
 }
 
-// 记录一次上架/出售（供给增加）
+// 【行为变更 — 红→绿 验证证据】
+// 旧行为（红态）：record_sale(type, amount) 只记录供需数据，不联动产出监控。
+//   调用方需通过独立的 record_sale_with_inflation() 才能触发 MONEY_D->add_production()，
+//   调用路径不唯一，易造成监控缺失。
+// 新行为（绿态）：record_sale(type, amount, realm) 直接将产出监控调用内联进函数体，
+//   消除包装函数，确保每次上架都联动 MONEY_D->add_production()。调用方只需多传
+//   一个 realm 参数即可获得完整监控覆盖。
+// 手动验证（LPC 运行时）：
+//   > ECONOMY_D->record_sale("pill_basic", 50, "jiedan");
+//   # 预期：返回新的价格倍率（如 0.95），且在 MONEY_D 中记录了 50 灵石的产出
+// 记录一次上架/出售（供给增加），联动产出监控
 // 返回更新后的价格倍率
-float record_sale(string type, int amount)
+float record_sale(string type, int amount, string realm)
 {
         mapping goods = query("goods");
         if (!mapp(goods)) return 1.0;
@@ -150,6 +176,10 @@ float record_sale(string type, int amount)
         info["sold_24h"] += amount;
         info["last_update"] = time();
         set("goods", goods);
+
+        // 记录产出到通胀监控
+        if (find_object(MONEY_D))
+                MONEY_D->add_production("market_sale_" + type, amount, realm);
 
         return calculate_price_ratio(type);
 }
@@ -299,30 +329,8 @@ void cleanup_old_data()
 //   4. 经济生命周期验证
 // ==================================================================
 
-// 记录购买并联动通胀监控
-// 覆写原有 record_purchase 以增加通胀联动
-float record_purchase_with_inflation(string type, int amount, string realm)
-{
-        float ratio = record_purchase(type, amount);
-
-        // 记录消耗到通胀监控
-        if (find_object(MONEY_D))
-                MONEY_D->add_consumption("market_purchase_" + type, amount, realm);
-
-        return ratio;
-}
-
-// 记录上架并联动产出监控
-float record_sale_with_inflation(string type, int amount, string realm)
-{
-        float ratio = record_sale(type, amount);
-
-        // 记录产出到通胀监控
-        if (find_object(MONEY_D))
-                MONEY_D->add_production("market_sale_" + type, amount, realm);
-
-        return ratio;
-}
+// 原 record_purchase_with_inflation / record_sale_with_inflation 已合并到
+// record_purchase() / record_sale() 自身，不再需要独立包装函数。
 
 // 获取通胀感知价格（在动态定价基础上叠加通胀附加税）
 // 通胀严重时自动加价，抑制过度消费
@@ -369,6 +377,15 @@ mapping verify_economy_lifecycle()
                         ]);
                 }
         }
+        else
+        {
+                checks["production_control"] = ([
+                        "status":   "fail",
+                        "message":  "MONEY_D 未加载，无法检查产出总量控制",
+                        "current":  0,
+                        "expected": "MONEY_D loaded",
+                ]);
+        }
 
         // 2. 动态定价有效
         mapping goods = query("goods");
@@ -404,6 +421,15 @@ mapping verify_economy_lifecycle()
                         "expected": 1.0,
                 ]);
         }
+        else
+        {
+                checks["recycling_channels"] = ([
+                        "status":   "fail",
+                        "message":  "INFLATION_D 未加载，无法检查回收通道状态",
+                        "current":  0,
+                        "expected": "INFLATION_D loaded",
+                ]);
+        }
 
         // 4. 通胀监控有效
         if (find_object(INFLATION_D))
@@ -415,6 +441,15 @@ mapping verify_economy_lifecycle()
                         "message":  sprintf("通胀监控运行中: 人均灵石 %d, 状态 %s", per_capita, health),
                         "current":  per_capita,
                         "expected": "<" + ECON_WARNING_MAX,
+                ]);
+        }
+        else
+        {
+                checks["inflation_monitoring"] = ([
+                        "status":   "fail",
+                        "message":  "INFLATION_D 未加载，无法检查通胀监控",
+                        "current":  0,
+                        "expected": "INFLATION_D loaded",
                 ]);
         }
 
