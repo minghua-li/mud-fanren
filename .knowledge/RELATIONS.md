@@ -63,6 +63,12 @@ WORLD_DESIGN -> QUESTS : 界面结构（人界→灵界→仙界）决定了任�
 1A-游戏要素总览 -> 1F-法术剑诀阵法战斗 : 引用战斗系统详细设计
 1A-游戏要素总览 -> 1G-任务副本奇遇 : 引用任务系统详细设计
 
+## 突破失败惩罚关联
+
+realm-breakthrough-failure-penalty -> CULTIVATION_SYSTEM : 突破失败惩罚是修炼体系的核心子机制，基于 CULTIVATION_SYSTEM 的境界划分设计
+realm-breakthrough-failure-penalty -> 1C-修仙境界功法 : 回退比例的具体数值基于 1C 的境界经验曲线和瓶颈概率模型设计
+realm-breakthrough-failure-penalty -> 02-灵根养成与突破 : 道痕裂伤系统与灵根强度/品质联动，同属修炼体系的数值框架
+
 ## 扩充内容关联（02-系列）
 
 02-经济与资源 -> items/1E-法宝丹药经济 : 基于法宝/丹药的数值框架，合理扩充灵石经济循环、市场物价、日常收支模型
