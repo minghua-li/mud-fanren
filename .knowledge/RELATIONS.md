@@ -147,3 +147,8 @@ teleport-network  ->  1D-门派种族声望 : NPC sect 属性与门派 ID 对齐
 llm-sidecar -> realm-storage-convention : LLM_D grounding 采集境界走 ROOT_REFINE_D->query_player_realm，读的是 realm 存储约定格式
 llm-sidecar -> 1C-修仙境界功法 : grounding 的 realm 字段给 LLM 提供境界上下文，境界体系见 1C 数值框架
 llm-sidecar -> sects/README : grounding 的 objects/房间信息来自九宗驻地房间（#58/#67 建图）
+sect-quest-system -> 1G-任务副本奇遇 : 宗门任务链是 1G 任务体系在九宗内的落地子集（支线/势力任务类型）
+sect-quest-system -> 02-任务链与奖励曲线 : 奖励四渠道与活跃度梯度（连续递增/断档衰减）按 02 设计实现
+sect-quest-system -> sects/README : 9 宗任务链与事件按九宗档案「宗门事件与任务链」节逐宗取材
+sect-quest-system -> teleport-network : 驻地场景挂接（sect_areas）依赖 #58 九宗驻地目录落地
+sect-quest-system -> 1D-门派种族声望 : 事件/任务声望奖励走 REPUTATION_D（含正魔互斥）

@@ -91,7 +91,7 @@ void init_teleport_nodes()
         TP_FIELD_UNLOCK_QUEST : 0,
         TP_FIELD_UNLOCK_ITEM  : 0,
         TP_FIELD_UNLOCK_REPUT : 0,
-        TP_FIELD_DEST      : ({ TP_NODE_YUE_SECTS, TP_NODE_TAI_NAN, TP_NODE_JIA_YUAN }),
+        TP_FIELD_DEST      : ({ TP_NODE_YUE_SECTS, TP_NODE_TAI_NAN, TP_NODE_JIA_YUAN, TP_NODE_QING_NIU }),
         TP_FIELD_GROUP     : "越国",
         TP_FIELD_DESC      : "镜州江湖的传送阵，连接越国各主要区域。",
     ]));
@@ -109,7 +109,7 @@ void init_teleport_nodes()
         TP_FIELD_UNLOCK_QUEST : 0,
         TP_FIELD_UNLOCK_ITEM  : 0,
         TP_FIELD_UNLOCK_REPUT : 0,
-        TP_FIELD_DEST      : ({ TP_NODE_MIRROR_LAKE, TP_NODE_TAI_NAN, TP_NODE_HUANGFENG, TP_NODE_JIA_YUAN, TP_NODE_TIANLUO_SECTS }),
+        TP_FIELD_DEST      : ({ TP_NODE_MIRROR_LAKE, TP_NODE_TAI_NAN, TP_NODE_HUANGFENG, TP_NODE_JIA_YUAN, TP_NODE_QING_NIU, TP_NODE_TIANLUO_SECTS }),
         TP_FIELD_GROUP     : "越国",
         TP_FIELD_DESC      : "越国七派共建的传送网络，各派弟子可便捷往来，亦可通魔道天罗国。",
     ]));
@@ -119,7 +119,7 @@ void init_teleport_nodes()
         TP_FIELD_ID        : TP_NODE_TAI_NAN,
         TP_FIELD_NAME      : "太南谷传送阵",
         TP_FIELD_LEVEL     : TP_LV1_REGION,
-        TP_FIELD_ROOM      : "/d/wudang/wdroad9",     // 示例路径
+        TP_FIELD_ROOM      : "/d/yueguo/tainan/fangshi",  // 太南谷坊市（#67 落地）
         TP_FIELD_STATUS    : TP_STATUS_ACTIVE,
         TP_FIELD_COST_BASE : TP_BASE_INTERCITY,
         TP_FIELD_DIST_COEFF : TP_DIST_NEARBY,
@@ -127,7 +127,7 @@ void init_teleport_nodes()
         TP_FIELD_UNLOCK_QUEST : 0,
         TP_FIELD_UNLOCK_ITEM  : 0,
         TP_FIELD_UNLOCK_REPUT : 0,
-        TP_FIELD_DEST      : ({ TP_NODE_MIRROR_LAKE, TP_NODE_YUE_SECTS, TP_NODE_HUANGFENG }),
+        TP_FIELD_DEST      : ({ TP_NODE_MIRROR_LAKE, TP_NODE_YUE_SECTS, TP_NODE_HUANGFENG, TP_NODE_QING_NIU }),
         TP_FIELD_GROUP     : "越国",
         TP_FIELD_DESC      : "太南谷坊市的传送阵，散修聚集之地，四通八达。",
     ]));
@@ -155,7 +155,7 @@ void init_teleport_nodes()
         TP_FIELD_ID        : TP_NODE_JIA_YUAN,
         TP_FIELD_NAME      : "嘉元城传送阵",
         TP_FIELD_LEVEL     : TP_LV1_REGION,
-        TP_FIELD_ROOM      : "/d/xinyang/kezhan",     // 示例路径
+        TP_FIELD_ROOM      : "/d/yueguo/jiayuan/dajie",  // 嘉元城大街（#67 落地）
         TP_FIELD_STATUS    : TP_STATUS_ACTIVE,
         TP_FIELD_COST_BASE : TP_BASE_INTERCITY,
         TP_FIELD_DIST_COEFF : TP_DIST_NEARBY,
@@ -163,9 +163,27 @@ void init_teleport_nodes()
         TP_FIELD_UNLOCK_QUEST : 0,
         TP_FIELD_UNLOCK_ITEM  : 0,
         TP_FIELD_UNLOCK_REPUT : 0,
-        TP_FIELD_DEST      : ({ TP_NODE_MIRROR_LAKE, TP_NODE_YUE_SECTS }),
+        TP_FIELD_DEST      : ({ TP_NODE_MIRROR_LAKE, TP_NODE_YUE_SECTS, TP_NODE_QING_NIU }),
         TP_FIELD_GROUP     : "越国",
         TP_FIELD_DESC      : "嘉元城的传送阵，连接镜州江湖与越国各派。",
+    ]));
+
+    // 青牛镇（镜州出生地）
+    register_node(([
+        TP_FIELD_ID        : TP_NODE_QING_NIU,
+        TP_FIELD_NAME      : "青牛镇传送阵",
+        TP_FIELD_LEVEL     : TP_LV1_REGION,
+        TP_FIELD_ROOM      : "/d/yueguo/qingniu/zhenkou",  // 青牛镇镇口（#67 落地）
+        TP_FIELD_STATUS    : TP_STATUS_ACTIVE,
+        TP_FIELD_COST_BASE : TP_BASE_INTERCITY,
+        TP_FIELD_DIST_COEFF : TP_DIST_NEARBY,
+        TP_FIELD_REALM_MIN : TP_REALM_MORTAL,       // 新手出村即可使用
+        TP_FIELD_UNLOCK_QUEST : 0,
+        TP_FIELD_UNLOCK_ITEM  : 0,
+        TP_FIELD_UNLOCK_REPUT : 0,
+        TP_FIELD_DEST      : ({ TP_NODE_MIRROR_LAKE, TP_NODE_YUE_SECTS, TP_NODE_TAI_NAN, TP_NODE_HUANGFENG, TP_NODE_JIA_YUAN }),
+        TP_FIELD_GROUP     : "越国",
+        TP_FIELD_DESC      : "青牛镇口的传送阵，镜州出生地的门户，可通越国各派、太南谷与嘉元城。",
     ]));
 
     // 天罗国魔道两宗（鬼灵门/御灵宗驻地，见 d/tianluo/）

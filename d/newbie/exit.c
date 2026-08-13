@@ -60,8 +60,8 @@ int do_leave()
         object me;
         me = this_player();
 
-	me->move("/d/city/kedian");
-	me->set("startroom","/d/city/kedian");
+	me->move("/d/yueguo/qingniu/zhenkou");
+	me->set("startroom","/d/yueguo/qingniu/zhenkou");
 	me->set("xuetang",1);
         message("vision",
                         me->name() + "不知道从哪里冒出来的，吓了你一跳。\n",
