@@ -35,6 +35,26 @@ void create()
                 "李化元说道：三阳之体修真阳诀，火属性体质如鱼得水，你可莫要选错了路。\n",
                 "李化元笑道：我黄枫谷弟子，剑法丹药皆有所长，天下大可去得。\n"
         }));
+        // —— 传功（#72）：本门功法 + 基本武学，供本门弟子 learn 请教 ——
+        set_skill("force", 200);
+        set_skill("dodge", 200);
+        set_skill("parry", 200);
+        set_skill("sword", 200);
+        set_skill("changchun-gong", 200);
+        set_skill("qingyuan-jianjue", 200);
+        set_skill("zhenyang-jue", 200);
+        set_skill("xuanbing-jue", 200);
+        set_skill("guiyuan-gong", 200);
+        set_skill("huanling-jue", 200);
+        set_skill("ningyuan-gong", 200);
         setup();
         carry_object("/clone/misc/cloth")->wear();
+}
+
+// 传功：仅黄枫谷弟子可请教（learn 命令），外人不得偷学本门功法
+int recognize_apprentice(object ob)
+{
+        if (SECT_D->query_player_sect(ob) != "huangfeng_valley")
+                return 0;
+        return 1;
 }

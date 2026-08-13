@@ -34,6 +34,22 @@ void create()
         set("chat_msg", ({
                 "络腮胡子弟子咧嘴一笑：我这灵兽袋里养的宝贝，血禁试炼中不知放翻了多少人。\n"
         }));
+        // —— 传功（#72）：本门功法 + 基本武学，供本门弟子 learn 请教 ——
+        set_skill("force", 100);
+        set_skill("dodge", 100);
+        set_skill("parry", 100);
+        set_skill("unarmed", 100);
+        set_skill("yushou-shu", 100);
+        set_skill("yichong-shu", 100);
+        set_skill("kuilei-shu", 100);
         setup();
         carry_object("/clone/misc/cloth")->wear();
+}
+
+// 传功：仅灵兽山弟子可请教（learn 命令），外人不得偷学本门功法
+int recognize_apprentice(object ob)
+{
+        if (SECT_D->query_player_sect(ob) != "lingshou_mountain")
+                return 0;
+        return 1;
 }
