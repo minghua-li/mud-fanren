@@ -34,6 +34,21 @@ void create()
         set("chat_msg", ({
                 "寒天涯怪笑道：嘿，你这小辈，可敢与我比划比划？我行事向来乖戾，可莫要惹我。\n"
         }));
+        // —— 传功（#72）：本门功法 + 基本武学，供本门弟子 learn 请教 ——
+        set_skill("force", 100);
+        set_skill("dodge", 100);
+        set_skill("parry", 100);
+        set_skill("blade", 100);
+        set_skill("daofa-chuancheng", 100);
+        set_skill("lianqi-shu", 100);
         setup();
         carry_object("/clone/misc/cloth")->wear();
+}
+
+// 传功：仅化刀坞弟子可请教（learn 命令），外人不得偷学本门功法
+int recognize_apprentice(object ob)
+{
+        if (SECT_D->query_player_sect(ob) != "huadao_dock")
+                return 0;
+        return 1;
 }

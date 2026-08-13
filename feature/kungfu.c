@@ -552,12 +552,28 @@ int valid_xiulian(object me, string skill)
     "百姓":({"taiyi-shengong"}),
     "侠客岛":({"xiake-shengong"}),
     "公共武学":({"jiuyin-shengong","chuforce","xixing-dafa"}) ]);
-    string fname,sname1,sname2,sname3;
+    string fname,sname1,sname2,sname3,sect_id;
+    string *sect_skills;
     int expm, outpar;
 
     if ( time()-me->query("wrong_status")<0 )
   {
     tell_object(me, "你体力真气混乱，短时间内无法再修炼内功。\n");
+    return -1;
+  }
+
+  // —— 修仙九宗（#57 门派系统）：门派信息存 sect/id，北侠 family 表不含九宗 ——
+  // 九宗弟子只能修炼本门 force 类功法（xiulian）；本门功法清单动态取自
+  // SECT_D->query_sect_skills（DRY：不复制门派→内功映射表），force 槽过滤
+  // 保证只有内功可修炼。sect 是本门派权威来源，优先于北侠 family 判断。
+  sect_id = SECT_D->query_player_sect(me);
+  if ( stringp(sect_id) )
+  {
+    sect_skills = SECT_D->query_sect_skills(sect_id);
+    if ( member_array(skill, sect_skills) >= 0 &&
+         SKILL_D(skill)->valid_enable("force") )
+      return 0;
+    tell_object(me, "只能修炼本门内功或者公共内功，要么你功夫未到，不能兼修其他门派内功。\n");
     return -1;
   }
 

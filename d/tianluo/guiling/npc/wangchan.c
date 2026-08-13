@@ -34,6 +34,24 @@ void create()
         set("chat_msg", ({
                 "王蝉傲然道：血灵大法需天灵根与暗灵根双修，我的暗灵根，正等着那位天灵根的道侣。\n"
         }));
+        // —— 传功（#72）：本门功法 + 基本武学，供本门弟子 learn 请教 ——
+        set_skill("force", 150);
+        set_skill("dodge", 150);
+        set_skill("parry", 150);
+        set_skill("unarmed", 150);
+        set_skill("guidao-gongfa", 150);
+        set_skill("dushu", 150);
+        set_skill("anshu", 150);
+        set_skill("lianshi-shu", 150);
+        set_skill("xueling-dafa", 150);
         setup();
         carry_object("/clone/misc/cloth")->wear();
+}
+
+// 传功：仅鬼灵门弟子可请教（learn 命令），外人不得偷学本门功法
+int recognize_apprentice(object ob)
+{
+        if (SECT_D->query_player_sect(ob) != "guiling_sect")
+                return 0;
+        return 1;
 }
