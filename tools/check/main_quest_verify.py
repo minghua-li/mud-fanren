@@ -359,18 +359,23 @@ def run_chain(player, chain, start_realm=None):
 # 主流程
 # ──────────────────────────────────────────────
 
-def main():
-    src = open(MQ_D, encoding="utf-8").read()
+def run_all(src, label="真实交付"):
+    """对给定 main_quest_d.c 源码文本跑全部断言（静态+行为+守卫+突变）。
+
+    突变段对改坏后的源码文本重跑全部断言，验证对应断言转红（证明非恒真）。
+    不做任何文件写入：改坏在内存中的文本副本上进行，工作树零污染。
+    """
+    global PASS, FAIL, CHECKS, QUEST_DEFS
+    PASS, FAIL, CHECKS = 0, 0, []
+
     chains = extract_chain_defs(src)
     all_ids = sorted(set(chains["chain_main_0"]) | set(chains["chain_main_1"]))
+    QUEST_DEFS = {}
     for qid in all_ids:
         t = parse_quest(src, qid)
-        if t:
-            QUEST_DEFS[qid] = t
-        else:
-            QUEST_DEFS[qid] = None  # 定义缺失（突变检测：静态校验会红）
+        QUEST_DEFS[qid] = t if t else None  # 定义缺失（突变检测：静态校验会红）
 
-    print("== [1] 静态校验 ==")
+    print(f"== [{label}] [1] 静态校验 ==")
 
     # 1.1 任务定义齐全
     expect = set(CHAIN_0 + CHAIN_1)
@@ -439,9 +444,6 @@ def main():
         if t is None:
             continue
         blk = t.get("rewards_blk", "")
-        for key in ("exp", "coin", "reputation", "contribution", "items", "skills"):
-            # 只校验出现过的键值形态
-            pass
         # 检查有至少一个 exp/coin 之一
         if "exp" not in blk and "coin" not in blk:
             bad_reward.append((qid, "no exp/coin"))
@@ -467,7 +469,20 @@ def main():
                        for t in QUEST_DEFS.values())
     check("全部任务 type=QUEST_TYPE_MAIN", main_type_ok)
 
-    print(f"\n== [2] 行为模拟 ==")
+    # 1.10 键一致性守卫（#65 审查第 1 轮 F1）：任务模板必须写 description 键、
+    #     query_progress 必须读 description 键（旧实现遗留读 desc 曾导致进度面板描述丢失）
+    desc_def_ok = all(t is not None and t["description"] for t in QUEST_DEFS.values())
+    check("守卫 任务模板均含 description 键", desc_def_ok)
+    # 模板不允许出现 desc 键（防新旧键混用）
+    desc_key_absent = not re.search(r'"desc"\s*:', src)
+    check("守卫 模板无 desc 键", desc_key_absent)
+    # query_progress 读 description 而非 desc
+    reads_description = ('node_data["description"]' in src)
+    reads_legacy_desc = re.search(r'node_data\["desc"\]', src) is None
+    check("守卫 query_progress 读 description 键", reads_description)
+    check("守卫 query_progress 无 desc 残留", reads_legacy_desc)
+
+    print(f"\n== [{label}] [2] 行为模拟 ==")
 
     # 场景1：新玩家（炼气 index=0）走完第零章 4 节点
     p = MockPlayer(realm_idx=0)
@@ -537,7 +552,7 @@ def main():
     check("场景5 第一章链 13 节点全部完成",
           set(c2.keys()) == set(all_ids), str(sorted(c2.keys())))
 
-    print(f"\n== [3] LPC 原文守卫 + 突变 ==")
+    print(f"\n== [{label}] [3] LPC 原文守卫 ==")
 
     # 3.1 complete_node 调 complete_quest（结算走框架）
     guard_ok = ("QUEST_CHAIN_D->complete_quest(player, node_id)" in src)
@@ -553,17 +568,91 @@ def main():
     guard_ok3 = ("QUEST_CHAIN_D->is_quest_available(qids[i], player)" in src)
     check("守卫 境界门槛经 is_quest_available", guard_ok3)
 
-    # 3.4 突变验证：改坏一个房间路径 → 静态断言红
-    if missing_rooms_simulate():
-        check("突变 改坏房间路径→红", False, "突变应触发红但未触发")
-    else:
-        check("突变 模拟改坏房间路径可检测", True)
+    # 3.4-3.6 真实突变验证（#65 审查第 1 轮 F2 修订）：
+    # 对改坏后的 LPC 原文文本重跑静态+场景断言，验证对应断言转红——证明脚本非恒真。
+    # 注意：改写在内存文本上进行，不写文件、不污染工作树。
+    print(f"\n== [{label}] [4] 真实突变（改坏原文文本→重跑→验证转红） ==")
+    mutation_cases = [
+        ("改坏 mq_0_1 目标房间路径",
+         src.replace('"target": "/d/yueguo/qingniu/zhenkou"',
+                     '"target": "/d/yueguo/qingniu/NONEXIST"', 1),
+         "目标房间文件全部存在"),
+        ("删除 mq_1_13 任务定义",
+         src.replace('"id": "mq_1_13"', '"id": "mq_1_13_del"', 1),
+         "17 个主线任务定义齐全"),
+        ("放宽 mq_1_7 境界门槛 {1,2}→{0,1}",
+         src.replace('"name": "百药园看守", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,\n        "realm_range": ({ 1, 2 }),',
+                     '"name": "百药园看守", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,\n        "realm_range": ({ 0, 1 }),', 1),
+         "场景3 炼气玩家接 mq_1_7 被境界拦截"),
+    ]
+    for mname, mutated_src, expect_fail in mutation_cases:
+        if mutated_src == src:
+            check(f"突变 [{mname}]: 改坏文本构造成功", False, "替换未生效（模式不匹配）")
+            continue
+        failed = _run_mut(mutated_src)
+        if expect_fail in failed:
+            check(f"突变 [{mname}]: 断言「{expect_fail}」转红（非恒真证明）", True)
+        else:
+            check(f"突变 [{mname}]: 断言「{expect_fail}」应转红但未转红",
+                  False, f"实际失败集: {failed}")
 
-    # 3.5 突变验证：删除一个任务定义 → 定义齐全断言红
-    if delete_quest_simulate():
-        check("突变 删任务定义→红", False, "突变应触发红但未触发")
-    else:
-        check("突变 模拟删任务定义可检测", True)
+    return PASS, FAIL
+
+
+def _run_mut(mutated_src):
+    """对改坏文本重跑静态+场景断言，返回失败断言名列表（独立统计，不碰主流程计数）。"""
+    chains = extract_chain_defs(mutated_src)
+    all_ids = sorted(set(chains["chain_main_0"]) | set(chains["chain_main_1"]))
+    defs = {}
+    for qid in all_ids:
+        t = parse_quest(mutated_src, qid)
+        defs[qid] = t if t else None
+
+    failed = []
+    def mcheck(name, cond):
+        if not cond:
+            failed.append(name)
+
+    # 静态
+    defined = set(q for q, t in defs.items() if t is not None)
+    mcheck("17 个主线任务定义齐全", defined == set(CHAIN_0 + CHAIN_1))
+    missing_rooms = []
+    for qid in all_ids:
+        t = defs[qid]
+        if t is None:
+            continue
+        for otype, target in t["obj_list"]:
+            if otype in ("OBJ_REACH", "OBJ_TALK"):
+                rel = target.lstrip("/") + ".c"
+                if not os.path.exists(os.path.join(ROOT, rel)):
+                    missing_rooms.append((qid, target))
+    mcheck("目标房间文件全部存在", not missing_rooms)
+    bad_range = [(q, t["realm_range"]) for q, t in defs.items()
+                 if t is not None
+                 and (not t["realm_range"] or t["realm_range"][0] > t["realm_range"][1]
+                      or t["realm_range"][0] < 0 or t["realm_range"][1] > 7)]
+    mcheck("realm_range 全部合法 (0~7, min<=max)", not bad_range)
+    mcheck("任务模板均含 description 键",
+           all(t is not None and t["description"] for t in defs.values()))
+
+    # 场景3 境界门槛（改坏放宽后：炼气玩家应能接 mq_1_7 → 原拦截断言转红）
+    saved_defs, saved_chains = globals().get("QUEST_DEFS"), globals().get("CHAIN_DEFS")
+    globals()["QUEST_DEFS"] = defs
+    try:
+        p = MockPlayer(realm_idx=0)
+        p.set_location("/d/yueguo/qingniu/zhenkou")
+        run_chain(p, CHAIN_0)
+        run_chain(p, CHAIN_1[:6])
+        blocked = assign_quest("mq_1_7", p)
+        mcheck("场景3 炼气玩家接 mq_1_7 被境界拦截", not blocked)
+    finally:
+        globals()["QUEST_DEFS"] = saved_defs
+    return failed
+
+
+def main():
+    src = open(MQ_D, encoding="utf-8").read()
+    run_all(src)
 
     print(f"\n结果: PASS={PASS} FAIL={FAIL}")
     if FAIL:
@@ -573,23 +662,6 @@ def main():
         sys.exit(1)
     print("RESULT: OK #65 主线任务内容填充（第零章+第一章越国篇）静态验收全部通过")
     sys.exit(0)
-
-
-def missing_rooms_simulate():
-    """模拟突变：把一个任务的目标房间改成不存在路径，验证静态检查能捕获。"""
-    fake = []
-    for qid in list(QUEST_DEFS.keys())[:1]:
-        for otype, target in QUEST_DEFS[qid]["obj_list"]:
-            if otype in ("OBJ_REACH", "OBJ_TALK"):
-                rel = ("/d/nonexistent/" + qid + ".c").lstrip("/")
-                if not os.path.exists(os.path.join(ROOT, rel)):
-                    fake.append(True)
-    return not fake  # 若 fake 空说明检测失败
-
-
-def delete_quest_simulate():
-    """模拟突变：删除一个任务定义后，定义齐全检查应失败。"""
-    return len(QUEST_DEFS.keys()) != 17
 
 
 if __name__ == "__main__":

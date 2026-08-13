@@ -20,7 +20,7 @@
 ## 二、任务模板字段约定（主线特有）
 
 - `chapter`：所属章节（complete_node 用它做章节完成检测）。
-- `realm_range`：境界门槛（quest_chain 索引 0 炼气 1 筑基 2 结丹 3 元婴…）。第零章/第一章炼气段 `({0,1})`、筑基段 `({1,2})`、结丹段 `({2,3})`——**max 放宽一格**防止高境界玩家回流主线被卡（主线串行不回补，境界超了也要能做完）。
+- `realm_range`：境界门槛（quest_chain 索引 0 炼气 1 筑基 2 结丹 3 元婴…）。第零章/第一章炼气段 `({0,1})`、筑基段 `({1,2})`、结丹段 `({2,3})`——**max 比 min 宽一个大境界**（如筑基段任务允许结丹玩家回流做，`max=2`），用于吸收小幅超境界回流。**max 不能无限放宽**：`quest_chain_d.calc_realm_reward_scale` 用 `quest_mid=(min+max)/2` 做奖励缩放中点，max 放到 7 会让 mid 漂到化神，正常推进的筑基玩家（realm 1 < mid）触发 0.4 倍奖励惩罚——奖励曲线塌掉。极端超境界回流（元婴回头做第一章筑基任务）会被 max 拦截，属已知边缘（主线 2.5× 是最大经验源，正常玩家不会出现），后续若需支持需先改框架奖励缩放。
 - `prerequisites.quests`：显式前置任务（与串行链顺序双保险；is_quest_available 只认 completed 表）。
 - `objectives`：`OBJ_REACH` 目标=真实房间路径（#67/#58 场景挂接），提交时按 `base_name(environment(player))` 前缀匹配判定。
 - 奖励走 `grant_quest_rewards` 六渠道（同 #59）：exp/coin/reputation/contribution/items/skills。

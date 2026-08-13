@@ -234,7 +234,6 @@ nosave mapping quest_chapters = ([
     CHAPTER_MORTAL: ([
         "chapter": CHAPTER_MORTAL, "name": CHAPTER_0_NAME,
         "chain_id": "chain_main_0",
-        "chapter":     CHAPTER_MORTAL,
         "realm_min": 0, "prereq_chapter": -1,
         "chapter_reward": ([ "exp": CHAPTER_0_BASE * CHAPTER_MULTIPLIER,
                              "coin": CHAPTER_0_BASE / 2,
@@ -244,7 +243,6 @@ nosave mapping quest_chapters = ([
     CHAPTER_YUE: ([
         "chapter": CHAPTER_YUE, "name": CHAPTER_1_NAME,
         "chain_id": "chain_main_1",
-        "chapter":     CHAPTER_YUE,
         "realm_min": 0, "prereq_chapter": CHAPTER_MORTAL,
         "chapter_reward": ([ "exp": CHAPTER_1_BASE * CHAPTER_MULTIPLIER,
                              "coin": CHAPTER_1_BASE / 2,
@@ -425,7 +423,7 @@ string query_progress(object player)
     {
         node_data = quest_defs[node_id];
         output += sprintf("当前任务：" HIW "%s" NOR "\n", node_data["name"]);
-        output += sprintf("任务说明：%s\n", node_data["desc"]);
+        output += sprintf("任务说明：%s\n", node_data["description"]);
         output += sprintf("任务奖励：经验 %d  灵石 %d\n",
                    node_data["rewards"]["exp"],
                    node_data["rewards"]["coin"]);
@@ -439,7 +437,7 @@ string query_progress(object player)
         {
             node_data = quest_defs[next];
             output += sprintf("可接任务：" HIW "%s" NOR "\n", node_data["name"]);
-            output += sprintf("任务说明：%s\n", node_data["desc"]);
+            output += sprintf("任务说明：%s\n", node_data["description"]);
             output += sprintf("奖励：经验 %d  灵石 %d\n",
                        node_data["rewards"]["exp"],
                        node_data["rewards"]["coin"]);
