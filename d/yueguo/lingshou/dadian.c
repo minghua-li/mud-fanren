@@ -15,6 +15,8 @@ LONG );
         set("exits", ([
                 "down" : "/d/yueguo/lingshou/shanmen",
                 "north" : "/d/yueguo/lingshou/chuangong",
+                "east" : "/d/yueguo/lingshou/fac/shoulan",
+                "west" : "/d/yueguo/lingshou/fac/chongfang",
         ]));
         set("objects", ([
                 __DIR__"npc/yunlu" : 1,

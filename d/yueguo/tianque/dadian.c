@@ -15,6 +15,7 @@ LONG );
         set("exits", ([
                 "south" : "/d/yueguo/tianque/shanmen",
                 "north" : "/d/yueguo/tianque/chuangong",
+                "west" : "/d/yueguo/tianque/fac/chengbang",
         ]));
         set("objects", ([
                 __DIR__"npc/gaoshou" : 1,

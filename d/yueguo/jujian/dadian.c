@@ -15,6 +15,8 @@ LONG );
         set("exits", ([
                 "down" : "/d/yueguo/jujian/shanmen",
                 "north" : "/d/yueguo/jujian/chuangong",
+                "west" : "/d/yueguo/jujian/fac/jianzhong",
+                "east" : "/d/yueguo/jujian/fac/yanwu",
         ]));
         set("objects", ([
                 __DIR__"npc/wanjia" : 1,

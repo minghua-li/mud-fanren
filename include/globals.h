@@ -261,6 +261,9 @@
 //门派系统（九宗入宗/晋升/功法）
 #define SECT_D                "/adm/daemons/sect_d"
 
+//门派设施系统（通用设施框架+九宗特色设施）
+#define SECT_FACILITY_D       "/adm/daemons/sect_facility_d"
+
 //宗门任务链与宗门事件（九宗档案落地）
 #define SECT_QUEST_D          "/adm/daemons/sect_quest_d"
 

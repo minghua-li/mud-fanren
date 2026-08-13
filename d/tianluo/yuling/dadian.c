@@ -15,6 +15,7 @@ LONG );
         set("exits", ([
                 "south" : "/d/tianluo/yuling/shanmen",
                 "north" : "/d/tianluo/yuling/chuangong",
+                "west" : "/d/tianluo/yuling/fac/wanshouyuan",
         ]));
         set("objects", ([
                 __DIR__"npc/quhun" : 1,

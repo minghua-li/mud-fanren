@@ -16,6 +16,8 @@ LONG );
                 "south" : "/d/yueguo/huangfeng/shanmen",
                 "north" : "/d/yueguo/huangfeng/chuangong",
                 "west" : "/d/yueguo/huangfeng/yuexudian",
+                "east" : "/d/yueguo/huangfeng/fac/baiyaoyuan",
+                "northeast" : "/d/yueguo/huangfeng/fac/fangshi",
         ]));
         set("objects", ([
                 __DIR__"npc/zhonglingdao" : 1,

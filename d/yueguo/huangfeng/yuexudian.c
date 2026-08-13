@@ -12,6 +12,7 @@ void create()
 谷中大部分丹药配方已然失传，仅存的配方皆藏于此，筑基丹主药出自血色禁地，
 是谷内最核心的资源。殿角丹炉之中，偶有青烟袅袅升起。
 LONG );
+        set("sect_facility", "huangfeng_cangjing");
         set("exits", ([
                 "east" : "/d/yueguo/huangfeng/dadian",
         ]));
