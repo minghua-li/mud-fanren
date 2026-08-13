@@ -7,10 +7,11 @@
 - [`combatd-attack-flow`](knowledge/combat/combatd-attack-flow.md) — COMBAT_D 的 do_attack() 通过 ap（攻击力与技能计算）、dp（防御与闪避）、pp（招架）三方判定命中，支持四种攻击类型
 - [`error-handling-crash-logging`](knowledge/architecture/error-handling-crash-logging.md) — master.c 的 log_error() 按文件所有者路由编译/运行时错误到对应巫师家目录，crash() 广播并记录日志到 /log/static/CRASHES
 - [`kungfu-system-overview`](knowledge/skill/kungfu-system-overview.md) — 武功系统在 /kungfu/ 下分 skill/（技能）、class/（门派）、special/（绝招）、condition/（内功心法）、music/（音乐）、profession/（职业）六个模块
+- [`llm-gateway-poc`](knowledge/architecture/llm-gateway-poc.md) — tools/llm/gateway.py 是 Phase 0 外挂 LLM 网关：telnet 连 5555/6666 按端口选 GBK/UTF-8 编码，ai 前缀输入经 LLM 解析、safety.py 分层过滤后回写执行
 - [`master-object-callbacks`](knowledge/architecture/master-object-callbacks.md) — master.c 是驱动入口对象，定义 connect/compile_object/crash/epilog/preload/log_error 等驱动回调，修改后需重启
 - [`player-login-flow`](knowledge/architecture/player-login-flow.md) — 登录流程分 login ob（验证）和 player ob（游戏体）两层，通过 exec() 转移交互连接；数据存于 /data/login/ 和 /data/user/ 按首字母分片
 - [`quest-system`](knowledge/architecture/quest-system.md) — 任务系统在 /quest/ 下按门派/区域分目录组织，标准模式是守护进程（aquest/bquest）加数字后缀，区域级任务直接放在命名目录下
-- [`sect-id-divergence`](knowledge/architecture/sect-id-divergence.md) — 门派 ID 存在设计文档（tianque_fort/huadao_dock/jujian_gate/guiling_sect）与代码 reputation_d.c（tianque_sect/qianyuan_sect 等）两套不一致命名
+- [`sect-id-divergence`](knowledge/architecture/sect-id-divergence.md) — 门派 ID 以 .knowledge/factions/sects/ 九宗档案命名为权威（tianque_fort/guiling_sect 等），reputation_d.c 的 faction_info 已于 2026-08-12 对齐
 - [`simul-efun-global-functions`](knowledge/architecture/simul-efun-global-functions.md) — simul_efun.c 中定义的函数对所有对象全局可见（无需 inherit），包括 message_vision/find_player/wizhood/utf8_to_gb 等核心函数
 - [`spirit-root-system`](knowledge/architecture/spirit-root-system.md) — ROOT_REFINE_D（/adm/daemons/root_refine_d.c）是灵根洗练/品质提升/境界突破/debuff管理的中央守护进程，通过玩家 dbase 属性 spirit_root/* 持久化状态
 
@@ -29,6 +30,8 @@
 - [`message-system-pattern`](knowledge/architecture/message-system-pattern.md) — LPC 消息系统分三级：write() 发给当前玩家、tell_object() 发给指定对象、message_vision() 发给房间所有人（$N 自动替换为玩家名）
 - [`npc-create-pattern`](knowledge/npc/npc-create-pattern.md) — NPC 的 create() 中设置属性后用 setup() 初始化，carry_object(path)->wear() 穿戴装备
 - [`room-create-setup-pattern`](knowledge/room/room-create-setup-pattern.md) — ROOM 的 create() 中必须在 setup() 之前依次调用 set('short', ...)、set('long', ...)、set('exits', ...)、set('objects', ...)
+- [`sect-skill-learning-chain`](knowledge/skill/sect-skill-learning-chain.md) — 九宗功法学习链路=SECT_D->learn_skill 写 sect/learned 习得记录+set_skill 入技能表（kungfu/skill/<id>.c 须先实体化）；任务奖励经
+- [`sect-system`](knowledge/architecture/sect-system.md) — 门派系统由 SECT_D（adm/daemons/sect_d.c）承载，玩家门派数据存 "sect/" 路径，境界门槛用 tier（境界索引*3+小阶段）比较，realm 属性可能未设置需 exp 兜底
 - [`skill-nested-system`](knowledge/skill/skill-nested-system.md) — F_SKILL 支持用 :: 分隔符的子技能（最多 3 层），如 music::gu_qin::gaoshan_liushui，set_skill/query_skill 递归处理嵌套 mapping
 - [`type-check-functions`](knowledge/lpc/type-check-functions.md) — LPC 运行时类型检查用 objectp()/stringp()/mapp()/functionp() 等函数，而非 typeof(x) == 'object'
 - [`varargs-function-pattern`](knowledge/lpc/varargs-function-pattern.md) — LPC 函数用 varargs 关键字声明可选参数，调用时未传的参数为 0，常用于 query()、do_attack() 等核心函数
