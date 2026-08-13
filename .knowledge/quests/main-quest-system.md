@@ -24,6 +24,7 @@
 - `prerequisites.quests`：显式前置任务（与串行链顺序双保险；is_quest_available 只认 completed 表）。
 - `objectives`：`OBJ_REACH` 目标=真实房间路径（#67/#58 场景挂接），提交时按 `base_name(environment(player))` 前缀匹配判定。
 - 奖励走 `grant_quest_rewards` 六渠道（同 #59）：exp/coin/reputation/contribution/items/skills。
+- **剧情入宗（c4，审查第 2 轮修复）**：`complete_node` 完成 `mq_1_6`（拜入黄枫谷）时，若玩家未入任何门派，自动调 `SECT_D->join_sect(player, "huangfeng_valley")`——默认分支（黄枫谷）剧情落地，入宗后贡献/功法奖励（mq_1_7/1_8/1_10/1_11）真实可达。`join_sect` 自带条件校验（炼气三层/已入他派/叛门记录），不满足时拒绝并提示（如炼气 1-2 层完成 mq_1_6 的玩家收到「修为不足」提示，需修炼后手动 `sect join`）；玩家已入他派时不强行改派（尊重分支选择，贡献发到实际门派）。
 
 ## 三、境界门槛与跨章解锁（c3）
 
@@ -48,4 +49,4 @@
 
 ## 六、验证
 
-`python3 tools/check/main_quest_verify.py`：33 断言，三部分（静态：17 任务定义/房间路径/realm_range/前置无环/括号配对；行为模拟：第零章全走→跨章解锁→第一章炼气段→境界门槛拦截→突破后续接→全 17 节点；LPC 原文守卫 + 突变实证：改坏房间路径/删任务定义/放宽境界门槛各转红）。可复跑，供采纳 check 复用（架构师登记时直接 `python3 tools/check/main_quest_verify.py`）。
+`python3 tools/check/main_quest_verify.py`：44 断言，四部分（静态：17 任务定义/房间路径/realm_range/前置无环/括号配对/键一致性守卫；行为模拟：第零章全走→跨章解锁→第一章炼气段→境界门槛拦截→突破后续接→全 17 节点→剧情入宗后贡献/功法可达；LPC 原文守卫；真实突变 4 组：改坏房间路径/删任务定义/放宽境界门槛/删 mq_1_6 入宗接线各转红）。可复跑，供采纳 check 复用（架构师登记时直接 `python3 tools/check/main_quest_verify.py`）。

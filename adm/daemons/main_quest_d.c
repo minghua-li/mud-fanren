@@ -371,6 +371,16 @@ int complete_node(object player, string node_id)
     if (!QUEST_CHAIN_D->complete_quest(player, node_id))
         return 0;
 
+    // 剧情入宗（c4 修复，审查第 2 轮）：mq_1_6「拜入黄枫谷」完成时自动入宗
+    // ——默认分支（黄枫谷）剧情落地。仅当玩家未入宗时尝试；join_sect 自带
+    // 条件校验（炼气三层/已入他派/叛门记录），不满足时拒绝并提示，不强行写入。
+    // 入宗后贡献/功法奖励（mq_1_7/1_8/1_10/1_11）经 SECT_D 渠道真实可达。
+    if (node_id == "mq_1_6")
+    {
+        if (!SECT_D->query_player_sect(player))
+            SECT_D->join_sect(player, "huangfeng_valley");
+    }
+
     // 章节完成检测
     chapter = quest_defs[node_id]["chapter"];
     if (is_chapter_completed(player, chapter))

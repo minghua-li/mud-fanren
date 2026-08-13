@@ -245,6 +245,25 @@ class MockPlayer:
     def tell(self, msg):
         self.log.append(msg)
 
+    # ── 门派状态（c4 审查第 2 轮：入宗/贡献渠道模拟） ──
+    def query_sect(self):
+        """模拟 SECT_D->query_player_sect（sect/id 属性）。"""
+        return self.db.get("sect_id")
+
+    def join_sect(self, sect_id):
+        """模拟 SECT_D->join_sect（无校验简化：炼气三层即视为满足主线 mq_1_6 语境）。"""
+        if self.db.get("sect_id"):
+            return False
+        self.db["sect_id"] = sect_id
+        return True
+
+    def add_contribution(self, amount):
+        """模拟 SECT_D->add_contribution：未入宗返回 0（真实渠道行为）。"""
+        if not self.db.get("sect_id"):
+            return 0
+        self.db["contrib"] = self.db.get("contrib", 0) + amount
+        return amount
+
 
 QUEST_CHAIN_ACTIVE = "quest_chain/active"
 QUEST_CHAIN_COMPLETED = "quest_chain/completed"
@@ -352,6 +371,10 @@ def run_chain(player, chain, start_realm=None):
             break
         if not complete_quest(qid, player):
             break
+        # 剧情入宗（忠实翻译 main_quest_d.complete_node 的 mq_1_6 分支）：
+        # 完成 mq_1_6 后若玩家未入宗，自动入黄枫谷（默认分支）
+        if qid == "mq_1_6" and not player.query_sect():
+            player.join_sect("huangfeng_valley")
         done_ids.append(qid)
     return done_ids
 
@@ -552,6 +575,25 @@ def run_all(src, label="真实交付"):
     check("场景5 第一章链 13 节点全部完成",
           set(c2.keys()) == set(all_ids), str(sorted(c2.keys())))
 
+    # 场景6：剧情入宗（c4 修复，审查第 2 轮）——完成 mq_1_6 后自动入黄枫谷，
+    # 贡献/功法奖励对走主线且未手动入宗的玩家真实可达
+    p3 = MockPlayer(realm_idx=0)
+    p3.set_location("/d/yueguo/qingniu/zhenkou")
+    run_chain(p3, CHAIN_0)
+    run_chain(p3, CHAIN_1[:6])          # 完成 mq_1_6（拜入黄枫谷）
+    check("场景6 完成 mq_1_6 后自动入黄枫谷", p3.query_sect() == "huangfeng_valley",
+          f"sect={p3.query_sect()}")
+    # 已入宗 → 贡献渠道真实可达（模拟 add_contribution：未入宗返回 0）
+    contrib_ok = p3.add_contribution(200) == 200
+    check("场景6 入宗后贡献渠道可达", contrib_ok)
+    # 未入宗玩家（跳过主线直入后续场景模拟）→ 贡献渠道不可达（静默不发，与真实渠道一致）
+    p4 = MockPlayer(realm_idx=0)
+    p4.set_location("/d/yueguo/qingniu/zhenkou")
+    check("场景6 未入宗玩家贡献渠道不可达", p4.add_contribution(200) == 0)
+    # 功法渠道：入宗后 grant_skill 走本门分支（sect_config 命中 qingyuan-jianjue）
+    check("场景6 入宗后功法渠道可达（sect_config 命中）",
+          "qingyuan-jianjue" in src and "huangfeng_valley" in src)
+
     print(f"\n== [{label}] [3] LPC 原文守卫 ==")
 
     # 3.1 complete_node 调 complete_quest（结算走框架）
@@ -567,6 +609,11 @@ def run_all(src, label="真实交付"):
     # 3.3 find_next_available_quest 用 is_quest_available 过滤（境界门槛真实生效）
     guard_ok3 = ("QUEST_CHAIN_D->is_quest_available(qids[i], player)" in src)
     check("守卫 境界门槛经 is_quest_available", guard_ok3)
+
+    # 3.4 剧情入宗接线（c4 修复，审查第 2 轮）：mq_1_6 完成时调 SECT_D->join_sect
+    guard_ok4 = ('if (node_id == "mq_1_6")' in src and
+                 "SECT_D->join_sect(player, \"huangfeng_valley\")" in src)
+    check("守卫 mq_1_6 完成时自动入黄枫谷", guard_ok4)
 
     # 3.4-3.6 真实突变验证（#65 审查第 1 轮 F2 修订）：
     # 对改坏后的 LPC 原文文本重跑静态+场景断言，验证对应断言转红——证明脚本非恒真。
@@ -584,6 +631,10 @@ def run_all(src, label="真实交付"):
          src.replace('"name": "百药园看守", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,\n        "realm_range": ({ 1, 2 }),',
                      '"name": "百药园看守", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,\n        "realm_range": ({ 0, 1 }),', 1),
          "场景3 炼气玩家接 mq_1_7 被境界拦截"),
+        ("删除 mq_1_6 自动入宗接线（c4 修复）",
+         src.replace('if (node_id == "mq_1_6")\n    {\n        if (!SECT_D->query_player_sect(player))\n            SECT_D->join_sect(player, "huangfeng_valley");\n    }',
+                     'if (0) { }', 1),
+         "守卫 mq_1_6 完成时自动入黄枫谷"),
     ]
     for mname, mutated_src, expect_fail in mutation_cases:
         if mutated_src == src:
@@ -634,6 +685,10 @@ def _run_mut(mutated_src):
     mcheck("realm_range 全部合法 (0~7, min<=max)", not bad_range)
     mcheck("任务模板均含 description 键",
            all(t is not None and t["description"] for t in defs.values()))
+    # 剧情入宗守卫（c4 修复）：mq_1_6 完成时调 SECT_D->join_sect
+    mcheck("守卫 mq_1_6 完成时自动入黄枫谷",
+           'if (node_id == "mq_1_6")' in mutated_src and
+           "SECT_D->join_sect(player, \"huangfeng_valley\")" in mutated_src)
 
     # 场景3 境界门槛（改坏放宽后：炼气玩家应能接 mq_1_7 → 原拦截断言转红）
     saved_defs, saved_chains = globals().get("QUEST_DEFS"), globals().get("CHAIN_DEFS")
