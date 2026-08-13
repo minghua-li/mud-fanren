@@ -14,6 +14,8 @@ void create()
 LONG );
         set("exits", ([
                 "south" : "/d/yueguo/huangfeng/dadian",
+                "north" : "/d/yueguo/huangfeng/fac/danfang",
+                "west" : "/d/yueguo/huangfeng/fac/qingjianchang",
         ]));
         set("objects", ([
                 __DIR__"npc/lihuayuan" : 1,

@@ -15,6 +15,8 @@ LONG );
         set("exits", ([
                 "south" : "/d/yueguo/qingxu/shanmen",
                 "north" : "/d/yueguo/qingxu/chuangong",
+                "east" : "/d/yueguo/qingxu/fac/daoguan",
+                "west" : "/d/yueguo/qingxu/fac/yanwu",
         ]));
         set("objects", ([
                 __DIR__"npc/wuyouzi" : 1,

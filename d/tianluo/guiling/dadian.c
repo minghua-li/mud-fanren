@@ -15,6 +15,7 @@ LONG );
         set("exits", ([
                 "south" : "/d/tianluo/guiling/shanmen",
                 "north" : "/d/tianluo/guiling/chuangong",
+                "west" : "/d/tianluo/guiling/fac/lianshifang",
         ]));
         set("objects", ([
                 __DIR__"npc/wangtiangu" : 1,

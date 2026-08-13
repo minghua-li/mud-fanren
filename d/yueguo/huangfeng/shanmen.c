@@ -15,6 +15,7 @@ LONG );
         set("exits", ([
                 "southeast" : "/d/yueguo/transmit",
                 "north" : "/d/yueguo/huangfeng/dadian",
+                "west" : "/d/yueguo/huangfeng/fac/hushan",
         ]));
         set("objects", ([
                 __DIR__"npc/dizi" : 1,

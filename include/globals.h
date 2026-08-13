@@ -255,6 +255,9 @@
 //门派系统（九宗入宗/晋升/功法）
 #define SECT_D                "/adm/daemons/sect_d"
 
+//门派设施系统（通用设施框架+九宗特色设施）
+#define SECT_FACILITY_D       "/adm/daemons/sect_facility_d"
+
 //生活技能系统
 #define PROFESSION_D(x)	("/kungfu/profession/" + x)
 

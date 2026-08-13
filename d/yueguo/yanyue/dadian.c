@@ -15,6 +15,8 @@ LONG );
         set("exits", ([
                 "south" : "/d/yueguo/yanyue/shanmen",
                 "north" : "/d/yueguo/yanyue/chuangong",
+                "west" : "/d/yueguo/yanyue/fac/yanwu",
+                "east" : "/d/yueguo/yanyue/fac/tianyuezhou",
         ]));
         set("objects", ([
                 __DIR__"npc/nishang" : 1,
