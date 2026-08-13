@@ -152,6 +152,22 @@ nosave mixed *mutex_relations = ({
   ({ "demon", "jiaochi", MUTEX_WEAK }),
   ({ "demon", "demon_six_sects", MUTEX_STRONG }),
   ({ "righteous_alliance", "jiaochi", MUTEX_STRONG }),
+  // 越国七派 × 魔道两宗 正魔敌对（1D-门派种族声望 §6.3 人界初始关系表：
+  // 七派弟子对魔道敌对、魔道弟子对七派敌对；#57 reverify 补齐 c2 正魔互斥）
+  ({ "yanyue_sect", "guiling_sect", MUTEX_STRONG }),
+  ({ "yanyue_sect", "yuling_sect", MUTEX_STRONG }),
+  ({ "huangfeng_valley", "guiling_sect", MUTEX_STRONG }),
+  ({ "huangfeng_valley", "yuling_sect", MUTEX_STRONG }),
+  ({ "lingshou_mountain", "guiling_sect", MUTEX_STRONG }),
+  ({ "lingshou_mountain", "yuling_sect", MUTEX_STRONG }),
+  ({ "qingxu_sect", "guiling_sect", MUTEX_STRONG }),
+  ({ "qingxu_sect", "yuling_sect", MUTEX_STRONG }),
+  ({ "huadao_dock", "guiling_sect", MUTEX_STRONG }),
+  ({ "huadao_dock", "yuling_sect", MUTEX_STRONG }),
+  ({ "tianque_fort", "guiling_sect", MUTEX_STRONG }),
+  ({ "tianque_fort", "yuling_sect", MUTEX_STRONG }),
+  ({ "jujian_gate", "guiling_sect", MUTEX_STRONG }),
+  ({ "jujian_gate", "yuling_sect", MUTEX_STRONG }),
 });
 
 // -------- 势力繁荣度（可运行时调整） --------
