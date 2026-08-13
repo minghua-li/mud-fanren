@@ -89,3 +89,4 @@
 ## 关联关系索引
 
 见 [[RELATIONS]] 文件（根目录），用边表记录知识点间的关联。
+- `teleport-network` — 传送网络节点哪些已落地、哪些还是占位路径；九宗驻地目录与 sect_id 对齐约定 — world/teleport-network.md
