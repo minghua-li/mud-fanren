@@ -37,7 +37,6 @@
 //   ]) ])
 
 // 炼丹术等级（玩家 DBASE）
-#define PILL_REFINE_LEVEL      "pill_refine_level"   // int，炼丹术等级（0 起）
 #define PILL_REFINE_EXP        "pill_refine_exp"     // int，累计炼制经验（成功 1 次 +1）
 #define PILL_TOXIN             "pill_toxin"          // int，丹毒累积（副作用）
 
@@ -46,5 +45,22 @@
 
 // 突破丹叠加上限（02 §3.1 筑基丹可叠加最多 3 颗；结金丹同）
 #define PILL_BREAK_MAX_STACK   3
+
+// 火候（1E §2.3 火候维度：稳火成功率+、旺火品质优但成功率−，中火为基准）
+// 以百分比修正加入成功率；旺火额外提升品质判定概率（见 PILL_FIRE_*_QUALITY）
+#define PILL_FIRE_WEN          1   // 稳火：成功率 +5，品质不提升
+#define PILL_FIRE_ZHONG        2   // 中火：无修正（默认）
+#define PILL_FIRE_WANG         3   // 旺火：成功率 −5，品质判定概率翻倍
+
+// 火候名称表（供命令展示）
+#define PILL_FIRE_NAMES        ([ \
+    PILL_FIRE_WEN : "稳火", \
+    PILL_FIRE_ZHONG : "中火", \
+    PILL_FIRE_WANG : "旺火", \
+])
+
+// 药材年份加成（1E §2.3 灵药年份：百年药→千年药→万年药）
+// 每 10 年年份 +1% 成功率，封顶 30%（300 年以上）
+#define PILL_YEAR_BONUS_CAP    30
 
 #endif

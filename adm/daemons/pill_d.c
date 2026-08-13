@@ -187,26 +187,43 @@ int add_refine_exp(object player, int n)
     return 0;
 }
 
-// ============ 成功率（02 §4.3 简化版）============
+// ============ 成功率（02 §4.3 同构版）============
 
-// 最终成功率 = 基准 ×（1 + 炼丹术×0.02 + 丹房加成）− 品级难度罚值
-// 简化实现（无丹炉/火候/材料品质维度）：直接累加，钳制 [5,95]
-int query_success_rate(object player, string id)
+// 最终成功率 = 基准 × (1 + 炼丹术×0.02 + 丹房加成 + 火候修正) × (1 + 药材年份加成) − 品级难度罚值
+//   炼丹术每级 +2%（02 §4.3「炼丹术等级×0.02」）
+//   丹房加成：SECT_FACILITY_D->query_danfang_bonus（#60 钩子，激活丹房 buff 时生效）
+//   火候：PILL_FIRE_*（稳火+5 / 中火0 / 旺火−5，1E §2.3 火候维度）
+//   药材年份：herb_year 平均每 10 年 +1%，封顶 PILL_YEAR_BONUS_CAP=30%
+//   （02 §4.3 的材料品质系数以药材年份近似——年份即品质代理）
+// 品级难度罚值：每提升一品 −10%（02 §4.3「丹药品级难度罚值」）
+// 钳制 [5,95]
+varargs int query_success_rate(object player, string id, int fire, int year)
 {
     mapping df;
-    int rate, refine, danfang_bonus, penalty;
+    int rate, refine, danfang_bonus, fire_bonus, year_bonus, penalty;
 
     df = danfang[id];
     if (!mapp(df)) return 0;
 
     rate = df["base_rate"];
     refine = query_refine_level(player);
-    rate += to_int(refine * 2);          // 炼丹术每级 +2%
 
     danfang_bonus = 0;
     if (find_object(SECT_FACILITY_D))
         danfang_bonus = SECT_FACILITY_D->query_danfang_bonus(player);
-    rate += danfang_bonus;               // 丹房加成（#60 钩子，激活丹房 buff 时生效）
+
+    // 火候修正
+    fire_bonus = 0;
+    if (fire == PILL_FIRE_WEN) fire_bonus = 5;
+    else if (fire == PILL_FIRE_WANG) fire_bonus = -5;
+
+    // 药材年份加成（未指定年份=0）
+    year_bonus = year / 10;
+    if (year_bonus > PILL_YEAR_BONUS_CAP) year_bonus = PILL_YEAR_BONUS_CAP;
+
+    // 乘法结构：base × (1 + 修正和%) × (1 + 年份%)
+    rate = rate * (100 + refine * 2 + danfang_bonus + fire_bonus) / 100;
+    rate = rate * (100 + year_bonus) / 100;
 
     penalty = (df["quality"] - PILL_QUALITY_FAN) * 10;  // 品级每高一品 −10%
     rate -= penalty;
@@ -216,13 +233,46 @@ int query_success_rate(object player, string id)
     return rate;
 }
 
+// 计算玩家身上某丹方药材的平均年份（供成功率与展示使用；无药材年份属性视为 0）
+int query_herb_avg_year(object player, string id)
+{
+    mapping ing;
+    string *mats;
+    object *inv;
+    int i, j, need, count, total;
+
+    ing = danfang[id]["ingredients"];
+    if (!mapp(ing)) return 0;
+
+    mats = keys(ing);
+    inv = all_inventory(player);
+    total = 0;
+    count = 0;
+    for (i = 0; i < sizeof(mats); i++)
+    {
+        need = ing[mats[i]];
+        for (j = 0; j < sizeof(inv); j++)
+        {
+            if (count >= need) break;
+            if (inv[j]->query("material_id") == mats[i])
+            {
+                total += inv[j]->query("herb_year");
+                count++;
+            }
+        }
+    }
+    if (count == 0) return 0;
+    return total / count;
+}
+
 // ============ 品质判定 ============
 
-// 基础品质来自丹方；炼丹术等级提高后有小概率产出高品级
-int roll_quality(object player, string id)
+// 基础品质来自丹方；炼丹术等级提高后有小概率产出高品级；
+// 旺火（PILL_FIRE_WANG）使品质提升概率翻倍（1E §2.3 火候影响成丹品质）
+varargs int roll_quality(object player, string id, int fire)
 {
     mapping df;
-    int quality, refine, roll;
+    int quality, refine, roll, q_prob;
 
     df = danfang[id];
     if (!mapp(df)) return PILL_QUALITY_FAN;
@@ -231,13 +281,15 @@ int roll_quality(object player, string id)
     refine = query_refine_level(player);
 
     // 炼丹术 ≥15：20% 概率品质 +1；≥30：额外 20% 概率再 +1（上限上品）
+    // 旺火：概率翻倍（20% → 40%）
+    q_prob = (fire == PILL_FIRE_WANG) ? 40 : 20;
     if (quality < PILL_QUALITY_SHANG && refine >= 15)
     {
         roll = random(100);
-        if (roll < 20)
+        if (roll < q_prob)
         {
             quality++;
-            if (quality < PILL_QUALITY_SHANG && refine >= 30 && random(100) < 20)
+            if (quality < PILL_QUALITY_SHANG && refine >= 30 && random(100) < q_prob)
                 quality++;
         }
     }
@@ -301,12 +353,13 @@ int consume_ingredients(object player, string id)
 }
 
 // 炼制（返回：1=成丹 0=失败/条件不满足）
+// fire：PILL_FIRE_*（由命令层解析传入，默认中火）
 // 调用方：cmds/usr/liandan.c
-int refine_pill(object player, string id)
+varargs int refine_pill(object player, string id, int fire)
 {
     mapping df;
     object pill;
-    int rate, quality, roll;
+    int rate, quality, roll, year;
 
     if (!objectp(player)) return 0;
     df = danfang[id];
@@ -315,6 +368,8 @@ int refine_pill(object player, string id)
         tell_object(player, "没有这种丹方。\n");
         return 0;
     }
+    if (fire != PILL_FIRE_WEN && fire != PILL_FIRE_WANG)
+        fire = PILL_FIRE_ZHONG;
 
     // 炼丹术等级门槛
     if (query_refine_level(player) < df["refine_level"])
@@ -326,9 +381,14 @@ int refine_pill(object player, string id)
     if (!consume_ingredients(player, id))
         return 0;
 
-    rate = query_success_rate(player, id);
-    tell_object(player, sprintf(HIC "你生火起炉，按「%s」丹方投放药材，凝神控火……成功率约 %d%%\n" NOR,
-                df["name"], rate));
+    // 药材平均年份（火候/年份影响成功率）
+    year = query_herb_avg_year(player, id);
+    rate = query_success_rate(player, id, fire, year);
+    tell_object(player, sprintf(HIC "你生火起炉（%s），按「%s」丹方投放药材，凝神控火……成功率约 %d%%\n" NOR,
+                PILL_FIRE_NAMES[fire], df["name"], rate));
+    if (year > 0)
+        tell_object(player, sprintf("  所用灵药平均年份 %d 年，药力加成 +%d%%。\n",
+                    year, year / 10));
 
     roll = random(100);
     if (roll >= rate)
@@ -338,7 +398,7 @@ int refine_pill(object player, string id)
     }
 
     // 成丹
-    quality = roll_quality(player, id);
+    quality = roll_quality(player, id, fire);
     pill = new(df["pill"]);
     if (!objectp(pill))
     {

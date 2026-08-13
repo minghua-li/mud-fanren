@@ -2,12 +2,15 @@
 // 炼丹命令（#73：#64 子单 丹药炼制链路）
 //
 // 用法：
-//   liandan            —— 列出当前可炼制的丹方（含材料/成功率/等级门槛）
-//   liandan <丹方名/id> —— 炼制指定丹药
-//   liandan help       —— 帮助
+//   liandan                    —— 列出当前可炼制的丹方（含材料/成功率/等级门槛）
+//   liandan <丹方名/id>         —— 以中火炼制指定丹药
+//   liandan <丹方名/id> wen     —— 稳火炼制（成功率 +5，品质不提升）
+//   liandan <丹方名/id> wang    —— 旺火炼制（成功率 −5，品质提升概率翻倍）
+//   liandan help                —— 帮助
 //
 // 炼丹不受地点限制；身处丹房并激活丹房设施 buff 时，炼丹成功率获得
 // 丹房加成（#60 SECT_FACILITY_D->query_danfang_bonus，本命令消费该钩子）。
+// 火候与药材年份影响成功率（1E §2.3：火候/灵药年份维度）。
 // 药材从身上扣除（坊市 buy / 灵田种植获得，material_id 匹配）。
 
 #include <ansi.h>
@@ -21,7 +24,8 @@ int help(object me);
 
 int main(object me, string arg)
 {
-    string id;
+    string id, fire_arg;
+    int fire;
 
     seteuid(getuid());
 
@@ -35,11 +39,21 @@ int main(object me, string arg)
     if (!stringp(arg) || arg == "")
         return list_danfang(me);
 
-    // 解析丹方（支持中文名）
-    id = arg;
+    // 解析丹方（支持中文名）与火候
+    fire = PILL_FIRE_ZHONG;
+    if (sscanf(arg, "%s %s", id, fire_arg) == 2)
+    {
+        if (fire_arg == "wen") fire = PILL_FIRE_WEN;
+        else if (fire_arg == "wang") fire = PILL_FIRE_WANG;
+        else if (fire_arg != "zhong")
+            return notify_fail("火候参数只能是 wen（稳火）/ zhong（中火）/ wang（旺火）。\n");
+    }
+    else
+        id = arg;
+
     if (!PILL_D->query_danfang(id))
     {
-        id = PILL_D->query_danfang_id(arg);
+        id = PILL_D->query_danfang_id(id);
         if (!id)
             return notify_fail("没有这种丹方。输入 liandan 查看可炼制的丹方。\n");
     }
@@ -51,7 +65,7 @@ int main(object me, string arg)
                     df["name"], df["refine_level"],
                     PILL_D->query_refine_level(me)));
 
-    if (PILL_D->refine_pill(me, id))
+    if (PILL_D->refine_pill(me, id, fire))
         write("炼丹成功！输入 inventory 查看收获。\n");
     else
         write("本次炼制未能成丹，材料已消耗。\n");
@@ -82,7 +96,8 @@ int list_danfang(object me)
                     (j < sizeof(mats) - 1 ? "、" : ""));
         msg += "\n";
     }
-    msg += "输入 liandan <丹方名> 炼制。药材可从坊市购买（太南谷坊市 buy）。\n";
+    msg += "输入 liandan <丹方名> 炼制（可加火候：wen 稳火 / wang 旺火）。\n";
+    msg += "药材可从坊市购买（太南谷坊市 buy lingcao / buy huanglongcao）。\n";
     write(msg);
     return 1;
 }
@@ -90,16 +105,19 @@ int list_danfang(object me)
 int help(object me)
 {
     write(@HELP
-指令格式 : liandan [丹方名]
+指令格式 : liandan [丹方名] [火候]
 
 炼丹之术，以灵草为引，炉火为媒。收集药材、知晓丹方后，即可尝试炼制。
 
-liandan            —— 列出当前可炼制的丹方
-liandan 筑基丹     —— 炼制筑基丹（丹方名或拼音 id 均可）
+liandan              —— 列出当前可炼制的丹方
+liandan 筑基丹       —— 以中火炼制筑基丹（丹方名或拼音 id 均可）
+liandan 筑基丹 wen   —— 稳火炼制（成功率 +5%，品质不提升）
+liandan 筑基丹 wang  —— 旺火炼制（成功率 -5%，产出高品级概率翻倍）
 
 说明：
 - 炼丹需消耗对应药材（身上扣除），失败则材料作废
 - 炼丹术等级随成功炼制次数提升，等级越高成功率越高
+- 药材年份越高成功率越高（灵草 50 年 / 黄龙草 80 年，每 10 年 +1%）
 - 身处门派丹房并激活丹房设施 buff 时，成功率额外加成
 - 药材可在太南谷坊市购买（buy lingcao / buy huanglongcao）
 HELP

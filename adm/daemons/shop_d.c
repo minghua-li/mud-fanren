@@ -37,7 +37,7 @@ nosave mixed *item_catalog = ({
   ({"hfg_sk1", "基础符箓术", "skill", "/obj/skill/basic_talisman", 10000, REP_LEVEL_FRIENDLY, 200, SHOP_TIER_INTERMEDIATE, "huangfeng_valley", "黄枫谷基础符箓制作法", 30}),
   // -- 高级 --
   ({"hfg_swd2", "中阶飞剑", "weapon", "/obj/weapon/feijian", 30000, REP_LEVEL_TRUST, 500, SHOP_TIER_ADVANCED, "huangfeng_valley", "中阶法器飞剑", 10}),
-  ({"hfg_pill3", "凝丹丸", "pill", "/clone/pill/ningdan", 25000, REP_LEVEL_TRUST, 400, SHOP_TIER_ADVANCED, "huangfeng_valley", "结丹期辅助丹药", 15}),
+  ({"hfg_pill3", "凝丹丸", "pill", "/clone/pill/ningdan", 25000, REP_LEVEL_TRUST, 400, SHOP_TIER_ADVANCED, "huangfeng_valley", "筑基期辅助丹药", 15}),
   ({"hfg_item1", "灵晶", "item", "/obj/item/lingjing", 20000, REP_LEVEL_TRUST, 300, SHOP_TIER_ADVANCED, "huangfeng_valley", "蕴含精纯灵力的水晶", 20}),
   ({"hfg_mat1", "天玄石", "item", "/obj/item/tianxuan_stone", 40000, REP_LEVEL_TRUST, 600, SHOP_TIER_ADVANCED, "huangfeng_valley", "稀有的炼器材料", 10}),
   // -- 核心 --

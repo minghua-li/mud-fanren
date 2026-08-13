@@ -172,6 +172,30 @@ for mid in sorted(mat_ids):
                 found = True
     ck('丹方药材 %s 有坊市材料对象' % mid, found)
 
+print('实体 refine_level 与丹方门槛一致（c6 数据一致性）:')
+# 解析 PILL_D 丹方：pill 路径 → refine_level
+df_pill_level = {}
+for m in re.finditer(r'"([a-z_]+)"\s*:\s*\(\[\s*"name"\s*:\s*"([^"]+)"\s*,\s*"pill"\s*:\s*"([^"]+)"\s*,.*?"refine_level"\s*:\s*(\d+)', pd, re.S):
+    df_pill_level[m.group(3)] = int(m.group(4))
+for ppath, plevel in sorted(df_pill_level.items()):
+    pfile = ppath[1:] + '.c'
+    psrc = readf(pfile)
+    m = re.search(r'set\("refine_level",\s*(\d+)\)', psrc)
+    if m:
+        ck('%s 实体 refine_level=%s == 丹方 %s' % (pfile, m.group(1), plevel), int(m.group(1)) == plevel)
+    else:
+        ck('%s 有 refine_level' % pfile, False)
+
+print('实体 effect 绑定（筑基丹 effect/stage/refine_level 从实体读取，防模拟硬编码漂移）:')
+zhuji_src = readf('clone/pill/zhuji.c')
+zhuji_effect = int(re.search(r'set\("effect",\s*(\d+)\)', zhuji_src).group(1))
+zhuji_stage = int(re.search(r'set\("stage",\s*(\d+)\)', zhuji_src).group(1))
+zhuji_plevel = int(re.search(r'set\("refine_level",\s*(\d+)\)', zhuji_src).group(1))
+ck('筑基丹 effect=25（实体绑定）', zhuji_effect == 25)
+ck('筑基丹 stage=2 目标筑基（实体绑定）', zhuji_stage == 2)
+ck('筑基丹 refine_level=8（实体绑定）', zhuji_plevel == 8)
+ck('筑基丹丹方门槛=8（实体与丹方一致）', df_pill_level.get('/clone/pill/zhuji') == 8)
+
 print('shop_d 13 个丹药引用全部指向真实对象:')
 shop = readf('adm/daemons/shop_d.c')
 refs = re.findall(r'"type"\s*:\s*"pill"[^}]*?"/clone/pill/([a-z_]+)"', shop)
@@ -237,16 +261,31 @@ ck('refine_pill 调 query_success_rate', 'query_success_rate' in rp)
 ck('refine_pill 成丹 new(df["pill"])', 'new(df["pill"])' in rp_raw)
 ck('refine_pill 成功率判定', 'random(100)' in rp and 'roll >= rate' in rp)
 
-# query_success_rate：炼丹术×2 + 丹房加成 − 品级罚值
+# query_success_rate：乘法结构 base×(1+修正%)×(1+年份%) − 品级罚值
 qsr_raw = func_body_raw(pd, 'query_success_rate')
 qsr = strip_lpc(qsr_raw)
 ck('成功率含炼丹术加成', 'refine * 2' in qsr)
 ck('成功率含丹房加成(接 #60)', 'query_danfang_bonus' in qsr_raw or 'query_danfang_bonus' in qsr)
-ck('成功率含品级罚值', 'df["quality"]' in qsr and '- penalty' in qsr or 'rate -= penalty' in qsr)
+ck('成功率含品级罚值', 'df["quality"]' in qsr_raw and 'rate -= penalty' in qsr)
+ck('成功率乘法结构(02 §4.3)', '* (100 + refine * 2' in qsr and '* (100 + year_bonus)' in qsr)
+ck('成功率含火候修正(1E §2.3)', 'fire_bonus' in qsr and 'PILL_FIRE_WEN' in qsr_raw and 'PILL_FIRE_WANG' in qsr_raw)
+ck('成功率含药材年份(1E §2.3)', 'year_bonus' in qsr and 'year / 10' in qsr and 'PILL_YEAR_BONUS_CAP' in qsr)
 
-# roll_quality：炼丹术提升品级
-rq = strip_lpc(func_body_raw(pd, 'roll_quality'))
+# query_herb_avg_year：读取材料 herb_year 求平均
+qh_raw = func_body_raw(pd, 'query_herb_avg_year')
+ck('药材年份读取 herb_year', 'herb_year' in qh_raw and 'material_id' in qh_raw)
+
+# roll_quality：炼丹术提升品级 + 旺火概率翻倍
+rq_raw = func_body_raw(pd, 'roll_quality')
+rq = strip_lpc(rq_raw)
 ck('品质判定随炼丹术提升', 'refine >= 15' in rq)
+ck('旺火品质概率翻倍', 'q_prob' in rq and '40' in rq)
+
+# 材料对象带 herb_year（1E §2.3 年份维度）
+lc = readf('d/yueguo/tainan/obj/lingcao.c')
+hc = readf('d/yueguo/tainan/obj/huanglongcao.c')
+ck('灵草带 herb_year', re.search(r'set\("herb_year",\s*\d+\)', lc))
+ck('黄龙草带 herb_year', re.search(r'set\("herb_year",\s*\d+\)', hc))
 
 # dan.c：do_eat 分发 + pill_bonus 写入 + 叠加上限
 dan = readf('inherit/item/dan.c')
@@ -305,16 +344,24 @@ ck('炼丹术 exp5→2', query_refine_level(5) == 2)
 ck('炼丹术 exp100→21（1-20 每级 5 次）', query_refine_level(100) == 21)
 ck('炼丹术 exp165→29（21-40 每级 8 次）', query_refine_level(100 + 8 * 8) == 29)
 
-# 3.2 成功率（PILL_D query_success_rate 翻译：base + refine*2 + danfang_bonus − quality_penalty，钳 5~95）
-def success_rate(base, refine, danfang_bonus, quality):
-    rate = base + int(refine) * 2 + danfang_bonus - (quality - 1) * 10
+# 3.2 成功率（PILL_D query_success_rate 翻译：base×(1+修正%)×(1+年份%) − 品级罚值，钳 5~95）
+def success_rate(base, refine, danfang_bonus, quality, fire=0, year=0):
+    fire_bonus = 5 if fire == 1 else (-5 if fire == 3 else 0)
+    year_bonus = min(year // 10, 30)
+    rate = base * (100 + refine * 2 + danfang_bonus + fire_bonus) // 100
+    rate = rate * (100 + year_bonus) // 100
+    rate -= (quality - 1) * 10
     rate = max(5, min(95, rate))
     return rate
 
-ck('炼气散 Lv1 无加成: 70+2=72', success_rate(70, 1, 0, 1) == 72)
-ck('筑基丹 Lv8(品2罚10): 40+16−10=46', success_rate(40, 8, 0, 2) == 46)
-ck('筑基丹 Lv8+丹房10: 40+16+10−10=56', success_rate(40, 8, 10, 2) == 56)
-ck('结金丹 Lv18: 30+36−20=46', success_rate(30, 18, 0, 3) == 46)
+ck('炼气散 Lv1 无加成: 70×1.02=71', success_rate(70, 1, 0, 1) == 71)
+ck('筑基丹 Lv8(品2罚10): 40×1.16−10=36', success_rate(40, 8, 0, 2) == 36)
+ck('筑基丹 Lv8+丹房10: 40×1.26−10=40', success_rate(40, 8, 10, 2) == 40)
+ck('结金丹 Lv18: 30×1.36−20=20', success_rate(30, 18, 0, 3) == 20)
+ck('稳火+5: 40×1.21−10=38', success_rate(40, 8, 0, 2, fire=1) == 38)
+ck('旺火−5: 40×1.11−10=34', success_rate(40, 8, 0, 2, fire=3) == 34)
+ck('年份100年+10%: 40×1.16×1.10−10=40', success_rate(40, 8, 0, 2, year=100) == 40)
+ck('年份300年封顶+30%: 40×1.16×1.30−10=49', success_rate(40, 8, 0, 2, year=300) == 49)
 ck('钳制下限 5', success_rate(5, 0, 0, 3) == 5)
 ck('钳制上限 95', success_rate(90, 10, 10, 1) == 95)
 
@@ -356,15 +403,16 @@ p = MockPlayer({'lingcao': 5, 'huanglongcao': 3})
 ok, have = consume_ingredients(p, {'lingcao': 5, 'huanglongcao': 3})
 ck('筑基丹材料足够扣除', ok == 1 and len(p.inv) == 0)
 
-# 3.4 品质判定（roll_quality 翻译：炼丹术≥15 提升）
+# 3.4 品质判定（roll_quality 翻译：炼丹术≥15 提升，旺火概率翻倍）
 import random
 random.seed(7)
-def roll_quality(base_q, refine):
+def roll_quality(base_q, refine, fire=0):
+    q_prob = 40 if fire == 3 else 20
     quality = base_q
     if quality < 3 and refine >= 15:
-        if random.random() < 0.20:
+        if random.random() < q_prob / 100.0:
             quality += 1
-            if quality < 3 and refine >= 30 and random.random() < 0.20:
+            if quality < 3 and refine >= 30 and random.random() < q_prob / 100.0:
                 quality += 1
     return min(quality, 3)
 
@@ -372,7 +420,9 @@ qs = [roll_quality(1, 1) for _ in range(500)]
 ck('炼丹术 Lv1 品质恒凡品', all(q == 1 for q in qs))
 qs = [roll_quality(1, 20) for _ in range(500)]
 ck('炼丹术 Lv20 可出现良品', any(q == 2 for q in qs))
-ck('品质上限上品', all(q <= 3 for q in qs))
+qs_fire = [roll_quality(1, 20, fire=3) for _ in range(500)]
+ck('旺火品质提升概率更高', sum(1 for q in qs_fire if q > 1) > sum(1 for q in qs if q > 1))
+ck('品质上限上品', all(q <= 3 for q in qs + qs_fire))
 
 # 3.5 筑基丹服用（dan.c do_eat_breakthrough 翻译：境界校验 + 叠加最多 3 颗）
 class Player:
@@ -397,15 +447,15 @@ def eat_breakthrough(me, target_stage, effect):
     return 1, 'ok'
 
 me = Player(1)  # 炼气期
-ok, why = eat_breakthrough(me, 2, 25)   # 筑基丹（目标筑基 stage=2）
-ck('炼气期服筑基丹成功', ok == 1 and me.temp['breakthrough/pill_bonus'] == 25)
-ok, why = eat_breakthrough(me, 2, 25)
-ok2, why2 = eat_breakthrough(me, 2, 25)
-ck('叠加 3 颗=75', me.temp['breakthrough/pill_bonus'] == 75)
-ok, why = eat_breakthrough(me, 2, 25)
-ck('第 4 颗被上限拦截', ok == 0 and me.temp['breakthrough/pill_bonus'] == 75)
+ok, why = eat_breakthrough(me, zhuji_stage, zhuji_effect)   # 筑基丹（实体绑定 effect/stage）
+ck('炼气期服筑基丹成功', ok == 1 and me.temp['breakthrough/pill_bonus'] == zhuji_effect)
+ok, why = eat_breakthrough(me, zhuji_stage, zhuji_effect)
+ok2, why2 = eat_breakthrough(me, zhuji_stage, zhuji_effect)
+ck('叠加 3 颗=%d' % (zhuji_effect * 3), me.temp['breakthrough/pill_bonus'] == zhuji_effect * 3)
+ok, why = eat_breakthrough(me, zhuji_stage, zhuji_effect)
+ck('第 4 颗被上限拦截', ok == 0 and me.temp['breakthrough/pill_bonus'] == zhuji_effect * 3)
 me2 = Player(2)  # 筑基期
-ok, why = eat_breakthrough(me2, 2, 25)
+ok, why = eat_breakthrough(me2, zhuji_stage, zhuji_effect)
 ck('筑基期服筑基丹被拒', ok == 0 and '境界不适用' in why)
 
 # 3.6 突破概率（query_major_breakthrough_probability 翻译：base×factor + aux + pill，钳 1~99）
@@ -414,11 +464,11 @@ def major_prob(quality_factor, base_realm_rate, realm_penalty, aux, pill):
     prob = max(1, min(99, prob))
     return prob
 
-# 炼气→筑基：base 10、伪灵根 0.3、realm_penalty=0
+# 炼气→筑基：base 10、伪灵根 0.3、realm_penalty=0（筑基丹 effect 从实体读取）
 base_zhuji = major_prob(0.3, 10, 0, 0, 0)
-with_pill = major_prob(0.3, 10, 0, 0, 25)
+with_pill = major_prob(0.3, 10, 0, 0, zhuji_effect)
 ck('伪灵根炼气→筑基 10×0.3=3', base_zhuji == 3)
-ck('服筑基丹后 +25 → 28（红→绿实证）', with_pill == 28)
+ck('服筑基丹后 +%d → %d（红→绿实证）' % (zhuji_effect, 3 + zhuji_effect), with_pill == 3 + zhuji_effect)
 base_jd = major_prob(0.3, 5, -15 * (3 - 2), 0, 0)   # 伪灵根筑基→结丹：5×0.3=1-15=-14→钳 1
 with_jj = major_prob(0.3, 5, -15, 0, 15)
 ck('伪灵根结丹概率钳制 1', base_jd == 1)
@@ -430,12 +480,12 @@ def tupo(me, result):
         if me.temp.get('breakthrough/pill_bonus', 0) > 0:
             del me.temp['breakthrough/pill_bonus']
 me = Player(1)
-me.add_temp('breakthrough/pill_bonus', 25)
+me.add_temp('breakthrough/pill_bonus', zhuji_effect)
 tupo(me, 1)
 ck('突破成功后 pill_bonus 清空', 'breakthrough/pill_bonus' not in me.temp)
-me.add_temp('breakthrough/pill_bonus', 25)
+me.add_temp('breakthrough/pill_bonus', zhuji_effect)
 tupo(me, 2)
-ck('突破失败后 pill_bonus 保留', me.temp.get('breakthrough/pill_bonus') == 25)
+ck('突破失败后 pill_bonus 保留', me.temp.get('breakthrough/pill_bonus') == zhuji_effect)
 
 # ═══════════ 结果 ═══════════
 print('')
