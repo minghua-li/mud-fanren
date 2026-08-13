@@ -31,11 +31,11 @@ nosave mapping faction_info = ([
     "desc": "越国七派之一，道门传承，清心寡欲，飞行法器雪虹绫"
   ]),
   "huadao_dock": ([
-    "name": "化刀坞", "type": FACTION_TYPE_RIGHTEOUS,
+    "name": "化刀坞", "type": FACTION_TYPE_NEUTRAL,
     "desc": "越国七派之一，刀修汇聚，炼器工艺突出"
   ]),
   "tianque_fort": ([
-    "name": "天阙堡", "type": FACTION_TYPE_RIGHTEOUS,
+    "name": "天阙堡", "type": FACTION_TYPE_NEUTRAL,
     "desc": "越国七派之一，筑堡建州，擅防御与阵法，镇派法宝为黄色大印"
   ]),
   "jujian_gate": ([

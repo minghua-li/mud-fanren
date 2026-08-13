@@ -41,3 +41,4 @@ verified: '2026-08-12'
 - reverify 补做①：sect 面板（show_panel）原缺门派声望展示，c3 验收要求"面板显示声望信息"，已加一行 REPUTATION_D->query_reputation_value/level 展示（数值+等级名）。
 - reverify 补做②：正魔互斥（c2 明写子句）原为空转——mutex_relations 无越国七派×魔道两宗关系对。已在 reputation_d.c mutex_relations 补 14 对（七派×guiling_sect/yuling_sect，MUTEX_STRONG）。join 任一正道派→魔道两宗各 -300；join 魔道→七派各 -300（1D §6.3 人界初始关系表：正魔敌对）。
 - **贡献获取渠道归属 #59**：`SECT_D->add_contribution(player, amount, reason)` 是全仓唯一贡献写入接口，当前零调用者（#59 宗门任务链 waiting 中，票面明写奖励接入门派贡献）。c4/c5/c6 的贡献可达性依赖 #59；#59 实施时经 add_contribution 发奖，勿另起接口。
+- reverify 补做③：化刀坞/天阙堡阵营标记 RIGHTEOUS→NEUTRAL（reputation_d.c faction_info）。此二派在 1D §2.1「越国七大门派」表与九宗档案（化刀坞.md:10、天阙堡.md:10、sects/README 速查）均标「中立」，e8aa7c5a（#57 链「对齐门派ID与设计文档」）定型时误标 RIGHTEOUS；已随 #57 修正为 FACTION_TYPE_NEUTRAL。faction.c/sect list 显示随 type 变为【中立】，互斥对（七派×魔道两宗）保留——1D §6.3 人界初始关系表「七派弟子对魔道敌对」含中立派。
