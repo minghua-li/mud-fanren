@@ -297,6 +297,40 @@ string *query_seed_ids()
     return keys(seed_config);
 }
 
+// ======== 中文名/拼音 id 双向解析（对齐 cmds/usr/sect.c sect learn 规范） ========
+
+// 灵种/坊市货物：中文名或拼音 id → seed_config 键（如 灵草→lingcao）
+string resolve_seed_id(string arg)
+{
+    string sid;
+    mapping sc;
+
+    if (!stringp(arg)) return 0;
+    foreach (sid in keys(seed_config))
+    {
+        sc = seed_config[sid];
+        if (sid == arg || (mapp(sc) && sc["name"] == arg))
+            return sid;
+    }
+    return 0;
+}
+
+// 门派功法：中文名或拼音 id → SECT_D 技能键（如 长春功→changchun-gong）
+string resolve_skill_id(string sect_id, string arg)
+{
+    string sid;
+    mapping info;
+
+    if (!stringp(arg)) return 0;
+    foreach (sid in SECT_D->query_sect_skills(sect_id))
+    {
+        info = SECT_D->query_sect_skill_info(sect_id, sid);
+        if (sid == arg || (mapp(info) && info["name"] == arg))
+            return sid;
+    }
+    return 0;
+}
+
 int query_facility_level(string key)
 {
     mapping cfg = facility_config[key];
@@ -658,6 +692,8 @@ int plant(object player, string key, string seed_id)
         return 0;
     }
 
+    // 允许中文名或拼音 id（对齐 cmds/usr/sect.c sect learn 规范）
+    seed_id = resolve_seed_id(seed_id);
     sc = seed_config[seed_id];
     if (!mapp(sc))
     {
@@ -807,6 +843,13 @@ int read_skill(object player, string key, string skill_id)
     }
 
     sect_id = SECT_D->query_player_sect(player);
+    if (!stringp(sect_id))
+    {
+        tell_object(player, "你尚未拜入任何门派。\n");
+        return 0;
+    }
+    // 允许中文名或拼音 id（对齐 cmds/usr/sect.c sect learn 规范）
+    skill_id = resolve_skill_id(sect_id, skill_id);
     info = SECT_D->query_sect_skill_info(sect_id, skill_id);
     if (!mapp(info))
     {
@@ -848,6 +891,13 @@ int transcribe_skill(object player, string key, string skill_id)
     }
 
     sect_id = SECT_D->query_player_sect(player);
+    if (!stringp(sect_id))
+    {
+        tell_object(player, "你尚未拜入任何门派。\n");
+        return 0;
+    }
+    // 允许中文名或拼音 id（对齐 cmds/usr/sect.c sect learn 规范）
+    skill_id = resolve_skill_id(sect_id, skill_id);
     info = SECT_D->query_sect_skill_info(sect_id, skill_id);
     if (!mapp(info))
     {
@@ -906,6 +956,8 @@ int market_buy(object player, string key, string good_id, int amount)
         return 0;
     }
 
+    // 允许中文名或拼音 id（对齐 cmds/usr/sect.c sect learn 规范）
+    good_id = resolve_seed_id(good_id);
     sc = seed_config[good_id];
     if (!mapp(sc))
     {

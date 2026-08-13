@@ -250,8 +250,6 @@ globals_src = open(os.path.join(BASE, 'include/globals.h')).read()
 checks += 1
 if 'SECT_FACILITY_D' not in globals_src:
     fail("globals.h 缺 SECT_FACILITY_D 宏")
-if 'SECT_FACILITY_D' not in daemon_src.replace('SECT_FACILITY_D', '') and True:
-    pass
 # daemon 依赖 SECT_D / MONEY_D 宏在 globals.h
 for macro in ['SECT_D', 'MONEY_D']:
     if not re.search(r'#define\s+%s\b' % macro, globals_src):

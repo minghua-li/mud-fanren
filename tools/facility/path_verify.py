@@ -177,6 +177,15 @@ class SECT_D:
         }
         return skills.get(sect, {}).get(sid)
     @staticmethod
+    def query_sect_skills(sect):
+        # sect_d.c:query_sect_skills —— 返回本门技能键列表
+        return list({
+            "huangfeng_valley": {
+                "changchun-gong": 1, "qingyuan-jianjue": 1, "zhenyang-jue": 1,
+            },
+            "yanyue_sect": {},
+        }.get(sect, {}).keys())
+    @staticmethod
     def query_sect_ranks(sect):
         return ["外门弟子", "内门弟子", "真传弟子", "长老", "副宗主", "宗主"]
     @staticmethod
@@ -306,6 +315,15 @@ def harvest(p, key, idx):        # sect_facility_d.c:harvest
     p.plots[key] = plots
     return count
 
+def read_skill(p, key, sid):     # sect_facility_d.c:read_skill（显示功法信息，无副作用）
+    cfg = facility_config[key]
+    if cfg["type"] != 3: return "此处不是藏经阁。"
+    err = check_access(p, key)
+    if err: return err
+    info = SECT_D.query_sect_skill_info(p.sect, sid)
+    if not info: return "本门无此功法。"
+    return "ok:" + info["name"]
+
 def transcribe(p, key, sid):     # sect_facility_d.c:transcribe_skill
     cfg = facility_config[key]
     if cfg["type"] != 3: return "此处不是藏经阁。"
@@ -368,6 +386,55 @@ def upgrade(p, key):             # sect_facility_d.c:upgrade_facility
     if err: return err
     cfg["level"] = nxt
     return "ok"
+
+# ---------- 命令层模拟（对齐 cmds/usr/facility.c main() 分发 + daemon 中文名解析） ----------
+# 审查发现（第 3 轮小厮·2）：帮助/列表展示中文名而实现按拼音 id 直查——玩家照帮助输入即失败。
+# 修复：daemon 新增 resolve_seed_id / resolve_skill_id（中文名或拼音 id 双向解析），
+# facility.c 子命令参数原样传给 daemon。此处模拟命令层完整调用链（中文名→id→命令层调用成功）。
+
+def resolve_seed_id(arg):
+    """对齐 sect_facility_d.c resolve_seed_id：中文名或拼音 id → seed_config 键"""
+    if arg is None: return None
+    for sid, sc in seed_config.items():
+        if sid == arg or sc["name"] == arg:
+            return sid
+    return None
+
+def resolve_skill_id(sect_id, arg):
+    """对齐 sect_facility_d.c resolve_skill_id：中文名或拼音 id → SECT_D 技能键"""
+    if arg is None: return None
+    for sid in SECT_D.query_sect_skills(sect_id):
+        info = SECT_D.query_sect_skill_info(sect_id, sid)
+        if sid == arg or (info and info["name"] == arg):
+            return sid
+    return None
+
+def cmd_facility(p, arg):
+    """对齐 cmds/usr/facility.c main()：子命令分发，参数（中文名或拼音 id）传给 daemon"""
+    if not arg or " " not in arg:
+        return None  # 无参/单参子命令（use/upgrade/practice/list/help）不在命令面测试范围
+    cmd, subarg = arg.split(" ", 1)
+    if cmd == "plant":
+        sid = resolve_seed_id(subarg)
+        if sid is None: return "没有这种灵种。输入 facility list 查看可种灵种。"
+        return plant(p, p.room, sid)
+    if cmd == "harvest":
+        idx = int(subarg) - 1      # 地块编号
+        if idx < 0: idx = 0
+        return harvest(p, p.room, idx)
+    if cmd == "read":
+        sid2 = resolve_skill_id(p.sect, subarg)
+        if sid2 is None: return "本门无此功法。输入 facility list 查看本门功法。"
+        return read_skill(p, p.room, sid2)
+    if cmd == "copy":
+        sid2 = resolve_skill_id(p.sect, subarg)
+        if sid2 is None: return "本门无此功法。"
+        return transcribe(p, p.room, sid2)
+    if cmd == "buy":
+        gid = resolve_seed_id(subarg)
+        if gid is None: return "坊市没有这种货物。输入 facility list 查看货物。"
+        return market_buy(p, p.room, gid)
+    return "未知子命令"
 
 # ---------- 断言框架 ----------
 PASS = 0; FAIL = []
@@ -487,6 +554,46 @@ check("通用五类设施齐备",
       {1,2,3,4,5} <= {c["type"] for c in facility_config.values()})
 check("18 个设施条目", len(facility_config) == 18)
 
+# ---------- 场景 10：命令层中文名→id 解析（c6 修复，第 3 轮小厮·2 not_met 项） ----------
+# 玩家照帮助输入中文名（facility plant <灵草|黄龙草|紫丹参>、read/copy <功法名>、buy <货物>）
+# 必须解析到正确拼音 id 并走通命令层调用；拼音 id 直传（既有调用方）仍可用。
+p3 = Player("cmd_hanli"); p3.sect = "huangfeng_valley"; p3.contribution = 1000
+
+p3.room = "huangfeng_baiyaoyuan"
+r = cmd_facility(p3, "plant 灵草")
+check("命令层：facility plant 灵草 → 解析 lingcao → 种植成功", r == "ok", str(r))
+pl = p3.plots["huangfeng_baiyaoyuan"][0]
+check("命令层：中文名种植地块 seed_id=lingcao", pl["seed_id"] == "lingcao", str(pl.get("seed_id")))
+r = cmd_facility(p3, "plant 黄龙草")
+check("命令层：facility plant 黄龙草 → 解析 huanglongcao → 种植成功", r == "ok", str(r))
+p3.now = p3.plots["huangfeng_baiyaoyuan"][1]["mature"] + 1
+r = cmd_facility(p3, "harvest 2")
+check("命令层：facility harvest 2（地块编号）可收获", isinstance(r, int) and r >= 1, str(r))
+r = cmd_facility(p3, "plant 紫丹参")
+check("命令层：facility plant 紫丹参 → 解析 zidanshen → 种植成功", r == "ok", str(r))
+r = cmd_facility(p3, "plant 不存在的灵草")
+check("命令层：中文名不存在被拒", "没有这种灵种" in r, r)
+
+p3.room = "huangfeng_cangjing"
+r = cmd_facility(p3, "read 长春功")
+check("命令层：facility read 长春功 → 解析 changchun-gong → 阅读成功", r.startswith("ok:"), str(r))
+r = cmd_facility(p3, "copy 长春功")
+check("命令层：facility copy 长春功 → 解析 changchun-gong → 抄录成功", r == "ok", str(r))
+check("命令层：抄录写入 learned[changchun-gong]", "changchun-gong" in p3.learned)
+r = cmd_facility(p3, "read 不存在功法")
+check("命令层：功法中文名不存在被拒", "本门无此功法" in r, r)
+
+p3.room = "huangfeng_fangshi"
+before_bal = p3.balance_wen
+r = cmd_facility(p3, "buy 紫丹参")
+check("命令层：facility buy 紫丹参 → 解析 zidanshen → 购买成功", r == "ok", str(r))
+check("命令层：中文名购买实扣灵石 100", p3.balance_wen == before_bal - 100*100)
+
+# 拼音 id 直传仍然可用（兼容既有调用方与 daemon 直接调用）
+p3.room = "huangfeng_baiyaoyuan"
+r = cmd_facility(p3, "plant lingcao")
+check("命令层：拼音 id 直传仍可用（facility plant lingcao）", r == "ok", str(r))
+
 # ---------- LPC 原文守卫（机器验证绑定 LPC 原文，非仅 Python 翻译） ----------
 # 针对审查意见：path_verify 的 Python 翻译不绑定 LPC 原文（改 LPC 不改翻译仍绿）。
 # 此段直接解析 LPC 原文关键函数体并断言顺序/匹配逻辑，另做一次 LPC 原文突变
@@ -547,6 +654,81 @@ mut_daemon = daemon.replace(old_seq, new_seq)
 mut_pay = extract_func(mut_daemon, "pay_cost")
 check("LPC 原文突变：颠倒扣费顺序后守卫转红（证明守卫绑定 LPC 原文）",
       mut_pay is not None and not pay_order_ok(mut_pay))
+
+# ======== c6 路径原文守卫（第 3 轮小厮·1 MUT-B/MUT-C 缺口） ========
+# MUT-B：删掉 plant 的灵石扣费 → 此前脚本仍全绿；MUT-C：use_facility 的 grant_buff 加成被移除 → 同样全绿。
+# 补守卫：解析 plant / use_facility 函数体，断言扣费与加成授予真实存在。
+
+def plant_pay_ok(body):
+    """plant 函数体：种植必须真实扣灵石（MONEY_D->player_pay）"""
+    if body is None: return False
+    return "MONEY_D->player_pay(player, cost * 100)" in body
+
+def use_grant_ok(body):
+    """use_facility 函数体：buff 类设施加成必须经 grant_buff 授予（丹房/护山大阵生效）"""
+    if body is None: return False
+    return "grant_buff(player, key, value, dur)" in body
+
+plant_body = extract_func(daemon, "plant")
+use_body = extract_func(daemon, "use_facility")
+check("LPC 原文 plant：种植扣灵石走 MONEY_D->player_pay", plant_pay_ok(plant_body))
+check("LPC 原文 use_facility：buff 加成经 grant_buff 授予", use_grant_ok(use_body))
+
+# 突变实证（复刻 MUT-B）：删掉 plant 函数的灵石扣费 → 守卫必须转红
+mut_plant = daemon.replace("if (!MONEY_D->player_pay(player, cost * 100))",
+                           "if (0) /* MUT-B: 灵石扣费被删 */")
+mut_plant_body = extract_func(mut_plant, "plant")
+check("LPC 原文突变：plant 灵石扣费被删后守卫转红（MUT-B）",
+      mut_plant_body is not None and not plant_pay_ok(mut_plant_body))
+
+# 突变实证（复刻 MUT-C）：use_facility 的 grant_buff 被移除（加成不再生效）→ 守卫必须转红
+mut_use = daemon.replace("grant_buff(player, key, value, dur);", "/* MUT-C: 加成不再生效 */")
+mut_use_body = extract_func(mut_use, "use_facility")
+check("LPC 原文突变：use_facility grant_buff 被移除后守卫转红（MUT-C）",
+      mut_use_body is not None and not use_grant_ok(mut_use_body))
+
+# ======== c6 命令面中文名解析原文守卫（第 3 轮小厮·2 not_met 项） ========
+# 帮助/列表展示中文名（灵草/黄龙草/紫丹参/长春功），实现必须按中文名或拼音 id 双向解析。
+
+def resolve_seed_name_ok(body):
+    """resolve_seed_id 函数体：必须含中文名匹配分支（sc["name"] == arg）"""
+    if body is None: return False
+    return 'sc["name"] == arg' in body
+
+def resolve_skill_name_ok(body):
+    """resolve_skill_id 函数体：必须含中文名匹配分支（info["name"] == arg）"""
+    if body is None: return False
+    return 'info["name"] == arg' in body
+
+seed_res_body = extract_func(daemon, "resolve_seed_id")
+skill_res_body = extract_func(daemon, "resolve_skill_id")
+check("LPC 原文 resolve_seed_id：中文名或拼音 id 双向匹配", resolve_seed_name_ok(seed_res_body))
+check("LPC 原文 resolve_skill_id：中文名或拼音 id 双向匹配", resolve_skill_name_ok(skill_res_body))
+
+# 突变实证：把 resolve_seed_id 改成只按拼音 id 匹配（删中文名分支）→ 守卫转红
+mut_seed = daemon.replace("if (sid == arg || (mapp(sc) && sc[\"name\"] == arg))",
+                          "if (sid == arg)")
+mut_seed_body = extract_func(mut_seed, "resolve_seed_id")
+check("LPC 原文突变：resolve_seed_id 去掉中文名匹配后守卫转红（c6 命令面）",
+      mut_seed_body is not None and not resolve_seed_name_ok(mut_seed_body))
+
+# ======== 命令层 dispatch 静态守卫（命令层测试绑定真实 facility.c） ========
+# 命令层必须把子命令参数（中文名或拼音 id）原样传给 daemon，中文名解析在 daemon 侧完成。
+facility_c = open(os.path.join(BASE, "cmds/usr/facility.c"), encoding="utf-8").read()
+check("命令层 facility.c：plant 子命令传参给 SECT_FACILITY_D->plant",
+      "SECT_FACILITY_D->plant(me, key, subarg)" in facility_c)
+check("命令层 facility.c：read 子命令传参给 SECT_FACILITY_D->read_skill",
+      "SECT_FACILITY_D->read_skill(me, key, subarg)" in facility_c)
+check("命令层 facility.c：copy 子命令传参给 SECT_FACILITY_D->transcribe_skill",
+      "SECT_FACILITY_D->transcribe_skill(me, key, subarg)" in facility_c)
+check("命令层 facility.c：buy 子命令传参给 SECT_FACILITY_D->market_buy",
+      "SECT_FACILITY_D->market_buy(me, key, subarg, 1)" in facility_c)
+
+# 突变实证：命令层把 plant 参数硬编码成拼音 id（中文名输入将失效）→ 守卫转红
+mut_fac = facility_c.replace("SECT_FACILITY_D->plant(me, key, subarg)",
+                             'SECT_FACILITY_D->plant(me, key, "lingcao")')
+check("命令层突变：facility.c plant 硬编码 id 后守卫转红（命令层绑定）",
+      "SECT_FACILITY_D->plant(me, key, subarg)" not in mut_fac)
 
 # ---------- 汇总 ----------
 print("===== #60 门派设施系统 路径验证 =====")
