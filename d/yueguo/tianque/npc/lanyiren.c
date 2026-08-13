@@ -34,6 +34,21 @@ void create()
         set("chat_msg", ({
                 "蓝衣人叹道：血禁试炼凶险异常，我那一身家当，险些尽数折在禁地之中。\n"
         }));
+        // —— 传功（#72）：本门功法 + 基本武学，供本门弟子 learn 请教 ——
+        set_skill("force", 100);
+        set_skill("dodge", 100);
+        set_skill("parry", 100);
+        set_skill("unarmed", 100);
+        set_skill("zhubao-shu", 100);
+        set_skill("zhenfa-shu", 100);
         setup();
         carry_object("/clone/misc/cloth")->wear();
+}
+
+// 传功：仅天阙堡弟子可请教（learn 命令），外人不得偷学本门功法
+int recognize_apprentice(object ob)
+{
+        if (SECT_D->query_player_sect(ob) != "tianque_fort")
+                return 0;
+        return 1;
 }
