@@ -10,6 +10,8 @@
 
 #include <ansi.h>
 #include <quest_chain.h>
+#include <sect_quest.h>
+#include <sect.h>
 
 inherit F_DBASE;
 
@@ -82,6 +84,11 @@ float calc_chain_length_bonus(string chain_id, mapping player_state);
 float calc_quality_coefficient(int quality);
 int calc_realm_base(int realm_index);
 int calc_drop_probability(object player, mapping quest_template, string item_type);
+
+// === 奖励结算（#59 宗门任务链接入） ===
+int grant_quest_rewards(object player, string quest_id);
+void grant_skill(object player, string sect_id, string skill_id);
+int update_daily_streak(object player);
 
 // === 内部工具 ===
 int get_player_realm_index(object player);
@@ -532,7 +539,10 @@ int complete_quest(object player, string quest_id)
     
     // 更新进度映射
     player->set(QUEST_CHAIN_PROGRESS + "/" + quest_id, QUEST_STATUS_COMPLETED);
-    
+
+    // 结算任务奖励（经验/灵石/声望/门派贡献/物品/功法）
+    grant_quest_rewards(player, quest_id);
+
     // 处理链式触发
     if (stringp(chain_id) && chain_registry[chain_id])
     {
@@ -563,11 +573,8 @@ int complete_quest(object player, string quest_id)
     if (template["type"] == QUEST_TYPE_DAILY)
     {
         player->add(QUEST_CHAIN_DAILY_COUNT, 1);
-        // 更新连续完成天数
-        int streak = player->query(QUEST_CHAIN_DAILY_STREAK);
-        if (!streak)
-            streak = 0;
-        player->set(QUEST_CHAIN_DAILY_STREAK, streak + 1);
+        // 活跃度梯度（c6）：连续活跃递增、断档衰减（按自然日）
+        update_daily_streak(player);
     }
     if (template["type"] == QUEST_TYPE_WEEKLY)
     {
@@ -576,6 +583,186 @@ int complete_quest(object player, string quest_id)
     
     save_player_quest_state(player);
     return 1;
+}
+
+// 更新连续活跃天数（按自然日计）；返回当前 streak
+// 同日多次完成不重复计；昨日活跃则连续 +1；断档（间隔 >1 天）重置为 1
+// 驱动点：日常任务完成（complete_quest）+ 宗门任务完成/事件触发（sect_quest_d）
+// 消费点：calc_daily_bonus（奖励加成：连续递增、断档回落）
+int update_daily_streak(object player)
+{
+    int today, last_day, streak;
+
+    if (!objectp(player)) return 0;
+
+    today = time() / 86400;
+    last_day = player->query(QUEST_CHAIN_LAST_DAY);
+    streak = player->query(QUEST_CHAIN_DAILY_STREAK);
+    if (!streak) streak = 0;
+
+    if (last_day == today)
+    {
+        // 同日已计，连续天数不变
+    }
+    else if (last_day == today - 1)
+    {
+        streak++;
+    }
+    else
+    {
+        // 断档：连续活跃重置
+        streak = 1;
+    }
+
+    player->set(QUEST_CHAIN_DAILY_STREAK, streak);
+    player->set(QUEST_CHAIN_LAST_DAY, today);
+    return streak;
+}
+
+// ═══════════════════════════════════════════
+//  任务奖励结算（#59 宗门任务链接入）
+// ═══════════════════════════════════════════
+
+// 结算任务奖励（complete_quest 内部调用）
+// 渠道（c4 奖励接入完整）：
+//   exp          → combat_exp 修为经验
+//   coin         → 灵石（MONEY_D->pay_player，1灵石=100文）
+//   reputation   → REPUTATION_D->add_reputation（含正魔互斥）
+//   contribution → SECT_D->add_contribution（门派贡献，需已入宗）
+//   items        → new() + move(player)（真实物品路径）
+//   skills       → 本门功法写 sect/learned 免贡献解锁；通用功法 set_skill(id,1)
+int grant_quest_rewards(object player, string quest_id)
+{
+    mapping template, rewards;
+    int exp, coin, contrib, i;
+    mixed rep_list, item_list, skill_list;
+
+    if (!objectp(player) || !userp(player)) return 0;
+
+    template = quest_templates[quest_id];
+    if (!mapp(template)) return 0;
+
+    rewards = template["rewards"];
+    if (!mapp(rewards)) return 0;
+
+    // 修为经验
+    exp = calc_exp_reward(player, template);
+    if (exp > 0)
+    {
+        player->add("combat_exp", exp);
+        tell_object(player, HIW "修为经验 +" + exp + "\n" NOR);
+    }
+
+    // 灵石（1 灵石 = 100 文）
+    coin = calc_coin_reward(player, template);
+    if (coin > 0)
+    {
+        MONEY_D->pay_player(player, coin * 100);
+        tell_object(player, HIY "灵石 +" + coin + "\n" NOR);
+    }
+
+    // 声望
+    rep_list = rewards["reputation"];
+    if (arrayp(rep_list))
+    {
+        for (i = 0; i < sizeof(rep_list); i++)
+        {
+            string faction = rep_list[i]["faction"];
+            int value = rep_list[i]["value"];
+            if (stringp(faction) && value)
+            {
+                REPUTATION_D->add_reputation(player, faction, value, "任务奖励 " + quest_id);
+                mapping fi = REPUTATION_D->get_faction_info(faction);
+                string fname = (mapp(fi) && fi["name"]) ? fi["name"] : faction;
+                tell_object(player, HIM "「" + fname + "」声望 +" + value + "\n" NOR);
+            }
+        }
+    }
+
+    // 门派贡献
+    contrib = rewards["contribution"];
+    if (contrib)
+    {
+        if (SECT_D->add_contribution(player, contrib, "任务奖励 " + quest_id))
+            tell_object(player, HIG "门派贡献 +" + contrib + "\n" NOR);
+    }
+
+    // 物品
+    item_list = rewards["items"];
+    if (arrayp(item_list))
+    {
+        for (i = 0; i < sizeof(item_list); i++)
+        {
+            mixed item = item_list[i];
+            string path = stringp(item) ? item
+                         : (mapp(item) ? item["id"] : 0);
+            if (stringp(path) && path != "")
+            {
+                object ob = new(path);
+                if (objectp(ob))
+                {
+                    if (ob->move(player))
+                        tell_object(player, "你获得了" + ob->name() + "。\n");
+                    else
+                        destruct(ob);
+                }
+            }
+        }
+    }
+
+    // 功法发放
+    skill_list = rewards["skills"];
+    if (arrayp(skill_list))
+    {
+        string sect_id = SECT_D->query_player_sect(player);
+        for (i = 0; i < sizeof(skill_list); i++)
+        {
+            string skill_id = skill_list[i];
+            if (stringp(skill_id) && skill_id != "")
+                grant_skill(player, sect_id, skill_id);
+        }
+    }
+
+    return 1;
+}
+
+// 发放单个功法
+// 本门功法（sect_config 命中）→ 写 sect/learned 免贡献解锁（对齐 #57 learn_skill 的数据结构）
+// 通用功法（kungfu/skill 真实存在）→ player->set_skill(id, 1) 直接发放
+void grant_skill(object player, string sect_id, string skill_id)
+{
+    mapping skill_info = 0;
+    mapping learned;
+
+    if (stringp(sect_id))
+        skill_info = SECT_D->query_sect_skill_info(sect_id, skill_id);
+
+    if (mapp(skill_info))
+    {
+        learned = player->query(SECT_PATH_LEARNED);
+        if (!mapp(learned)) learned = ([]);
+        if (!learned[skill_id])
+        {
+            learned[skill_id] = time();
+            player->set(SECT_PATH_LEARNED, learned);
+            tell_object(player, HIG "你习得本门功法「" + skill_info["name"] + "」！\n" NOR);
+        }
+        return;
+    }
+
+    // 通用功法
+    if (file_size(SKILL_D(skill_id) + ".c") > 0)
+    {
+        if (player->query_skill(skill_id, 1) <= 0)
+        {
+            player->set_skill(skill_id, 1);
+            tell_object(player, HIG "你领悟了「" + skill_id + "」的入门真意！\n" NOR);
+        }
+        return;
+    }
+
+    log_file("sect_quest", sprintf("%s %s 任务奖励功法缺失: %s\n",
+              ctime(time()), player->query("id"), skill_id));
 }
 
 // 放弃任务
@@ -1299,27 +1486,35 @@ int calc_drop_probability(object player, mapping quest_template, string item_typ
 // ═══════════════════════════════════════════
 
 // 获取玩家境界索引（0=炼气, 1=筑基, ...）
-// 从玩家的"realm"属性读取，如果没有则返回0
+// 优先读玩家"realm"属性；缺失时按 combat_exp 兜底（阈值对齐 sect_d.exp_to_tier）
 int get_player_realm_index(object player)
 {
     string realm;
     string *realm_names;
     int i;
-    
+
     if (!objectp(player))
         return 0;
-    
+
     realm = player->query("realm");
     if (!stringp(realm) || realm == "")
-        return 0;
-    
+    {
+        int exp = player->query("combat_exp");
+        if (exp < 100000)     return 0;   // 炼气
+        if (exp < 1000000)    return 1;   // 筑基
+        if (exp < 10000000)   return 2;   // 结丹
+        if (exp < 50000000)   return 3;   // 元婴
+        if (exp < 200000000)  return 4;   // 化神
+        return 5;                         // 炼虚+
+    }
+
     realm_names = REALM_NAMES;
     for (i = 0; i < sizeof(realm_names); i++)
     {
         if (strsrch(realm, realm_names[i]) != -1)
             return i;
     }
-    
+
     return 0; // 默认为炼气
 }
 

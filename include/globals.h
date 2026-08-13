@@ -258,6 +258,9 @@
 //门派设施系统（通用设施框架+九宗特色设施）
 #define SECT_FACILITY_D       "/adm/daemons/sect_facility_d"
 
+//宗门任务链与宗门事件（九宗档案落地）
+#define SECT_QUEST_D          "/adm/daemons/sect_quest_d"
+
 //生活技能系统
 #define PROFESSION_D(x)	("/kungfu/profession/" + x)
 
