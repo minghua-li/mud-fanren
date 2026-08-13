@@ -136,6 +136,12 @@ def test_sidecar_safety() -> None:
         {"commands": ["go east", "fly to moon"], "confirm": [], "reason": ""})
     check("非白名单动词拦截", allowed == ["go east"] and any("fly" in b for b in blocked2),
           repr((allowed, blocked2)))
+    # 指令条数超限（MAX_COMMANDS=8，9 条 → SafetyError）
+    try:
+        filter_payload({"commands": [f"go {i}" for i in range(9)], "confirm": [], "reason": ""})
+        check("指令条数超限被拒", False, "未抛 SafetyError")
+    except SafetyError:
+        check("指令条数超限被拒", True)
 
 
 def test_sidecar_timeout() -> None:
@@ -705,9 +711,14 @@ def test_key_local_only() -> None:
         check(f"{path.name} 无密钥字面量", suspicious.search(text) is None,
               repr(suspicious.search(text).group(0)) if suspicious.search(text) else "")
     sidecar_src = (ROOT / "tools/llm/sidecar.py").read_text(encoding="utf-8")
-    check("sidecar 密钥来源仅环境变量/本地配置（复用 #69 llm_client）",
-          "LLMConfig" in sidecar_src and "api_key" not in sidecar_src.replace(
-              "api_key", "").lower() or "LLMConfig" in sidecar_src, "")
+    # 密钥只经 LLMConfig（#69 llm_client）透传：sidecar 自身不得出现 api_key 字面量赋值。
+    # （argparse --llm-key 参数与 LLMConfig(api_key=args.llm_key) 透传是合法形态，不匹配本模式）
+    key_assign = re.findall(r"api_key\s*=\s*['\"][^'\"]+['\"]", sidecar_src)
+    check("sidecar 无 api_key 字面量赋值（只透传 LLMConfig）", key_assign == [], repr(key_assign))
+    check("sidecar 密钥经 LLMConfig 构造透传",
+          "LLMConfig(api_base=args.llm_base, api_key=args.llm_key, model=args.model)" in sidecar_src, "")
+    hard = re.findall(r"(sk-[A-Za-z0-9]{8,}|AIza[A-Za-z0-9_-]{8,}|Bearer\s+[A-Za-z0-9._-]{16,})", sidecar_src)
+    check("sidecar 无硬编码密钥/令牌字面量", hard == [], repr(hard))
     check("sidecar 复用 #69 资产（llm_client/safety/mock 导入）",
           "from tools.llm.llm_client" in sidecar_src
           and "from tools.llm.safety" in sidecar_src

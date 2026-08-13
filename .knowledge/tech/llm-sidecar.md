@@ -69,8 +69,8 @@ prompt 组装 / LLM 调用 / safety 过滤（复用 #69 llm_client/safety/mock�
    （economyd.c:62 `remove_call_out("auto_save")`、bidd.c:45 等）——若按函数名移除
    watchdog_timeout 会误伤其他玩家同函数的挂起 call_out；llmd.c 选择「响应到达即删
    pending，watchdog 触发时查表为空则空跑」精确失效（单线程安全，handle 存表备用）。
-   catch(expr) 单表达式本仓有大量先例（taskd.c:276 `err=catch(obj=new(...))`、
-   storyd.c:154 `catch(ob = load_object(name))`、masternew.c:16 等），llmd.c 的
+   catch(expr) 单表达式本仓有大量先例（taskd.c:69 `err=catch(ob=new(task))`、
+   storyd.c:154 `catch(ob = load_object(name))`、masternew.c:14 等），llmd.c 的
    `err = catch(data = json_parse(line))` 与 `catch(ctx["realm"] = ...)` 同形态。
 9. **force_me 前提**：LLM_D 需 `seteuid(ROOT_UID)`（master.c valid_seteuid 返 1
    允许），feature/command.c 的 force_me 检查 previous_object euid == ROOT_UID。
@@ -85,11 +85,14 @@ prompt 组装 / LLM 调用 / safety 过滤（复用 #69 llm_client/safety/mock�
 
 ## 验证
 
-`python tools/llm/sidecar_selftest.py`（87 断言 + 4 组突变验证，exit 0）：
+`python tools/llm/sidecar_selftest.py`（93 断言 + 多组突变红→绿实证，exit 0；
+断言数随审查修订增长，以脚本实际输出为准）：
 mock 解析链路 / LLM 替身危险指令拦截 / 慢 LLM 超时 / 协议容错 / 未配 key /
-LPC 静态校验（括号配对 + 关键模式）/ LPC 逻辑忠实翻译模拟（正常注入、watchdog
-零注入、迟到响应忽略、LPC 白名单、confirm 流程、非法响应、断线、限流）/
-端到端（真实 TCP + fake LPC 客户端）/ 密钥零硬编码。
+LPC 静态校验（括号配对 + 关键模式 + **函数体级守卫**：watchdog_timeout 零注入 /
+inject_commands 走 force_me / handle_response 错误路径提示）/ LPC 逻辑忠实翻译
+模拟（正常注入、watchdog 零注入、迟到响应忽略、LPC 白名单、confirm 流程、非法
+响应、断线、限流）/ 端到端（真实 TCP + fake LPC 客户端）/ 密钥零硬编码
+（含「sidecar 无 api_key 字面量赋值、密钥仅经 LLMConfig 透传」真实形态断言）。
 
 环境无 fluffos driver：LPC 侧为静态校验 + Python 翻译模拟（作用域已如实标注），
 真实驱动端到端待装驱动后复验（先例 #61/#69）。

@@ -40,8 +40,9 @@ python -m tools.llm.sidecar --port 37777
 python -m tools.llm.sidecar --port 37777 --mock
 ```
 
-- 只监听 `127.0.0.1`（绝不 0.0.0.0）；端口默认 37777，与 `include/globals.h`
-  的 `LLM_SIDECAR_PORT` 一致。
+- 默认只监听 `127.0.0.1`（绝不默认 0.0.0.0）；`--host` 可覆盖绑定地址以支持
+  特殊本地部署，覆盖时须自行确保仅本机/受信主机可访问。端口默认 37777，
+  与 `include/globals.h` 的 `LLM_SIDECAR_PORT` 一致。
 - **每请求一连接、新行分隔 JSON**：LPC 侧发一行请求、收一行响应。
 - LLM 调用超时默认 12s（`--timeout`），**必须短于 LPC 侧 watchdog 15s**。
 
