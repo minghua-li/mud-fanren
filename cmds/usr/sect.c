@@ -67,7 +67,7 @@ int show_panel(object me)
         output += "  " HIY "sect list" NOR "            查看九大宗门\n";
         output += "  " HIY "sect info <门派>" NOR "     查看宗门详情\n";
         output += "  " HIY "sect join <门派>" NOR "     拜入宗门（需炼气三层）\n\n";
-        output += "越国七派（正道）：掩月宗、黄枫谷、灵兽山、清虚门、化刀坞、天阙堡、巨剑门\n";
+        output += "越国七派：掩月宗、黄枫谷、灵兽山、清虚门、巨剑门（正道）；化刀坞、天阙堡（中立）\n";
         output += "天罗魔道：鬼灵门、御灵宗\n";
         me->start_more(output);
         return 1;
@@ -109,7 +109,7 @@ int list_sects(object me)
     string *sects = SECT_D->query_sects();
 
     output = HIC "≡  ≡  ≡  ≡  【 九大宗门 】 ≡  ≡  ≡  ≡\n\n" NOR;
-    output += HIC "◇ 越国七派（正道）\n" NOR;
+    output += HIC "◇ 越国七派（正道五派、中立两派）\n" NOR;
 
     foreach (string sid in sects)
     {
