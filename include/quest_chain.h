@@ -137,5 +137,12 @@
 #define QUEST_CHAIN_DAILY_COUNT  "quest_chain/daily_count"
 #define QUEST_CHAIN_WEEKLY_COUNT "quest_chain/weekly_count"
 #define QUEST_CHAIN_DAILY_STREAK "quest_chain/daily_streak"
+#define QUEST_CHAIN_LAST_DAY     "quest_chain/last_active_day"
+
+// ─── 奖励键扩展（宗门任务/事件用） ───
+// 基础键：exp（修为经验）/ coin（灵石）/ reputation（声望数组）/ items（物品路径数组）
+// 扩展键（#59 宗门任务链）：
+//   "contribution": N   → 门派贡献，结算走 SECT_D->add_contribution
+//   "skills": ({ id })  → 功法发放，见 sect_quest.h 说明
 
 #endif // __QUEST_CHAIN__
