@@ -146,3 +146,10 @@ sect-quest-system -> 02-任务链与奖励曲线 : 奖励四渠道与活跃度�
 sect-quest-system -> sects/README : 9 宗任务链与事件按九宗档案「宗门事件与任务链」节逐宗取材
 sect-quest-system -> teleport-network : 驻地场景挂接（sect_areas）依赖 #58 九宗驻地目录落地
 sect-quest-system -> 1D-门派种族声望 : 事件/任务声望奖励走 REPUTATION_D（含正魔互斥）
+
+## 静态验收方法关联
+
+lpc-region-data-acceptance -> teleport-network : teleport 节点一致性校验的基线是传送网络节点登记（含占位节点清单）
+lpc-region-data-acceptance -> 1D-门派种族声望 : NPC sect 对齐校验的注册表来自门派系统九宗 ID
+lpc-region-data-acceptance -> sects/README : 九宗驻地目录与命名约定是区域数据引用完整性的基线
+lpc-region-data-acceptance -> sect-quest-system : #59 交付验证脚本 tools/check/sect_quest_verify.py 是「同构模拟 + LPC 原文守卫 + 双突变实证」范式的落地实例（§四 模式 3/5）

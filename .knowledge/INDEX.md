@@ -42,6 +42,8 @@
 ├── quests/                     # 📜 任务系统
 │   ├── 1G-任务副本奇遇.md       # 主线/副本/奇遇完整设计（完整版）
 │   └── sect-quest-system.md    # 宗门任务链与宗门事件（LPC 实现版，#59 落地）
+├── architecture/               # 🏗️ 架构·验收方法
+│   └── lpc-region-data-acceptance.md  # LPC 区域数据静态验收方法（无 driver 环境，#58 实测 + 多轮 check 实战）
 ├── 02-扩充内容/                # ✨ 合理扩充（旧版，.knowledge 内备份）
 │   ├── 02-经济与资源.md         # （旧版基底，见新版项目根 02-扩充内容/）
 │   ├── 02-日常玩法.md           # 修行生活、副职系统、PVE/PVP 日常（合理扩充）
@@ -61,6 +63,7 @@
 
 | 目录 | 文件 | 维度 | 概述 | 类型 |
 |------|------|------|------|------|
+| `architecture/` | [[lpc-region-data-acceptance]] | **LPC 区域数据静态验收方法** | 无 fluffos driver 环境下纯房间/NPC 数据的 author_check 写法、check 脚本踩坑与 check 自身 bug 模式（#57/#58/#60/#61/#67/#59 实测） | 验收方法 |
 | `overview/` | [[1A-游戏要素总览]] | **总览** | 全部设计文档的汇总总览，按八大维度组织 | 📖 入手先读 |
 | `world/` | [[WORLD_DESIGN]] | 世界观总览 | 三界结构（人界→灵界→仙界）、地理区域、历史脉络 | 总览文档 |
 | `world/` | → [[1A-人界地理]] | 人界地理（详细） | 越国七派、乱星海、大晋、慕兰草原、凡人江湖等区域 | 详细展开 |
@@ -93,4 +96,5 @@
 见 [[RELATIONS]] 文件（根目录），用边表记录知识点间的关联。
 - `teleport-network` — 传送节点落地现状与占位清单、九宗/越国世俗区域目录约定、太南谷坊市买卖入口的经济接口接法 — world/teleport-network.md
 - `realm-storage-convention` — 读/写玩家 realm 属性时须用「炼气N层」ASCII 数字层数格式（sect_d.extract_layer 只认 0-9，中文数字会解析失败）；统一走 ROOT_REFINE_D 接口 — cultivation/realm-storage-convention.md
+- `lpc-region-data-acceptance` — 无 driver 环境下 LPC 区域数据 author_check 写法、脚本踩坑与 check 自身 bug 模式（空集合恒真守卫/突变实证/作用域标注） — architecture/lpc-region-data-acceptance.md
 - `teleport-network` — 传送网络节点哪些已落地、哪些还是占位路径；九宗驻地目录与 sect_id 对齐约定 — world/teleport-network.md
