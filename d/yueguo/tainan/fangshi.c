@@ -17,6 +17,10 @@ inherit ROOM;
 // 商品类型对齐 include/region_economy.h REGION_SPECIAL_PRODUCTS（ore_basic/herb_basic/hide_basic）
 nosave mapping goods = ([
         "tiejing" : ([ "name" : "铁精", "file" : __DIR__"obj/tiejing", "type" : "ore_basic", "base" : 2 ]),
+        "yinjing" : ([ "name" : "银精", "file" : __DIR__"obj/yinjing", "type" : "ore_silver", "base" : 5 ]),
+        "jinjing" : ([ "name" : "金精", "file" : __DIR__"obj/jinjing", "type" : "ore_gold", "base" : 15 ]),
+        "xuantie" : ([ "name" : "玄铁", "file" : __DIR__"obj/xuantie", "type" : "ore_xuantie", "base" : 30 ]),
+        "gengjing" : ([ "name" : "庚精", "file" : __DIR__"obj/gengjing", "type" : "ore_gengjing", "base" : 80 ]),
         "lingcao" : ([ "name" : "灵草", "file" : __DIR__"obj/lingcao", "type" : "herb_basic", "base" : 1 ]),
         "shoupi" : ([ "name" : "兽皮", "file" : __DIR__"obj/shoupi", "type" : "hide_basic", "base" : 1 ]),
         "huanglongcao" : ([ "name" : "黄龙草", "file" : __DIR__"obj/huanglongcao", "type" : "herb_huanglong", "base" : 5 ]),
@@ -43,8 +47,13 @@ LONG );
         ]));
 
         // P5-4 经济接口预留：注册坊市材料商品（幂等；重复注册仅刷新基准价）
+        // #74 起矿石类材料供给炼器配方（铁精/银精/金精/玄铁/庚精，稀有度递增）
         if (find_object(ECONOMY_D)) {
                 ECONOMY_D->register_goods("ore_basic", 2, 50);
+                ECONOMY_D->register_goods("ore_silver", 5, 40);
+                ECONOMY_D->register_goods("ore_gold", 15, 30);
+                ECONOMY_D->register_goods("ore_xuantie", 30, 20);
+                ECONOMY_D->register_goods("ore_gengjing", 80, 5);
                 ECONOMY_D->register_goods("herb_basic", 1, 100);
                 ECONOMY_D->register_goods("hide_basic", 1, 80);
                 ECONOMY_D->register_goods("herb_huanglong", 5, 30);
