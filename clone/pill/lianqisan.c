@@ -17,7 +17,7 @@ void create()
         set("stage", 1);
         set("effect", 300);
         set("quality", 1);
-        set("refine_level", 5);
+        set("refine_level", 1);
         set("side_effect", "炼制炼气散的材料多为寻常灵草，长期服用丹毒微量。");
         set("long", "一瓶以灵草为主药炼制的散剂，供炼气期修士精进修为。\n");
         setup();

@@ -17,7 +17,7 @@ void create()
         set("stage", 1);
         set("effect", 800);
         set("quality", 1);
-        set("refine_level", 5);
+        set("refine_level", 3);
         set("side_effect", "黄龙草药性偏烈，久服丹毒累积稍快。");
         set("long", "以黄龙草炼制的丹药，可大幅提升炼气期修为。\n");
         setup();

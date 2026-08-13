@@ -17,7 +17,7 @@ void create()
         set("stage", 2);
         set("effect", 2000);
         set("quality", 2);
-        set("refine_level", 10);
+        set("refine_level", 12);
         set("side_effect", "药力深厚，筑基期以上服用，丹毒较重。");
         set("long", "供筑基期修士巩固修为的丹药，蕴含浓厚灵力。\n");
         setup();

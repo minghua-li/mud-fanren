@@ -17,7 +17,7 @@ void create()
         set("stage", 3);
         set("effect", 15);
         set("quality", 3);
-        set("refine_level", 15);
+        set("refine_level", 18);
         set("side_effect", "逆天丹药，药力暴烈，冲击结丹瓶颈时方显神效。");
         set("long", "辅助结丹的逆天丹药，服用后冲击结丹瓶颈成功率提升（可叠加最多3颗）。\n");
         setup();

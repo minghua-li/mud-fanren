@@ -12,6 +12,7 @@ void create()
         set("material", "herb");
         set("is_material", 1);
         set("material_id", "lingcao");
+        set("herb_year", 50);
         set("value", 100);
         set("long", "一株常见的灵草，叶片泛着淡淡灵光，是炼制炼气期丹药的基础材料。\n");
         setup();

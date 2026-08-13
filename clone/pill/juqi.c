@@ -15,9 +15,9 @@ void create()
         set("value", 800);
         set("pill_type", "xiuwei");
         set("stage", 1);
-        set("effect", 200);
+        set("effect", 500);
         set("quality", 1);
-        set("refine_level", 5);
+        set("refine_level", 2);
         set("side_effect", "常见丹药，丹毒轻微。");
         set("long", "聚集天地灵气的丹药，服用后可小幅增加修为。\n");
         setup();
