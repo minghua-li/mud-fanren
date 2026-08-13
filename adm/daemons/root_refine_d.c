@@ -1706,6 +1706,577 @@ int query_skill_level_limit(object ob, string skill_name)
 }
 
 //=============================================================================
+// 境界(realm)属性接线：统一境界存储约定
+//   realm      = 中文境界字符串（"炼气1层"~"炼气13层"（层数为 ASCII 数字，sect_d 依赖）/
+//                 "筑基初期"~"大乘后期"）
+//   realm_sub  = 子阶段（"初期"/"中期"/"后期"/"巅峰"/"大圆满"，供 achievement 等系统）
+//   realm_index= 大境界索引（0=凡人 1=炼气 2=筑基 3=结丹 4=元婴 5=化神 6=炼虚 7=合体 8=大乘）
+//   xiuwei     = 修为值（打坐/灵石灌注获得，突破消耗）
+// 读取端（sect_d/quest_chain_d/activity_d/achievement_d/economy_bridge_d）均以
+// query("realm") 为真值来源，本约定与各自解析逻辑兼容。
+//=============================================================================
+
+// 大境界名称（下标即 realm_index，0=凡人）
+nosave string *realm_stage_names = ({ "凡人", "炼气", "筑基", "结丹", "元婴", "化神", "炼虚", "合体", "大乘" });
+nosave string *realm_sub_stage_names = ({ "初期", "中期", "后期", "巅峰", "大圆满" });
+
+// 炼气期层数上限
+#define REALM_QI_MAX_LAYER       13
+// 炼气期 13 层 → 筑基的修为门槛（含各子境界门槛）
+// 设计依据：quest_chain.h REALM_BASE_*（炼气=50 筑基=200 …）× 放大系数 200
+#define XIUWEI_QI_TO_ZHU         10000
+#define XIUWEI_ZHU_SUB           5000    // 筑基初→中→后 每档
+#define XIUWEI_ZHU_TO_JIE        30000   // 筑基→结丹
+#define XIUWEI_JIE_SUB           20000   // 结丹初→中→后 每档
+#define XIUWEI_JIE_TO_YING       100000  // 结丹→元婴
+#define XIUWEI_YING_SUB          50000   // 元婴初→中→后 每档
+#define XIUWEI_YING_TO_HUA       500000  // 元婴→化神
+
+// 打坐修炼：每次心跳获得的基础修为（按大境界）
+#define XIUWEI_BASE_QI           10
+#define XIUWEI_BASE_ZHU          30
+#define XIUWEI_BASE_JIE          100
+#define XIUWEI_BASE_YING         400
+#define XIUWEI_BASE_HUA          1500
+
+// 突破失败冷却（现实秒）：对齐 realm-breakthrough-failure-penalty 设计约定
+//   下境界大境界突破失败 15 游戏天 ≈ 现实 1 天；上境界 45 游戏天 ≈ 现实 3 天
+#define BREAK_CD_QI_TO_ZHU       86400
+#define BREAK_CD_ZHU_TO_JIE      86400
+#define BREAK_CD_JIE_TO_YING     259200
+#define BREAK_CD_YING_TO_HUA     259200
+
+// 大境界连续失败保底（≥3 次后下次概率 +15%，直到成功为止）
+#define MAJOR_BREAK_STREAK_THRESHOLD  3
+#define MAJOR_BREAK_STREAK_BONUS      15
+
+// 大境界突破失败修为回退比例（千分比，保留部分进度不重置）
+#define BREAK_FAIL_XIUWEI_KEEP    500   // 失败保留 50% 当前突破门槛
+
+// ----- 查询接口 -----
+
+// 玩家当前大境界索引（0=凡人）
+int query_player_realm_index(object ob)
+{
+    int idx;
+
+    if (!objectp(ob)) return 0;
+    idx = ob->query("realm_index");
+    if (intp(idx) && idx > 0) return idx;
+    // 兜底：从 realm 字符串解析
+    return query_realm_index_from_string(ob->query("realm"));
+}
+
+// 从境界字符串解析大境界索引（与 sect_d.parse_realm 口径一致）
+int query_realm_index_from_string(string realm)
+{
+    int i;
+
+    if (!stringp(realm) || realm == "") return 0;
+    for (i = 1; i < sizeof(realm_stage_names); i++)
+        if (strsrch(realm, realm_stage_names[i]) != -1)
+            return i;
+    return 0;
+}
+
+// 玩家炼气层数（非炼气期返回 0）
+int query_player_realm_layer(object ob)
+{
+    string realm;
+    int idx, i, len, start, end;
+
+    if (!objectp(ob)) return 0;
+    idx = query_player_realm_index(ob);
+    if (idx != 1) return 0;
+
+    realm = ob->query("realm");
+    if (!stringp(realm)) return 0;
+    len = strlen(realm);
+    start = -1;
+    for (i = 0; i < len; i++)
+    {
+        int ch = realm[i];
+        if (ch >= 48 && ch <= 57)
+        {
+            start = i;
+            break;
+        }
+    }
+    if (start == -1) return 1;
+    end = start;
+    while (end < len)
+    {
+        int ch = realm[end];
+        if (ch < 48 || ch > 57) break;
+        end++;
+    }
+    return to_int(realm[start..end-1]);
+}
+
+// 玩家境界显示名（无则"凡人"）
+string query_player_realm(object ob)
+{
+    string realm;
+
+    if (!objectp(ob)) return "凡人";
+    realm = ob->query("realm");
+    if (stringp(realm) && realm != "") return realm;
+    return "凡人";
+}
+
+// 玩家子阶段名（供 achievement_d 等系统）
+string query_player_realm_sub(object ob)
+{
+    string sub;
+
+    if (!objectp(ob)) return "初期";
+    sub = ob->query("realm_sub");
+    if (stringp(sub) && sub != "") return sub;
+    return "初期";
+}
+
+// 境界索引 + 子阶段 → 中文境界字符串
+// index=1（炼气）时 sub 为层数（1~13）；index>=2 时 sub 为子阶段序号（0初/1中/2后）
+string realm_name(int index, int sub)
+{
+    if (index <= 0) return "凡人";
+    if (index >= sizeof(realm_stage_names)) index = sizeof(realm_stage_names) - 1;
+
+    if (index == 1)
+    {
+        if (sub < 1) sub = 1;
+        if (sub > REALM_QI_MAX_LAYER) sub = REALM_QI_MAX_LAYER;
+        // 层数用 ASCII 数字（sect_d.extract_layer 只解析 0-9，中文数字无法提取）
+        return "炼气" + sub + "层";
+    }
+    else
+    {
+        if (sub < 0) sub = 0;
+        if (sub > 2) sub = 2;
+        return realm_stage_names[index] + realm_sub_stage_names[sub];
+    }
+}
+
+// 炼气层数 → 子阶段名
+string qi_layer_sub_name(int layer)
+{
+    if (layer <= 3) return "初期";
+    if (layer <= 6) return "中期";
+    if (layer <= 9) return "后期";
+    if (layer <= 12) return "巅峰";
+    return "大圆满";
+}
+
+// 子阶段序号 → 名（0初/1中/2后）
+string sub_stage_name(int stage)
+{
+    if (stage < 0) stage = 0;
+    if (stage > 2) stage = 2;
+    return realm_sub_stage_names[stage];
+}
+
+// 写入玩家境界（统一入口）
+void set_player_realm(object ob, int index, int sub)
+{
+    if (!objectp(ob)) return;
+
+    ob->set("realm", realm_name(index, sub));
+    ob->set("realm_index", index);
+    if (index == 1)
+        ob->set("realm_sub", qi_layer_sub_name(sub));
+    else
+        ob->set("realm_sub", sub_stage_name(sub));
+}
+
+// ----- 修为存取 -----
+
+// 玩家当前修为
+int query_xiuwei(object ob)
+{
+    int x;
+
+    if (!objectp(ob)) return 0;
+    x = ob->query("xiuwei");
+    if (!intp(x)) return 0;
+    return x;
+}
+
+// 增加修为（0 以下归零保护）
+int add_xiuwei(object ob, int n)
+{
+    int cur;
+
+    if (!objectp(ob) || n == 0) return query_xiuwei(ob);
+    cur = query_xiuwei(ob) + n;
+    if (cur < 0) cur = 0;
+    ob->set("xiuwei", cur);
+    return cur;
+}
+
+// 消耗修为（够则扣并返回 1，不够返回 0）
+int spend_xiuwei(object ob, int n)
+{
+    if (!objectp(ob) || n <= 0) return 0;
+    if (query_xiuwei(ob) < n) return 0;
+    add_xiuwei(ob, -n);
+    return 1;
+}
+
+// 炼气第 N 层 → N+1 层所需修为（1→2 需 100，2→3 需 200 … 12→13 需 1200）
+int query_layer_xiuwei_need(int layer)
+{
+    if (layer < 1) layer = 1;
+    return layer * 100;
+}
+
+// 当前炼气层 → 下一层的修为需求；已大圆满返回 0
+int query_next_layer_need(object ob)
+{
+    int layer;
+
+    if (!objectp(ob)) return 0;
+    if (query_player_realm_index(ob) != 1) return 0;
+    layer = query_player_realm_layer(ob);
+    if (layer >= REALM_QI_MAX_LAYER) return 0;
+    return query_layer_xiuwei_need(layer);
+}
+
+// 当前子境界 → 下一子境界的修为需求（筑基/结丹/元婴）；非此类返回 0
+int query_next_sub_need(object ob)
+{
+    int idx;
+
+    if (!objectp(ob)) return 0;
+    idx = query_player_realm_index(ob);
+    switch (idx)
+    {
+    case 2: return XIUWEI_ZHU_SUB;   // 筑基
+    case 3: return XIUWEI_JIE_SUB;   // 结丹
+    case 4: return XIUWEI_YING_SUB;  // 元婴
+    default: return 0;
+    }
+}
+
+// 当前境界突破到下一大境界所需修为（非大圆满前不可大突破）
+int query_major_break_need(object ob)
+{
+    int idx, layer;
+
+    if (!objectp(ob)) return 0;
+    idx = query_player_realm_index(ob);
+    switch (idx)
+    {
+    case 1:
+        layer = query_player_realm_layer(ob);
+        if (layer >= REALM_QI_MAX_LAYER) return XIUWEI_QI_TO_ZHU;
+        return 0;
+    case 2:
+        if (query_player_sub_stage(ob) >= 2) return XIUWEI_ZHU_TO_JIE;
+        return 0;
+    case 3:
+        if (query_player_sub_stage(ob) >= 2) return XIUWEI_JIE_TO_YING;
+        return 0;
+    case 4:
+        if (query_player_sub_stage(ob) >= 2) return XIUWEI_YING_TO_HUA;
+        return 0;
+    default:
+        return 0;
+    }
+}
+
+// 玩家子阶段序号（0初/1中/2后；炼气按层数折算）
+int query_player_sub_stage(object ob)
+{
+    string sub;
+
+    if (!objectp(ob)) return 0;
+    if (query_player_realm_index(ob) == 1)
+    {
+        int layer = query_player_realm_layer(ob);
+        if (layer <= 3) return 0;
+        if (layer <= 6) return 1;
+        return 2;
+    }
+    sub = ob->query("realm_sub");
+    if (!stringp(sub)) return 0;
+    if (strsrch(sub, "中期") != -1) return 1;
+    if (strsrch(sub, "后期") != -1) return 2;
+    return 0;
+}
+
+// ----- 修炼（时间换修为） -----
+
+// 当前境界的打坐基础修为（每次心跳）
+int query_cultivation_base(object ob)
+{
+    int idx;
+
+    if (!objectp(ob)) return 0;
+    idx = query_player_realm_index(ob);
+    switch (idx)
+    {
+    case 0: return 0;                    // 凡人无法修炼
+    case 1: return XIUWEI_BASE_QI;
+    case 2: return XIUWEI_BASE_ZHU;
+    case 3: return XIUWEI_BASE_JIE;
+    case 4: return XIUWEI_BASE_YING;
+    default: return XIUWEI_BASE_HUA;     // 化神及以上
+    }
+}
+
+// 单次心跳修炼所得修为 = 境界基准 × 灵根速度系数（含精纯度修正）
+int query_heartbeat_cultivation_gain(object ob)
+{
+    int base;
+    float factor;
+
+    if (!objectp(ob)) return 0;
+    base = query_cultivation_base(ob);
+    if (base <= 0) return 0;
+    factor = query_cultivation_speed_factor(ob);
+    if (factor <= 0.0) return 0;
+    return to_int(to_float(base) * factor);
+}
+
+// 检查并执行炼气期层数自动提升（修为足够即升层，新人保护无概率判定）
+// 返回 1=已升层，0=未升层
+int check_qi_layer_up(object ob)
+{
+	int layer, need, new_layer;
+
+	if (!objectp(ob)) return 0;
+	if (query_player_realm_index(ob) != 1) return 0;
+
+	layer = query_player_realm_layer(ob);
+	if (layer >= REALM_QI_MAX_LAYER) return 0;
+	need = query_layer_xiuwei_need(layer);
+	if (query_xiuwei(ob) < need) return 0;
+
+	new_layer = layer + 1;
+	spend_xiuwei(ob, need);
+	set_player_realm(ob, 1, new_layer);
+	if (new_layer >= REALM_QI_MAX_LAYER)
+		tell_object(ob, HIG "你的修为已达炼气" + REALM_QI_MAX_LAYER +
+		            "层大圆满！可以尝试突破筑基（tupo）。\n" NOR);
+	else
+		tell_object(ob, HIG "水到渠成，你的境界提升至炼气" + new_layer + "层！\n" NOR);
+	return 1;
+}
+
+// 执行一次心跳修炼，返回实际获得修为（同时喂养灵根经验）
+int do_heartbeat_cultivation(object ob)
+{
+	int gain;
+
+	if (!objectp(ob) || !userp(ob)) return 0;
+	gain = query_heartbeat_cultivation_gain(ob);
+	if (gain <= 0)
+	{
+		tell_object(ob, "你尚未测出灵根，无法引气入体。请先前往门派「测灵殿」检测灵根（root 查看）。\n");
+		return 0;
+	}
+
+	add_xiuwei(ob, gain);
+	// 灵根经验同步成长（修炼获得灵根经验）
+	gain_exp_from_cultivation(ob, gain / 2);
+	// 炼气期层数自动提升
+	check_qi_layer_up(ob);
+
+	return gain;
+}
+
+// ----- 大境界突破 -----
+
+// 大境界突破失败冷却（秒），按当前境界
+int query_break_cd(object ob)
+{
+    int idx;
+
+    if (!objectp(ob)) return 0;
+    idx = query_player_realm_index(ob);
+    switch (idx)
+    {
+    case 1: return BREAK_CD_QI_TO_ZHU;   // 炼气→筑基
+    case 2: return BREAK_CD_ZHU_TO_JIE;  // 筑基→结丹
+    case 3: return BREAK_CD_JIE_TO_YING; // 结丹→元婴
+    default: return BREAK_CD_YING_TO_HUA; // 元婴及以上
+    }
+}
+
+// 剩余突破冷却（秒），0 表示可突破
+int query_break_cooldown_remaining(object ob)
+{
+    int last, remain;
+
+    if (!objectp(ob)) return 0;
+    last = ob->query(ROOT_PROP_LAST_BREAK);
+    if (!intp(last) || last <= 0) return 0;
+    remain = last + query_break_cd(ob) - time();
+    if (remain < 0) return 0;
+    return remain;
+}
+
+// 大境界突破成功：写入真实境界
+int major_breakthrough_success(object ob, int method)
+{
+    int idx, new_idx, purity;
+    string msg;
+
+    if (!objectp(ob)) return 0;
+    idx = query_player_realm_index(ob);
+
+    // 炼气→筑基：新境界筑基初期；其余大境界进入下一境界初期
+    new_idx = idx + 1;
+    set_player_realm(ob, new_idx, 0);
+    ob->set(ROOT_PROP_LAST_BREAK, 0);
+
+    // 突破奖励：灵根强度 +10、精纯度 +3%（与灵根突破一致）
+    ob->add(ROOT_PROP_STRENGTH, 10);
+    purity = ob->query(ROOT_PROP_PURITY);
+    purity += 3;
+    if (purity > 100) purity = 100;
+    ob->set(ROOT_PROP_PURITY, purity);
+    ob->set(ROOT_PROP_FAIL_STREAK, 0);
+
+    msg = sprintf(HIG "\n═══════════════════\n"
+                  "  恭喜！你突破至%s！\n"
+                  "  灵根强度 +10，精纯度 +3%%\n"
+                  "═══════════════════\n" NOR, query_player_realm(ob));
+    tell_object(ob, msg);
+    // 让同房间的人看到突破异象
+    if (environment(ob))
+        message_vision(HIM "$N身上灵光暴涨，气息陡然大增——竟然突破了境界！\n" NOR, ob);
+
+    log_file("realm", sprintf("%s %s breakthrough -> %s\n",
+              ctime(time()), ob->query("id"), query_player_realm(ob)));
+    return 1;
+}
+
+// 大境界突破失败：修为回退 + 冷却 + 连续失败保底
+int major_breakthrough_failure(object ob, int method)
+{
+    int need, keep, penalty, streak;
+
+    if (!objectp(ob)) return 0;
+    need = query_major_break_need(ob);
+    // 修为回退：保留当前突破门槛的 50%（保留部分进度，不重置）
+    keep = to_int(to_float(need) * BREAK_FAIL_XIUWEI_KEEP / 1000.0);
+    if (keep > 0)
+    {
+        penalty = need - keep;
+        add_xiuwei(ob, -penalty);
+    }
+
+    // 设置失败冷却
+    ob->set(ROOT_PROP_LAST_BREAK, time());
+
+    // 连续失败计数（大境界失败才累计，成功清零）
+    ob->add(ROOT_PROP_FAIL_STREAK, 1);
+    streak = ob->query(ROOT_PROP_FAIL_STREAK);
+
+    // 道痕裂伤（简化版：连续失败 ≥2 触发灵根震荡 debuff，修炼效率下降）
+    if (streak >= 2 && !ob->query(ROOT_PROP_DEBUFF))
+        apply_root_debuff(ob, ROOT_DEBUFF_SHOCK, ROOT_DEBUFF_DURATION_SHORT);
+
+    tell_object(ob, HIR "\n═══════════════════\n"
+                "  突破失败！\n");
+    if (penalty > 0)
+        tell_object(ob, sprintf("  修为受损 -%d\n", penalty));
+    tell_object(ob, sprintf("  经脉受创，%d 秒内无法再次尝试大境界突破\n", query_break_cd(ob)));
+    tell_object(ob, "═══════════════════\n" NOR);
+
+    if (streak >= MAJOR_BREAK_STREAK_THRESHOLD)
+        tell_object(ob, HIC "连续失败多次，下次突破将获得额外加成！\n" NOR);
+
+    return 1;
+}
+
+// 执行大境界突破（返回：1=成功 2=失败 0=条件不满足）
+// method 复用灵根突破方式常量（BREAK_METHOD_*）
+int do_major_breakthrough(object ob, int method)
+{
+    int need, prob, streak, idx, target;
+    int roll, cd;
+
+    if (!objectp(ob)) return 0;
+
+    idx = query_player_realm_index(ob);
+    if (idx <= 0 || idx >= sizeof(realm_stage_names) - 1)
+    {
+        tell_object(ob, "你已修炼至当前界面的最高境界，再无可突破之境。\n");
+        return 0;
+    }
+
+    need = query_major_break_need(ob);
+    if (need <= 0)
+    {
+        tell_object(ob, "你尚未修炼至当前境界的圆满，无法尝试大境界突破。\n");
+        return 0;
+    }
+
+    if (query_xiuwei(ob) < need)
+    {
+        tell_object(ob, sprintf("修为不足：突破需修为 %d（当前 %d）。请继续打坐修炼（dazuo）。\n",
+                    need, query_xiuwei(ob)));
+        return 0;
+    }
+
+    cd = query_break_cooldown_remaining(ob);
+    if (cd > 0)
+    {
+        tell_object(ob, sprintf("经脉尚未恢复，还需 %d 秒才能再次尝试突破。\n", cd));
+        return 0;
+    }
+
+    // 天灵根特例：结丹及以下自动成功（query_major_breakthrough_probability 已内置）
+    target = idx + 1;
+    prob = query_major_breakthrough_probability(ob, target);
+
+    tell_object(ob, sprintf(HIC "你盘膝而坐，引动体内灵力冲击%s瓶颈……成功率约 %d%%\n" NOR,
+                realm_stage_names[target], prob));
+
+    // 连续失败保底
+    streak = ob->query(ROOT_PROP_FAIL_STREAK);
+    if (streak >= MAJOR_BREAK_STREAK_THRESHOLD)
+    {
+        prob += MAJOR_BREAK_STREAK_BONUS;
+        if (prob > 99) prob = 99;
+        tell_object(ob, HIC "连续失败的积累让你对瓶颈有了更深感悟，突破概率提升！\n" NOR);
+    }
+
+    roll = random(100);
+    if (roll < prob)
+    {
+        spend_xiuwei(ob, need);
+        return major_breakthrough_success(ob, method) ? 1 : 0;
+    }
+    else
+    {
+        return major_breakthrough_failure(ob, method) ? 2 : 0;
+    }
+}
+
+// 当前突破任务链提示（接 root_refine_d 任务链设计）
+string query_current_break_task_chain(object ob)
+{
+    int idx, target, i;
+    string *chain;
+    string ret;
+
+    if (!objectp(ob)) return "";
+    idx = query_player_realm_index(ob);
+    target = idx + 1;
+    if (target >= sizeof(realm_stage_names)) return "";
+    chain = query_breakthrough_task_chain(ob, target);
+    if (!sizeof(chain)) return "";
+    ret = HIC "突破任务链（" + realm_stage_names[idx] + "→" +
+          realm_stage_names[target] + "）：\n" NOR;
+    for (i = 0; i < sizeof(chain); i++)
+        ret += sprintf("  %d. %s\n", i + 1, chain[i]);
+    return ret;
+}
+
+//=============================================================================
 // 工具函数
 //=============================================================================
 
