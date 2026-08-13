@@ -138,5 +138,3 @@ realm-breakthrough-failure-penalty -> 02-灵根养成与突破 : 道痕裂伤系
 teleport-network  ->  1A-人界地理 : 越国七派/天罗国区域落地到 d/yueguo 与 d/tianluo
 teleport-network  ->  sects/README : 九宗驻地房间与 NPC 按宗门档案取材
 teleport-network  ->  1D-门派种族声望 : NPC sect 属性与门派 ID 对齐
-teleport-network  ->  1A-人界地理 : 越国世俗区域/天南各国按 1A 地理档案取材建图
-teleport-network  ->  1D-门派种族声望 : 九宗驻地 NPC sect 属性对齐 sect_d 九宗 ID

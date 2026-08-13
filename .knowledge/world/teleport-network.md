@@ -31,7 +31,7 @@ updated: 2026-08-13
 
 - **越国境内互通**：mirror_lake / yue_sects / huangfeng / tai_nan / jia_yuan / qing_niu / tianluo_sects 七节点互联（#58 三节点 + #67 落地三节点）。
 - 落地节点的 `TP_FIELD_REALM_MIN` 均为 `TP_REALM_MORTAL`（新手出村即可达）；`tai_nan`/`jia_yuan` 保持 `TP_REALM_QI`（#33 原门槛，炼气期使用）。
-- **出生链路（#67）**：`d/newbie/exit.c` 的 `leave` 把新玩家送到 `/d/yueguo/qingniu/zhenkou` 并设 `startroom`；新玩家从青牛镇步行可达七玄门、太南谷坊市，经传送可达九宗山门。
+- **出生链路（#67，真实流程）**：新玩家首次登录被 logind.c/logind2.c 送入新手村 `/d/newbie_lxsz/weiminggu.c`（未明谷教程）；出村经 `d/newbie_lxsz/mache.c`（柳秀山庄马车，`do_qu` 目的地=青牛镇）落到 `/d/yueguo/qingniu/zhenkou` 并设 `startroom=/d/yueguo/qingniu/zhenkou`（死亡重生同在青牛镇）。`d/newbie/`（北侠旧新手村）为死代码，无活链接入，其 `exit.c` 的 leave 亦已顺带指向青牛镇。新玩家从青牛镇步行可达七玄门、太南谷坊市，经传送可达九宗山门。
 
 ## 三、未落地占位节点（#33 遗留，建区时需同步）
 
@@ -57,4 +57,4 @@ updated: 2026-08-13
 
 - 世俗区域在 `d/yueguo/` 下按地名单建目录：`qingniu/`（青牛镇，出生地）、`qixuanmen/`（七玄门，镜州彩霞山）、`tainan/`（太南谷修仙坊市）、`jiayuan/`（嘉元城，岚州）、`jingzhou/`（镜州城）。
 - **太南谷坊市买卖入口**（`d/yueguo/tainan/fangshi.c`）：`list`/`buy <id> [数量]`/`sell <id>` 交易材料（铁精/灵草/兽皮/黄龙草），定价与记账接 P5-4 经济接口——`ECONOMY_D->register_goods/query_current_price/record_purchase/record_sale`（商品 type 对齐 `include/region_economy.h` 的 `REGION_SPECIAL_PRODUCTS`：ore_basic/herb_basic/hide_basic），结算走 `MONEY_D->player_pay/pay_player`（1 灵石=100 文），境界标识取 `ECONOMY_BRIDGE_D->get_player_realm_code`；材料物件（`inherit ITEM`）带 `is_material`/`material_id` 属性供 `sell` 识别。炼制（FORGE_D/炼丹）不在坊市入口范围。
-- 端到端链路：青牛镇（出生）→（步行）七玄门 →（山间驿道）太南谷坊市 →（传送 tai_nan→yue_sects）→ 越国七派传送阵 →（步行）九宗各派山门——全程无境界硬门槛，传送段按 #33 经济模型收费。
+- 端到端链路：未明谷新手村（教程）→ 出村马车 → 青牛镇（出生地）→（步行）七玄门 →（山间驿道）太南谷坊市 →（传送 tai_nan→yue_sects）→ 越国七派传送阵 →（步行）九宗各派山门——全程无境界硬门槛，传送段按 #33 经济模型收费。

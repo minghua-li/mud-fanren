@@ -160,9 +160,10 @@ int do_sell(string arg)
         if (!mapp(g))
                 return notify_fail("坊市不收这种材料。\n");
 
-        // 收购价 = 当前价 × 80%（对齐区域特产规则：非产地在远方的最低折扣 0.80）
+        // 收购价 = 当前价（下品灵石）× 80% × 100 文/灵石
+        // （对齐区域特产规则：非产地在远方的最低折扣 0.80；先按灵石价折算再转文，避免整数截断）
         type_price = query_price(ob->query("material_id"));
-        price = type_price * 80 / 100 * 100;   // 灵石 → 文（×0.8）
+        price = type_price * 80;   // 灵石价 ×0.8 → 文（1 灵石 = 100 文）
 
         MONEY_D->pay_player(me, price);
         message_vision("$N把$n卖给坊市，换得" + MONEY_D->money_str(price) + "。\n", me, ob);

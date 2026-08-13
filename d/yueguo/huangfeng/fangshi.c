@@ -14,7 +14,7 @@ void create()
 太南谷的大坊市——那里货物更全，交易也公道。
 LONG );
         set("exits", ([
-                "southwest" : "/d/yueguo/huangfeng/shanmen",
+                "west" : "/d/yueguo/huangfeng/shanmen",
         ]));
 
         setup();

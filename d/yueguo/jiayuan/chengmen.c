@@ -14,7 +14,7 @@ void create()
 LONG );
         set("exits", ([
                 "north" : "/d/yueguo/jiayuan/dajie",
-                "south" : "/d/yueguo/tainan/xiangludao",
+                "west" : "/d/yueguo/tainan/xiangludao",
         ]));
         set("objects", ([
                 __DIR__"npc/chengwei" : 1,
