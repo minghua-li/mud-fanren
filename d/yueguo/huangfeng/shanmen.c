@@ -16,6 +16,7 @@ LONG );
                 "southeast" : "/d/yueguo/transmit",
                 "north" : "/d/yueguo/huangfeng/dadian",
                 "east" : "/d/yueguo/huangfeng/fangshi",
+                "west" : "/d/yueguo/huangfeng/fac/hushan",
         ]));
         set("objects", ([
                 __DIR__"npc/dizi" : 1,

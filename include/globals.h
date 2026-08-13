@@ -103,6 +103,12 @@
 #define SHOP_D			"/adm/daemons/shop_d"
 #define ZQUEST_D "/obj/quest.c"
 #define ROOT_REFINE_D   "/adm/daemons/root_refine_d"
+// LLM 自然语言解析（#70 Phase 1）：LLM_D 为 mudlib 侧 LPC daemon，
+// 经 TCP 127.0.0.1 连本地 sidecar（tools/llm/sidecar.py，每请求一连接、新行分隔 JSON）。
+#define LLM_D		"/adm/daemons/llmd"
+#define LLM_SIDECAR_HOST	"127.0.0.1"
+#define LLM_SIDECAR_PORT	37777
+#define LLM_WATCHDOG_TIME	15
 #define AREA_INFO "/inherit/char/area_info.c"
 // Clonable/Non-inheritable Standard Objects
 #define COIN_OB		"/clone/money/coin"
@@ -254,6 +260,9 @@
 
 //门派系统（九宗入宗/晋升/功法）
 #define SECT_D                "/adm/daemons/sect_d"
+
+//门派设施系统（通用设施框架+九宗特色设施）
+#define SECT_FACILITY_D       "/adm/daemons/sect_facility_d"
 
 //宗门任务链与宗门事件（九宗档案落地）
 #define SECT_QUEST_D          "/adm/daemons/sect_quest_d"

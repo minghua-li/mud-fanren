@@ -15,6 +15,7 @@ LONG );
         set("exits", ([
                 "south" : "/d/yueguo/huadao/shanmen",
                 "north" : "/d/yueguo/huadao/chuangong",
+                "west" : "/d/yueguo/huadao/fac/lianqi",
         ]));
         set("objects", ([
                 __DIR__"npc/zhishilao" : 1,
