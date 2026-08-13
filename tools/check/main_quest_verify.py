@@ -261,17 +261,21 @@ class MockPlayer:
     def join_sect(self, sect_id):
         """模拟 SECT_D->join_sect，含真实 check_join 门禁语义（sect_d.c:403-441）：
         - 已入他派 → 拒（不强制改派）
-        - 炼气 1-2 层（realm_index==0 且层数 1-2）→ 「修为不足：入宗需炼气三层以上」拒
-        - 炼气 3 层+、筑基以上、realm 缺失 → 放行（realm 缺失兜底与真实代码一致）
+        - realm 存在且为炼气 1-2 层（realm_index==0 且层数 1-2）→ 「修为不足：入宗需炼气三层以上」拒
+        - 炼气 3 层+、筑基以上、realm 缺失/空 → 放行。
+          realm 缺失放行与真实代码一致：sect_d.c:425 守卫 stringp(realm) && realm != ""，
+          缺失/空不查层数。本脚本 __init__ 恒设 realm 三键，此分支现有场景不可达；
+          若要模拟 realm 缺失场景须先 del self.db["realm"]。
         """
         if self.db.get("sect_id"):
             self.log.append("你已是其他门派弟子，入宗被拒")
             return False
-        ri = self.db.get("realm_index", 0)
-        layer = self.db.get("realm_layer", 1)
-        if ri == 0 and 1 <= layer < 3:
-            self.log.append("修为不足：入宗需炼气三层以上")
-            return False
+        if self.db.get("realm"):
+            ri = self.db.get("realm_index", 0)
+            layer = self.db.get("realm_layer", 1)
+            if ri == 0 and 1 <= layer < 3:
+                self.log.append("修为不足：入宗需炼气三层以上")
+                return False
         self.db["sect_id"] = sect_id
         return True
 
@@ -636,6 +640,20 @@ def run_all(src, label="真实交付"):
           f"sect={p_low.query_sect()}")
     contrib_ok2 = p_low.add_contribution(200) == 200
     check("场景6 补入后贡献渠道可达", contrib_ok2)
+    # 对齐真实兜底：realm 缺失玩家入宗放行（sect_d.c:425 守卫 stringp(realm) && realm != ""，
+    # 缺失/空不查层数；#57 reverify 确认的合理兜底——存量/异常玩家可能无 realm 属性）。
+    # 现有场景 __init__ 恒设 realm 三键，此处显式删除以覆盖该分支（每个 if 分支需自测覆盖）。
+    p_nr = MockPlayer(realm_idx=0, realm_layer=1)
+    p_nr.set_location("/d/yueguo/qingniu/zhenkou")
+    run_chain(p_nr, CHAIN_0)
+    run_chain(p_nr, CHAIN_1[:6])   # 炼气1层 → 自动入宗被拒（sect 仍 None）
+    del p_nr.db["realm"]
+    del p_nr.db["realm_index"]
+    del p_nr.db["realm_layer"]
+    ok_nr = p_nr.join_sect("huangfeng_valley")
+    check("场景6 realm 缺失玩家入宗放行（对齐真实兜底 sect_d.c:425）",
+          ok_nr and p_nr.query_sect() == "huangfeng_valley",
+          f"sect={p_nr.query_sect()}")
 
     print(f"\n== [{label}] [3] LPC 原文守卫 ==")
 
