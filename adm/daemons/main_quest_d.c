@@ -1,682 +1,567 @@
 // main_quest_d.c
-// 主线任务守护进程 — 节点管理、进度追踪、奖励发放
-// Based on: 02-扩充内容/02-任务链与奖励曲线.md
+// 主线任务守护进程 —— 5 章主线框架 + 第零章凡人篇 + 第一章越国篇落地
 //
-// 职责：
-//   1. 管理 5 章主线框架定义（节点+条件+奖励）
-//   2. 玩家进度追踪（当前章节/节点/已完成列表）
-//   3. 串行链自动推进
-//   4. 章节完成检测与里程碑奖励发放
-//   5. 境界条件检查（防止跳章节）
+// 职责（#65 重写，路径②直接实施）：
+//   1. 定义主线任务模板（第零章 4 节点 + 第一章越国篇 13 节点，按 1G §二 取材）
+//   2. 注册到 QUEST_CHAIN_D（#59 任务链框架）：任务模板 + 串行链
+//   3. 玩家侧接口：接取 / 目标推进 / 完成 / 进度查询（main_quest.c 调用）
+//
+// 设计依据:
+//   .knowledge/quests/1G-任务副本奇遇.md（§二 主线任务链：第零章/第一章节点表）
+//   02-扩充内容/02-任务链与奖励曲线.md（§2.1 章节结构 / §2.2 跨章境界门槛 / §2.3 奖励曲线）
+//
+// 奖励接入（c4，复用 #59/#57 接线，走 grant_quest_rewards 六渠道）：
+//   修为经验 → combat_exp（主线难度系数 2.5，实际发放 = 模板值 × 2.5 × 链长加成）
+//   灵石     → MONEY_D->pay_player（1 灵石 = 100 文）
+//   声望     → REPUTATION_D->add_reputation（黄枫谷/掩月宗声望）
+//   门派贡献 → SECT_D->add_contribution（需已入宗）
+//   物品     → new() + move(player)（真实物品路径：baicao-dan/lingzhi）
+//   功法     → 本门功法写 sect/learned 免贡献解锁（grant_skill，黄枫谷青元剑诀）
+//
+// 境界门槛（c3，复用 quest_chain_d 统一境界索引）：
+//   0=炼气 1=筑基 2=结丹 3=元婴 4=化神 5=炼虚 6=合体 7=大乘
+//   任务 realm_range 即境界门槛；跨章解锁（第零章→第一章）由章节 realm_min 承担
+//   注：索引粒度只到大境界（炼气7层/13层细节在 desc 提示），与 #57 exp_to_tier 同源边界
+//
+// 场景挂接（c3）：OBJ_REACH 目标用 #67 越国世俗区 + #58 九宗驻地真实房间路径
 
 #include <ansi.h>
+#include <quest_chain.h>
 #include <main_quest.h>
+#include <globals.h>
 
 inherit F_DBASE;
 
-// 节点数据模型：
-// ([
-//   "node_0_1": ([
-//     "id":       "node_0_1",
-//     "chapter":  0,
-//     "index":    1,
-//     "name":     "七玄门入门",
-//     "desc":     "前往七玄门，拜墨大夫为师...",
-//     "chapter_name": "凡人篇",
-//     "chapter_idx":  0,
-//     "prereq_node":  null,
-//     "realm_min":    0,
-//     "rewards":      ([ "exp": 100, "coin": 10 ]),
-//   ]),
-// ])
+// ─── 主线任务链定义 ───
+// 字段对齐 quest_chain_d.register_quest 模板格式；type=QUEST_TYPE_MAIN 一次性不可回流
+// chain_id: chain_main_0（第零章）/ chain_main_1（第一章）
+// realm_range: 统一境界索引 ({min_idx, max_idx})
+// objectives: OBJ_REACH 到达真实房间（OBJ_TALK 与 OBJ_REACH 同按位置判定，见 quest_progress）
+nosave mapping quest_defs = ([
+    // ═══════ 第零章·凡人篇（1G §二 0.1-0.11 主干压缩为 4 节点） ═══════
+    "mq_0_1": ([
+        "id": "mq_0_1", "chain_id": "chain_main_0",
+        "chapter":     CHAPTER_MORTAL,
+        "name": "离开家乡", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,
+        "realm_range": ({ 0, 1 }),
+        "prerequisites": ([ ]),
+        "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/qingniu/zhenkou", "amount": 1 ]) }),
+        "rewards": ([ "exp": 100, "coin": 10 ]),
+        "description": "你出生于越国镜州青牛镇的一个小山村。家中贫困，听闻江湖上有仙人踪迹，你决心离开家乡，前往七玄门拜师学艺。前往青牛镇镇口，踏上修仙之路。",
+    ]),
+    "mq_0_2": ([
+        "id": "mq_0_2", "chain_id": "chain_main_0",
+        "chapter":     CHAPTER_MORTAL,
+        "name": "拜入七玄门", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,
+        "realm_range": ({ 0, 1 }),
+        "prerequisites": ([ "quests": ({ "mq_0_1" }) ]),
+        "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/qixuanmen/shanmen", "amount": 1 ]) }),
+        "rewards": ([ "exp": 150, "coin": 15 ]),
+        "description": "你来到七玄门彩霞山。七玄门是越国世俗武林大派，门主与神手谷谷主墨大夫皆是当世高手。通过入门考核，方可成为七玄门弟子。",
+    ]),
+    "mq_0_3": ([
+        "id": "mq_0_3", "chain_id": "chain_main_0",
+        "chapter":     CHAPTER_MORTAL,
+        "name": "练气入门", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,
+        "realm_range": ({ 0, 1 }),
+        "prerequisites": ([ "quests": ({ "mq_0_2" }) ]),
+        "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/qixuanmen/shenshougu", "amount": 1 ]) }),
+        "rewards": ([ "exp": 200, "coin": 20 ]),
+        "description": "墨大夫收你为记名弟子，传授你《长春功》心法。前往神手谷墨大夫静室，勤加修炼，感悟天地灵气，踏入炼气期。",
+    ]),
+    "mq_0_4": ([
+        "id": "mq_0_4", "chain_id": "chain_main_0",
+        "chapter":     CHAPTER_MORTAL,
+        "name": "离别七玄门", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,
+        "realm_range": ({ 0, 1 }),
+        "prerequisites": ([ "quests": ({ "mq_0_3" }) ]),
+        "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/qixuanmen/caixiashan", "amount": 1 ]) }),
+        "rewards": ([ "exp": 300, "coin": 30 ]),
+        "description": "在七玄门修行已有小成。墨大夫告知你修行之路漫漫，需走出山门前往越国修仙界历练。临行前他赠你些许盘缠，你从彩霞山下山，踏上新的旅程。",
+    ]),
 
-// 章节数据模型：
-// ([
-//   "chapter": 0,
-//   "name": "凡人篇",
-//   "node_ids": ({ "node_0_1", "node_0_2", ... }),
-//   "realm_min": 0,
-//   "prereq_chapter": null,
-//   "chapter_reward": ([ "exp": 300, "coin": 30, "item": "...", "title": "初入修仙" ]),
-// ])
+    // ═══════ 第一章·越国篇（1G §二 1.1-1.13 完整 13 节点） ═══════
+    "mq_1_1": ([
+        "id": "mq_1_1", "chain_id": "chain_main_1",
+        "chapter":     CHAPTER_YUE,
+        "name": "嘉元城初到", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,
+        "realm_range": ({ 0, 1 }),
+        "prerequisites": ([ "quests": ({ "mq_0_4" }) ]),
+        "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/jiayuan/dajie", "amount": 1 ]) }),
+        "rewards": ([ "exp": 600, "coin": 100 ]),
+        "description": "你抵达岚州嘉元城（炼气七层以上方宜前往）。这座世俗大城人流如织，墨家府邸门庭若市，城中也偶有修士出没。先在大街上打探修仙界消息，寻找太南谷坊市的线索。",
+    ]),
+    "mq_1_2": ([
+        "id": "mq_1_2", "chain_id": "chain_main_1",
+        "chapter":     CHAPTER_YUE,
+        "name": "墨府恩怨", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,
+        "realm_range": ({ 0, 1 }),
+        "prerequisites": ([ "quests": ({ "mq_1_1" }) ]),
+        "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/jiayuan/mofu", "amount": 1 ]) }),
+        "rewards": ([ "exp": 800, "coin": 120 ]),
+        "description": "墨府是嘉元城第一修仙家族，家主墨凤舞修为高深。你应约前往墨府，助其清理府中叛徒，了结一场恩怨。墨府玉佩与萦香丸配方将是你在此城立足的依仗。",
+    ]),
+    "mq_1_3": ([
+        "id": "mq_1_3", "chain_id": "chain_main_1",
+        "chapter":     CHAPTER_YUE,
+        "name": "太南小会", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,
+        "realm_range": ({ 0, 1 }),
+        "prerequisites": ([ "quests": ({ "mq_1_2" }) ]),
+        "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/tainan/fangshi", "amount": 1 ]) }),
+        "rewards": ([ "exp": 1000, "coin": 150 ]),
+        "description": "太南谷是越国修仙者的交易重地，每逢集会，散修云集（炼气九层以上方宜前往）。前往太南谷坊市，参加修仙者交易小会，用灵石兑换丹药法器。",
+    ]),
+    "mq_1_4": ([
+        "id": "mq_1_4", "chain_id": "chain_main_1",
+        "chapter":     CHAPTER_YUE,
+        "name": "灵根鉴定", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,
+        "realm_range": ({ 0, 1 }),
+        "prerequisites": ([ "quests": ({ "mq_1_3" }) ]),
+        "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/tainan/tainansi", "amount": 1 ]) }),
+        "rewards": ([ "exp": 1000, "coin": 150 ]),
+        "description": "太南寺中住着一位精通灵根鉴定的青颜真人。请其为你鉴定灵根资质——灵根决定你的修仙潜力与拜师方向，务必认真对待。",
+    ]),
+    "mq_1_5": ([
+        "id": "mq_1_5", "chain_id": "chain_main_1",
+        "chapter":     CHAPTER_YUE,
+        "name": "升仙大会", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,
+        "realm_range": ({ 0, 1 }),
+        "prerequisites": ([ "quests": ({ "mq_1_4" }) ]),
+        "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/huangfeng/shanmen", "amount": 1 ]) }),
+        "rewards": ([ "exp": 1200, "coin": 200 ]),
+        "description": "越国七派联合升仙大会在黄枫谷山门召开（炼气顶峰方有资格参与）。各派长老亲临选拔弟子，这是散修拜入名门正派的最佳机会。",
+    ]),
+    "mq_1_6": ([
+        "id": "mq_1_6", "chain_id": "chain_main_1",
+        "chapter":     CHAPTER_YUE,
+        "name": "拜入黄枫谷", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,
+        "realm_range": ({ 0, 1 }),
+        "prerequisites": ([ "quests": ({ "mq_1_5" }) ]),
+        "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/huangfeng/dadian", "amount": 1 ]) }),
+        "rewards": ([ "exp": 1500, "coin": 250,
+                      "reputation": ({ ([ "faction": "huangfeng_valley", "value": 50 ]) }) ]),
+        "description": "升仙大会上你表现出众，选择拜入黄枫谷（也可选择掩月宗、灵兽山等其余六派，主线以黄枫谷为默认分支）。前往黄枫谷大殿行拜师礼，成为黄枫谷弟子，正式踏入修仙门派。",
+    ]),
+    "mq_1_7": ([
+        "id": "mq_1_7", "chain_id": "chain_main_1",
+        "chapter":     CHAPTER_YUE,
+        "name": "百药园看守", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,
+        "realm_range": ({ 1, 2 }),
+        "prerequisites": ([ "quests": ({ "mq_1_6" }) ]),
+        "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/huangfeng/yuexudian", "amount": 1 ]) }),
+        "rewards": ([ "exp": 2000, "coin": 300, "contribution": 200,
+                      "items": ({ "/clone/drug/lingzhi" }) ]),
+        "description": "筑基初期的你被派往月须殿百药园看守灵药。在灵田劳作中学习灵药知识，获赐灵芝灵药。好好干，修仙路漫漫，根基要牢。",
+    ]),
+    "mq_1_8": ([
+        "id": "mq_1_8", "chain_id": "chain_main_1",
+        "chapter":     CHAPTER_YUE,
+        "name": "岳麓殿之行", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,
+        "realm_range": ({ 1, 2 }),
+        "prerequisites": ([ "quests": ({ "mq_1_7" }) ]),
+        "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/huangfeng/chuangong", "amount": 1 ]) }),
+        "rewards": ([ "exp": 2000, "coin": 300,
+                      "skills": ({ "qingyuan-jianjue" }) ]),
+        "description": "岳麓殿藏经阁收藏黄枫谷历代功法。你随传功长老前往传功房，获授青元剑诀残本（入黄枫谷后由本门功法渠道习得）。",
+    ]),
+    "mq_1_9": ([
+        "id": "mq_1_9", "chain_id": "chain_main_1",
+        "chapter":     CHAPTER_YUE,
+        "name": "血色禁地试炼", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,
+        "realm_range": ({ 1, 2 }),
+        "prerequisites": ([ "quests": ({ "mq_1_8" }) ]),
+        "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/huangfeng/shanmen", "amount": 1 ]) }),
+        "rewards": ([ "exp": 3000, "coin": 400,
+                      "items": ({ "/clone/drug/baicao-dan" }) ]),
+        "description": "筑基中期，你获得进入血色禁地的资格。禁地每六十年开启一次，内部灵药遍地、妖兽成群，是筑基丹材料的主产地。前往黄枫谷山门集结，随队进入禁地采药历练。",
+    ]),
+    "mq_1_10": ([
+        "id": "mq_1_10", "chain_id": "chain_main_1",
+        "chapter":     CHAPTER_YUE,
+        "name": "正魔之战前夕", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,
+        "realm_range": ({ 1, 2 }),
+        "prerequisites": ([ "quests": ({ "mq_1_9" }) ]),
+        "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/huangfeng/dadian", "amount": 1 ]) }),
+        "rewards": ([ "exp": 3000, "coin": 400, "contribution": 300 ]),
+        "description": "筑基后期，魔道六宗大举入侵越国，黄枫谷上下备战。你前往大殿听候掌门调遣，领取守山职责，为即将到来的大战积蓄力量。",
+    ]),
+    "mq_1_11": ([
+        "id": "mq_1_11", "chain_id": "chain_main_1",
+        "chapter":     CHAPTER_YUE,
+        "name": "乌龙潭之战", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,
+        "realm_range": ({ 1, 2 }),
+        "prerequisites": ([ "quests": ({ "mq_1_10" }) ]),
+        "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/huangfeng/shanmen", "amount": 1 ]) }),
+        "rewards": ([ "exp": 3200, "coin": 500, "contribution": 500,
+                      "reputation": ({ ([ "faction": "huangfeng_valley", "value": 80 ]) }) ]),
+        "description": "正魔大战在乌龙潭爆发。你随黄枫谷弟子出征，在血战中斩敌立功，为宗门赢得战功，也为自己挣得赫赫声望。",
+    ]),
+    "mq_1_12": ([
+        "id": "mq_1_12", "chain_id": "chain_main_1",
+        "chapter":     CHAPTER_YUE,
+        "name": "掩月宗之行", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,
+        "realm_range": ({ 2, 3 }),
+        "prerequisites": ([ "quests": ({ "mq_1_11" }) ]),
+        "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/yanyue/dadian", "amount": 1 ]) }),
+        "rewards": ([ "exp": 3200, "coin": 500,
+                      "reputation": ({ ([ "faction": "yanyue_sect", "value": 30 ]) }) ]),
+        "description": "结丹初期的你前往掩月宗大殿，与故人南宫婉重逢。掩月宗乃越国第一大宗，你在此探得乱星海与天月神舟的情报，为远行做准备。",
+    ]),
+    "mq_1_13": ([
+        "id": "mq_1_13", "chain_id": "chain_main_1",
+        "chapter":     CHAPTER_YUE,
+        "name": "越国终章", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,
+        "realm_range": ({ 2, 3 }),
+        "prerequisites": ([ "quests": ({ "mq_1_12" }) ]),
+        "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/transmit", "amount": 1 ]) }),
+        "rewards": ([ "exp": 3200, "coin": 600 ]),
+        "description": "越国正魔大战收尾，你也已成结丹修士。乱星海有更广阔的天地，传闻那里天材地宝无数。前往越国传送阵，决定前往乱星海，开启新的篇章。（可选择留越国做支线，随时可触发离去）",
+    ]),
+]);
 
-protected mapping quest_chapters = ([]);   // chapter_index → chapter_data
-protected mapping quest_nodes   = ([]);    // node_id → node_data
+// ─── 主线串行链（第零章 4 节点 / 第一章 13 节点） ───
+nosave mapping chain_defs = ([
+    "chain_main_0": ({ "mq_0_1", "mq_0_2", "mq_0_3", "mq_0_4" }),
+    "chain_main_1": ({ "mq_1_1", "mq_1_2", "mq_1_3", "mq_1_4", "mq_1_5",
+                       "mq_1_6", "mq_1_7", "mq_1_8", "mq_1_9", "mq_1_10",
+                       "mq_1_11", "mq_1_12", "mq_1_13" }),
+]);
+
+// ─── 章节定义（5 章框架；第零章/第一章已落地，后续章另开子票） ───
+// realm_min 用 quest_chain 统一境界索引（0=炼气 1=筑基 2=结丹 3=元婴 4=化神 5=炼虚 6=合体 7=大乘）
+// 第零章→第一章跨章门槛：炼气≥7 层（索引 0，7 层细节在 desc）；第一章→第二章：结丹初期（索引 2）
+nosave mapping quest_chapters = ([
+    CHAPTER_MORTAL: ([
+        "chapter": CHAPTER_MORTAL, "name": CHAPTER_0_NAME,
+        "chain_id": "chain_main_0",
+        "chapter":     CHAPTER_MORTAL,
+        "realm_min": 0, "prereq_chapter": -1,
+        "chapter_reward": ([ "exp": CHAPTER_0_BASE * CHAPTER_MULTIPLIER,
+                             "coin": CHAPTER_0_BASE / 2,
+                             "title": "初入修仙",
+                             "item": "/clone/drug/baicao-dan" ]),
+    ]),
+    CHAPTER_YUE: ([
+        "chapter": CHAPTER_YUE, "name": CHAPTER_1_NAME,
+        "chain_id": "chain_main_1",
+        "chapter":     CHAPTER_YUE,
+        "realm_min": 0, "prereq_chapter": CHAPTER_MORTAL,
+        "chapter_reward": ([ "exp": CHAPTER_1_BASE * CHAPTER_MULTIPLIER,
+                             "coin": CHAPTER_1_BASE / 2,
+                             "title": "越国风云",
+                             "item": "/clone/drug/lingzhi" ]),
+    ]),
+    // 后续章框架占位（乱星海/灵界/飞升）——内容按 1G 分阶段另开子 ticket
+    CHAPTER_LUANXINGHAI: ([
+        "chapter": CHAPTER_LUANXINGHAI, "name": CHAPTER_2_NAME,
+        "chain_id": "", "realm_min": 2, "prereq_chapter": CHAPTER_YUE,
+        "chapter_reward": ([ ]),
+    ]),
+    CHAPTER_LINGJIE: ([
+        "chapter": CHAPTER_LINGJIE, "name": CHAPTER_3_NAME,
+        "chain_id": "", "realm_min": 4, "prereq_chapter": CHAPTER_LUANXINGHAI,
+        "chapter_reward": ([ ]),
+    ]),
+    CHAPTER_FEISHENG: ([
+        "chapter": CHAPTER_FEISHENG, "name": CHAPTER_4_NAME,
+        "chain_id": "", "realm_min": 7, "prereq_chapter": CHAPTER_LINGJIE,
+        "chapter_reward": ([ ]),
+    ]),
+]);
 
 // ── 公开接口声明 ──────────────────────────────────
 int    start_quest(object player);
 int    accept_node(object player, string node_id);
 int    complete_node(object player, string node_id);
 string query_progress(object player);
-int    query_current_chapter(object player);
 string query_current_node_id(object player);
-int    get_chapter_node_count(int chapter);
-string *get_chapter_node_ids(int chapter);
-int    is_node_completed(object player, string node_id);
+int    quest_progress(object player, string quest_id);
+int    get_player_realm_index(object player);
 int    is_chapter_completed(object player, int chapter);
 int    is_chapter_unlocked(object player, int chapter);
-int    award_chapter_reward(object player, int chapter);
-int    award_node_reward(object player, string node_id);
 mixed  query_chapter_info(int chapter);
 mixed  query_node_info(string node_id);
-int    get_player_realm_index(object player);
+string *get_chapter_node_ids(int chapter);
 
 // ── 初始化 ──────────────────────────────────────────
 void create()
 {
-    seteuid(getuid());
+    seteuid(ROOT_UID);
     set("channel_id", "主线任务精灵");
     set("name", "主线任务系统");
 
-    initialize_chapters();
-    initialize_nodes();
+    register_all_quests();
 
     CHANNEL_D->do_channel(this_object(), "sys",
         "主线任务系统启动完毕。");
 }
 
-// ── 章节定义 ────────────────────────────────────────
-void initialize_chapters()
+int clean_up()
 {
-    // 凡人篇（第零章）
-    quest_chapters[CHAPTER_MORTAL] = ([
-        "chapter":       CHAPTER_MORTAL,
-        "name":          CHAPTER_0_NAME,
-        "node_ids":      ({ "node_0_1", "node_0_2", "node_0_3", "node_0_4" }),
-        "realm_min":     CHAPTER_0_MIN_REALM,
-        "prereq_chapter": -1,
-        "chapter_reward": ([
-            "exp":      CHAPTER_0_BASE * CHAPTER_MULTIPLIER,
-            "coin":     CHAPTER_0_BASE / 2,
-            "title":    "初入修仙",
-            "item":     "/clone/pill/huang_long_dan",
-        ]),
-    ]);
-
-    // 越国篇（第一章）
-    quest_chapters[CHAPTER_YUE] = ([
-        "chapter":       CHAPTER_YUE,
-        "name":          CHAPTER_1_NAME,
-        "node_ids":      ({ "node_1_1", "node_1_2", "node_1_3", "node_1_4" }),
-        "realm_min":     CHAPTER_1_MIN_REALM,
-        "prereq_chapter": CHAPTER_MORTAL,
-        "chapter_reward": ([
-            "exp":      CHAPTER_1_BASE * CHAPTER_MULTIPLIER,
-            "coin":     CHAPTER_1_BASE / 2,
-            "title":    "越国风云",
-            "item":     "/clone/pill/zhu_ji_dan",
-        ]),
-    ]);
-
-    // 乱星海篇（第二章）
-    quest_chapters[CHAPTER_LUANXINGHAI] = ([
-        "chapter":       CHAPTER_LUANXINGHAI,
-        "name":          CHAPTER_2_NAME,
-        "node_ids":      ({ "node_2_1", "node_2_2", "node_2_3" }),
-        "realm_min":     CHAPTER_2_MIN_REALM,
-        "prereq_chapter": CHAPTER_YUE,
-        "chapter_reward": ([
-            "exp":      CHAPTER_2_BASE * CHAPTER_MULTIPLIER,
-            "coin":     CHAPTER_2_BASE / 2,
-            "title":    "星海霸主",
-            "item":     "/clone/pill/bu_tian_dan",
-        ]),
-    ]);
-
-    // 灵界篇（第三章）
-    quest_chapters[CHAPTER_LINGJIE] = ([
-        "chapter":       CHAPTER_LINGJIE,
-        "name":          CHAPTER_3_NAME,
-        "node_ids":      ({ "node_3_1", "node_3_2", "node_3_3" }),
-        "realm_min":     CHAPTER_3_MIN_REALM,
-        "prereq_chapter": CHAPTER_LUANXINGHAI,
-        "chapter_reward": ([
-            "exp":      CHAPTER_3_BASE * CHAPTER_MULTIPLIER,
-            "coin":     CHAPTER_3_BASE / 2,
-            "title":    "灵界传奇",
-            "item":     "/clone/pill/tong_tian_ling_bao",
-        ]),
-    ]);
-
-    // 飞升篇（终章）
-    quest_chapters[CHAPTER_FEISHENG] = ([
-        "chapter":       CHAPTER_FEISHENG,
-        "name":          CHAPTER_4_NAME,
-        "node_ids":      ({ "node_4_1", "node_4_2" }),
-        "realm_min":     CHAPTER_4_MIN_REALM,
-        "prereq_chapter": CHAPTER_LINGJIE,
-        "chapter_reward": ([
-            "exp":      CHAPTER_4_BASE * CHAPTER_MULTIPLIER,
-            "coin":     CHAPTER_4_BASE / 2,
-            "title":    "飞升上界",
-        ]),
-    ]);
+    return 1;
 }
 
-// ── 节点定义 ────────────────────────────────────────
-void initialize_nodes()
+// 注册主线任务到 QUEST_CHAIN_D（任务模板 + 串行链）
+void register_all_quests()
 {
-    // ═══════════════════════════════════════════════
-    // 凡人篇（第零章）
-    // ═══════════════════════════════════════════════
+    string *qids = keys(quest_defs);
+    string *cids = keys(chain_defs);
+    int i;
 
-    // node_0_1: 离开家乡
-    quest_nodes["node_0_1"] = ([
-        "id":           "node_0_1",
-        "chapter":      CHAPTER_MORTAL,
-        "index":        1,
-        "name":         "离开家乡",
-        "desc":         "你出生于越国镜州青牛镇的一个小山村。家中贫困，不足以支撑生计。听闻江湖上有仙人踪迹，你决定离开家乡，前往七玄门拜师学艺。",
-        "chapter_name": CHAPTER_0_NAME,
-        "prereq_node":  0,            // 无前置
-        "realm_min":    REALM_MORTAL,
-        "rewards":      ([ "exp": 100, "coin": 10 ]),
-    ]);
+    for (i = 0; i < sizeof(qids); i++)
+        QUEST_CHAIN_D->register_quest(quest_defs[qids[i]]);
 
-    // node_0_2: 拜入七玄门
-    quest_nodes["node_0_2"] = ([
-        "id":           "node_0_2",
-        "chapter":      CHAPTER_MORTAL,
-        "index":        2,
-        "name":         "拜入七玄门",
-        "desc":         "经过一路跋涉，你来到七玄门。得知七玄门是越国七大修仙门派之一，门主墨大夫法力高深。你需通过入门考核，方可成为七玄门弟子。",
-        "chapter_name": CHAPTER_0_NAME,
-        "prereq_node":  "node_0_1",
-        "realm_min":    REALM_MORTAL,
-        "rewards":      ([ "exp": 200, "coin": 20 ]),
-    ]);
-
-    // node_0_3: 练气入门
-    quest_nodes["node_0_3"] = ([
-        "id":           "node_0_3",
-        "chapter":      CHAPTER_MORTAL,
-        "index":        3,
-        "name":         "练气入门",
-        "desc":         "拜入七玄门后，墨大夫传授你《长春功》心法。你需要勤加修炼，感悟天地灵气，达到炼气入门境界。",
-        "chapter_name": CHAPTER_0_NAME,
-        "prereq_node":  "node_0_2",
-        "realm_min":    REALM_QI_INIT,
-        "rewards":      ([ "exp": 300, "coin": 30 ]),
-    ]);
-
-    // node_0_4: 离别七玄门
-    quest_nodes["node_0_4"] = ([
-        "id":           "node_0_4",
-        "chapter":      CHAPTER_MORTAL,
-        "index":        4,
-        "name":         "离别七玄门",
-        "desc":         "在七玄门修行已有小成。墨大夫告知你，修行之路漫漫，需走出山门，前往越国各大修仙门派历练。临行前，墨大夫赠你一本秘籍和些许盘缠。",
-        "chapter_name": CHAPTER_0_NAME,
-        "prereq_node":  "node_0_3",
-        "realm_min":    REALM_QI_INIT,
-        "rewards":      ([ "exp": 500, "coin": 50 ]),
-    ]);
-
-    // ═══════════════════════════════════════════════
-    // 越国篇（第一章）
-    // ═══════════════════════════════════════════════
-
-    // node_1_1: 拜入宗门
-    quest_nodes["node_1_1"] = ([
-        "id":           "node_1_1",
-        "chapter":      CHAPTER_YUE,
-        "index":        1,
-        "name":         "拜入宗门",
-        "desc":         "你来到越国修仙界，需要在黄枫谷、掩月宗、灵兽山等七派中选择一个宗门拜入。不同的门派有不同的功法和特色，选择将影响你的修仙之路。",
-        "chapter_name": CHAPTER_1_NAME,
-        "prereq_node":  "node_0_4",
-        "realm_min":    CHAPTER_1_MIN_REALM,
-        "rewards":      ([ "exp": 1000, "coin": 100 ]),
-    ]);
-
-    // node_1_2: 血色禁地
-    quest_nodes["node_1_2"] = ([
-        "id":           "node_1_2",
-        "chapter":      CHAPTER_YUE,
-        "index":        2,
-        "name":         "血色禁地",
-        "desc":         "越国修仙界每六十年开启一次的血色禁地即将开启。各大门派的弟子将进入禁地争夺资源。你需要进入血色禁地，寻找筑基机缘。",
-        "chapter_name": CHAPTER_1_NAME,
-        "prereq_node":  "node_1_1",
-        "realm_min":    CHAPTER_1_MIN_REALM,
-        "rewards":      ([ "exp": 3000, "coin": 300 ]),
-    ]);
-
-    // node_1_3: 筑基试炼
-    quest_nodes["node_1_3"] = ([
-        "id":           "node_1_3",
-        "chapter":      CHAPTER_YUE,
-        "index":        3,
-        "name":         "筑基试炼",
-        "desc":         "在血色禁地中获得筑基丹后，你需要寻找一处灵气充沛之地，闭关冲击筑基期。筑基成功才算真正踏入修仙门槛。",
-        "chapter_name": CHAPTER_1_NAME,
-        "prereq_node":  "node_1_2",
-        "realm_min":    REALM_QI_7,
-        "rewards":      ([ "exp": 5000, "coin": 500 ]),
-    ]);
-
-    // node_1_4: 越国终章
-    quest_nodes["node_1_4"] = ([
-        "id":           "node_1_4",
-        "chapter":      CHAPTER_YUE,
-        "index":        4,
-        "name":         "越国终章",
-        "desc":         "筑基有成后，你发现越国修仙界只是冰山一角。传闻乱星海有更广阔的天地，那里有更多的天材地宝和更强的对手。你决定前往乱星海。",
-        "chapter_name": CHAPTER_1_NAME,
-        "prereq_node":  "node_1_3",
-        "realm_min":    REALM_QI_7,
-        "rewards":      ([ "exp": 8000, "coin": 800 ]),
-    ]);
-
-    // ═══════════════════════════════════════════════
-    // 乱星海篇（第二章）
-    // ═══════════════════════════════════════════════
-
-    // node_2_1: 初临星海
-    quest_nodes["node_2_1"] = ([
-        "id":           "node_2_1",
-        "chapter":      CHAPTER_LUANXINGHAI,
-        "index":        1,
-        "name":         "初临星海",
-        "desc":         "通过跨界传送阵，你来到乱星海。这里岛屿星罗棋布，修仙势力错综复杂。你需要在天星城落脚，了解这里的规则。",
-        "chapter_name": CHAPTER_2_NAME,
-        "prereq_node":  "node_1_4",
-        "realm_min":    CHAPTER_2_MIN_REALM,
-        "rewards":      ([ "exp": 10000, "coin": 1000 ]),
-    ]);
-
-    // node_2_2: 虚天殿探秘
-    quest_nodes["node_2_2"] = ([
-        "id":           "node_2_2",
-        "chapter":      CHAPTER_LUANXINGHAI,
-        "index":        2,
-        "name":         "虚天殿探秘",
-        "desc":         "乱星海传说中的虚天殿开启，据说殿中有无数珍宝和突破元婴的机缘。你需要凑齐虚天残图，进入虚天殿寻找机缘。",
-        "chapter_name": CHAPTER_2_NAME,
-        "prereq_node":  "node_2_1",
-        "realm_min":    CHAPTER_2_MIN_REALM + 5,
-        "rewards":      ([ "exp": 30000, "coin": 3000 ]),
-    ]);
-
-    // node_2_3: 乱星海终章
-    quest_nodes["node_2_3"] = ([
-        "id":           "node_2_3",
-        "chapter":      CHAPTER_LUANXINGHAI,
-        "index":        3,
-        "name":         "乱星海终章",
-        "desc":         "元婴大成后，你感到乱星海已经无法满足你的修行需求。传闻灵界才是更高层次修士的舞台，你决定寻找前往灵界的途径。",
-        "chapter_name": CHAPTER_2_NAME,
-        "prereq_node":  "node_2_2",
-        "realm_min":    CHAPTER_2_MIN_REALM + 10,
-        "rewards":      ([ "exp": 80000, "coin": 8000 ]),
-    ]);
-
-    // ═══════════════════════════════════════════════
-    // 灵界篇（第三章）
-    // ═══════════════════════════════════════════════
-
-    // node_3_1: 灵界初探
-    quest_nodes["node_3_1"] = ([
-        "id":           "node_3_1",
-        "chapter":      CHAPTER_LINGJIE,
-        "index":        1,
-        "name":         "灵界初探",
-        "desc":         "你以化神之姿降临灵界。灵界广袤无垠，种族林立。你需要在这片强者为尊的世界中找到立足之地。",
-        "chapter_name": CHAPTER_3_NAME,
-        "prereq_node":  "node_2_3",
-        "realm_min":    CHAPTER_3_MIN_REALM,
-        "rewards":      ([ "exp": 500000, "coin": 50000 ]),
-    ]);
-
-    // node_3_2: 地渊历练
-    quest_nodes["node_3_2"] = ([
-        "id":           "node_3_2",
-        "chapter":      CHAPTER_LINGJIE,
-        "index":        2,
-        "name":         "地渊历练",
-        "desc":         "灵界有三处秘境：地渊、广寒界、魔金山脉。你需要深入地渊，寻找大乘突破的契机。",
-        "chapter_name": CHAPTER_3_NAME,
-        "prereq_node":  "node_3_1",
-        "realm_min":    CHAPTER_3_MIN_REALM + 5,
-        "rewards":      ([ "exp": 2000000, "coin": 100000 ]),
-    ]);
-
-    // node_3_3: 灵界终章
-    quest_nodes["node_3_3"] = ([
-        "id":           "node_3_3",
-        "chapter":      CHAPTER_LINGJIE,
-        "index":        3,
-        "name":         "灵界终章",
-        "desc":         "大乘圆满后，你感知到天劫将至。渡过天劫便可飞升真仙界。你需要准备渡劫法宝和丹药，迎接飞升天劫。",
-        "chapter_name": CHAPTER_3_NAME,
-        "prereq_node":  "node_3_2",
-        "realm_min":    REALM_DACHENG,
-        "rewards":      ([ "exp": 5000000, "coin": 200000 ]),
-    ]);
-
-    // ═══════════════════════════════════════════════
-    // 飞升篇（终章）
-    // ═══════════════════════════════════════════════
-
-    // node_4_1: 渡飞升劫
-    quest_nodes["node_4_1"] = ([
-        "id":           "node_4_1",
-        "chapter":      CHAPTER_FEISHENG,
-        "index":        1,
-        "name":         "渡飞升劫",
-        "desc":         "大乘圆满之后，飞升天劫降临。你需要以毕生修为对抗天劫，渡过三灾九难，方可飞升真仙界。",
-        "chapter_name": CHAPTER_4_NAME,
-        "prereq_node":  "node_3_3",
-        "realm_min":    CHAPTER_4_MIN_REALM,
-        "rewards":      ([ "exp": 10000000, "coin": 1000000 ]),
-    ]);
-
-    // node_4_2: 飞升上界
-    quest_nodes["node_4_2"] = ([
-        "id":           "node_4_2",
-        "chapter":      CHAPTER_FEISHENG,
-        "index":        2,
-        "name":         "飞升上界",
-        "desc":         "成功渡过天劫，你破碎虚空，飞升真仙界。北寒仙域的入口已在眼前，一段全新的旅程即将开始。恭喜你完成了凡人到真仙的蜕变！",
-        "chapter_name": CHAPTER_4_NAME,
-        "prereq_node":  "node_4_1",
-        "realm_min":    CHAPTER_4_MIN_REALM,
-        "rewards":      ([ "exp": 50000000, "coin": 5000000 ]),
-        "is_final":     1,
-    ]);
+    for (i = 0; i < sizeof(cids); i++)
+        QUEST_CHAIN_D->register_chain(cids[i], CHAIN_SERIAL, chain_defs[cids[i]], ([]));
 }
 
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // 核心 API
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 
-// 开始（或继续）主线任务
-// 检查玩家当前进度，自动推进到下一个可接取节点
+// 开始（或继续）主线任务：接取下一个可用主线节点
 // 返回：1=新节点已激活  0=无可用新节点  -1=参数错误
 int start_quest(object player)
 {
-    int chapter, realm;
-    string node_id;
+    string next;
 
     if (!player) return -1;
 
-    // 检查玩家是否已全部完成
-    if (player->query(MQ_KEY_STATUS) == MQ_COMPLETED)
-        return 0;
-
-    // 初始化状态
-    if (player->query(MQ_KEY_STATUS) == MQ_INACTIVE)
+    next = find_next_available_quest(player);
+    if (stringp(next) && next != "")
     {
-        player->set(MQ_KEY_STATUS, MQ_ACTIVE);
-        player->set(MQ_KEY_CHAPTER, CHAPTER_MORTAL);
-        player->set(MQ_KEY_COMP_NODES, ({ }));
-        player->set(MQ_KEY_COMP_CHAPTERS, ({ }));
+        if (QUEST_CHAIN_D->assign_quest(player, next))
+            return 1;
     }
+    return 0;
+}
 
-    chapter = player->query(MQ_KEY_CHAPTER);
-    node_id = player->query(MQ_KEY_NODE);
+// 接取指定主线节点（显式接取；自动接续失败时玩家手动 accept 当前节点）
+// 返回：1=成功  0=不可接取  -1=参数错误
+int accept_node(object player, string node_id)
+{
+    if (!player || !stringp(node_id) || node_id == "")
+        return -1;
 
-    // 已有活跃节点
-    if (stringp(node_id) && node_id != "")
+    if (undefinedp(quest_defs[node_id]))
         return 0;
 
-    // 查找下一个可接取节点
-    node_id = find_next_available_node(player, chapter);
-    if (node_id && node_id != "")
-    {
-        player->set(MQ_KEY_NODE, node_id);
+    if (QUEST_CHAIN_D->assign_quest(player, node_id))
         return 1;
-    }
-
-    // 检查是否所有章节都完成
-    if (chapter >= CHAPTER_COUNT - 1)
-    {
-        player->set(MQ_KEY_STATUS, MQ_COMPLETED);
-        return 0;
-    }
 
     return 0;
 }
 
-// 接取指定节点
-// 返回：1=成功  0=不可接取  -1=参数错误
-int accept_node(object player, string node_id)
-{
-    mapping node, chapter_data;
-    int realm;
-
-    if (!player || !stringp(node_id) || node_id == "")
-        return -1;
-
-    if (undefinedp(quest_nodes[node_id]))
-        return 0;
-
-    node = quest_nodes[node_id];
-
-    // 检查是否已接取或已完成
-    if (player->query(MQ_KEY_NODE) == node_id)
-        return 0;
-
-    if (is_node_completed(player, node_id))
-        return 0;
-
-    // 检查前置节点
-    if (node["prereq_node"] && node["prereq_node"] != 0)
-    {
-        if (!is_node_completed(player, node["prereq_node"]))
-            return 0;
-    }
-
-    // 检查境界要求
-    realm = get_player_realm_index(player);
-    if (realm < node["realm_min"])
-        return 0;
-
-    // 检查章节解锁
-    chapter_data = quest_chapters[node["chapter"]];
-    if (!chapter_data)
-        return 0;
-
-    if (!is_chapter_unlocked(player, node["chapter"]))
-        return 0;
-
-    // 设置当前节点
-    player->set(MQ_KEY_CHAPTER, node["chapter"]);
-    player->set(MQ_KEY_NODE, node_id);
-    if (player->query(MQ_KEY_STATUS) == MQ_INACTIVE)
-        player->set(MQ_KEY_STATUS, MQ_ACTIVE);
-
-    return 1;
-}
-
-// 完成指定节点
-// 检查节点状态，发放奖励，自动推送到下一节点
+// 完成指定主线节点（目标达成检查 + 结算 + 章节完成检测）
 // 返回：1=完成成功（含下一节点已激活） 2=完成且章节完成
 //       3=全部主线完成  0=条件不满足  -1=参数错误
 int complete_node(object player, string node_id)
 {
-    mapping node;
-    string next_id;
-    int chapter, next_chapter, result, realm;
+    mapping ch_data;
+    int chapter;
 
     if (!player || !stringp(node_id) || node_id == "")
         return -1;
 
-    if (undefinedp(quest_nodes[node_id]))
+    if (undefinedp(quest_defs[node_id]))
         return 0;
 
-    node = quest_nodes[node_id];
-
-    // 检查是否已激活
-    if (player->query(MQ_KEY_NODE) != node_id)
+    // 目标推进检查（OBJ_REACH 按当前位置判定）
+    if (!quest_progress(player, node_id))
         return 0;
 
-    // 检查境界
-    realm = get_player_realm_index(player);
-    if (realm < node["realm_min"])
+    if (!QUEST_CHAIN_D->complete_quest(player, node_id))
         return 0;
 
-    // 发放节点奖励
-    award_node_reward(player, node_id);
-
-    // 标记节点完成
-    add_completed_node(player, node_id);
-    player->set(MQ_KEY_NODE, "");
-
-    // 检查章节是否完成
-    chapter = node["chapter"];
-    if (check_chapter_complete(player, chapter))
+    // 章节完成检测
+    chapter = quest_defs[node_id]["chapter"];
+    if (is_chapter_completed(player, chapter))
     {
         // 发放章节奖励
         award_chapter_reward(player, chapter);
-        add_completed_chapter(player, chapter);
 
-        // 检查是否可以进入下一章
-        next_chapter = chapter + 1;
-        if (next_chapter < CHAPTER_COUNT &&
-            is_chapter_unlocked(player, next_chapter))
-        {
-            player->set(MQ_KEY_CHAPTER, next_chapter);
-        }
-        else if (next_chapter >= CHAPTER_COUNT)
-        {
-            // 所有章节完成
-            player->set(MQ_KEY_STATUS, MQ_COMPLETED);
+        // 章节完成：终章完成=全部完成；否则章节完成（后续章未落地则等待）
+        if (chapter >= CHAPTER_COUNT - 1)
             return 3;
-        }
-
-        result = 2;
-    }
-    else
-    {
-        result = 1;
+        return 2;
     }
 
-    // 自动激活下一节点
-    next_id = find_next_in_chapter(player, chapter);
-    if (next_id && next_id != "")
-    {
-        player->set(MQ_KEY_NODE, next_id);
-    }
-
-    return result;
+    return 1;
 }
 
 // 查询玩家主线进度摘要
-// 返回格式化的进度字符串
 string query_progress(object player)
 {
-    string output, node_id, status_str;
+    string output, node_id;
     int chapter, status;
     mapping node_data, chapter_data;
-    string *completed_nodes;
-    int *completed_chapters;
+    int i;
 
     if (!player) return "";
-
-    status = player->query(MQ_KEY_STATUS);
-    if (status == MQ_INACTIVE)
-        return "你还未开始主线任务。\n";
 
     output = HIC "╔══════════════════════════════════╗\n" NOR;
     output += HIC "║       主 线 任 务 进 度         ║\n" NOR;
     output += HIC "╚══════════════════════════════════╝\n" NOR;
 
-    completed_chapters = player->query(MQ_KEY_COMP_CHAPTERS);
-    if (!pointerp(completed_chapters))
-        completed_chapters = ({});
-
-    for (int ch = 0; ch < CHAPTER_COUNT; ch++)
+    for (i = 0; i < CHAPTER_COUNT; i++)
     {
-        chapter_data = quest_chapters[ch];
+        chapter_data = quest_chapters[i];
         if (!chapter_data) continue;
 
-        if (member_array(ch, completed_chapters) != -1)
-        {
+        if (is_chapter_completed(player, i))
             output += sprintf(" " HIG "■" NOR " %s " HIG "(已完成)" NOR "\n",
                        chapter_data["name"]);
-        }
-        else if (is_chapter_unlocked(player, ch))
-        {
+        else if (is_chapter_unlocked(player, i))
             output += sprintf(" " HIY "▶" NOR " %s " HIY "(进行中)" NOR "\n",
                        chapter_data["name"]);
-        }
         else
-        {
             output += sprintf(" " HIB "□" NOR " %s " HIB "(未解锁)" NOR "\n",
                        chapter_data["name"]);
-        }
     }
 
     output += "\n";
-    node_id = player->query(MQ_KEY_NODE);
-    if (stringp(node_id) && node_id != "" && !undefinedp(quest_nodes[node_id]))
+    node_id = query_current_node_id(player);
+    if (stringp(node_id) && node_id != "" && !undefinedp(quest_defs[node_id]))
     {
-        node_data = quest_nodes[node_id];
+        node_data = quest_defs[node_id];
         output += sprintf("当前任务：" HIW "%s" NOR "\n", node_data["name"]);
         output += sprintf("任务说明：%s\n", node_data["desc"]);
         output += sprintf("任务奖励：经验 %d  灵石 %d\n",
                    node_data["rewards"]["exp"],
                    node_data["rewards"]["coin"]);
+        output += sprintf("目标：" HIW "%s" NOR "\n", obj_target_text(node_data["objectives"]));
+        output += "输入 " HIG "main_quest submit" NOR " 提交（需到达目标地点）。\n";
     }
     else
     {
-        // 找下一个可用节点
-        node_id = find_next_available_node(player, player->query(MQ_KEY_CHAPTER));
-        if (stringp(node_id) && node_id != "" && !undefinedp(quest_nodes[node_id]))
+        string next = find_next_available_quest(player);
+        if (stringp(next) && next != "" && !undefinedp(quest_defs[next]))
         {
-            node_data = quest_nodes[node_id];
+            node_data = quest_defs[next];
             output += sprintf("可接任务：" HIW "%s" NOR "\n", node_data["name"]);
+            output += sprintf("任务说明：%s\n", node_data["desc"]);
+            output += sprintf("奖励：经验 %d  灵石 %d\n",
+                       node_data["rewards"]["exp"],
+                       node_data["rewards"]["coin"]);
             output += "输入 " HIG "main_quest accept" NOR " 接取。\n";
         }
         else
         {
-            if (status == MQ_COMPLETED)
-                output += HIG "全部主线任务已完成！恭喜你飞升上界！" NOR "\n";
-            else
-                output += "当前无可接取的主线任务。请提升境界后重试。\n";
+            output += "当前无可接取的主线任务。请提升境界后重试。\n";
         }
     }
 
     return output;
 }
 
-// ═══════════════════════════════════════════════════
-// 辅助方法
-// ═══════════════════════════════════════════════════
-
-// 获取玩家境界索引（简化实现）
-// 实际实现应查询 player->query("level") 或等效字段
-// TODO: 对接实际境界系统后替换此方法
-int get_player_realm_index(object player)
+// 获取当前活跃主线节点 ID
+string query_current_node_id(object player)
 {
-    int level;
+    mapping active;
+    string *ids;
+    int i;
 
-    if (!player) return 0;
+    if (!player) return "";
 
-    // 尝试从 player 对象获取境界/等级
-    // 兼容不同属性名
-    level = player->query("level");
-    if (level <= 0)
-        level = player->query("combat_exp") / 10000;
+    active = QUEST_CHAIN_D->get_player_quests(player);
+    if (!mapp(active)) return "";
 
-    if (level < 0) level = 0;
-    if (level > 100) level = 100;
-
-    return level;
+    ids = keys(active);
+    for (i = 0; i < sizeof(ids); i++)
+    {
+        if (quest_defs[ids[i]])
+            return ids[i];
+    }
+    return "";
 }
 
-// 检查章节是否已解锁
+// 推进主线任务目标进度（OBJ_REACH/OBJ_TALK 按当前位置判定）
+// 返回目标是否全部达成
+// 注意：必须取整张活跃任务表 active 修改子表再整表写回（#59 铁律）
+int quest_progress(object player, string quest_id)
+{
+    mapping active;
+    mapping sub;
+    mapping template;
+    mapping objectives;
+    mapping progress;
+    string here;
+    int i, done;
+
+    if (!objectp(player)) return 0;
+
+    active = player->query(QUEST_CHAIN_ACTIVE);
+    if (!mapp(active)) return 0;
+    sub = active[quest_id];
+    if (!mapp(sub)) return 0;
+
+    template = quest_defs[quest_id];
+    if (!mapp(template)) return 0;
+
+    objectives = template["objectives"];
+    progress = sub["progress"];
+    if (!mapp(progress)) progress = ([]);
+
+    here = base_name(environment(player));
+    done = 1;
+
+    for (i = 0; i < sizeof(objectives); i++)
+    {
+        mapping obj = objectives[i];
+        string key = "obj_" + i;
+        int cur = progress[key];
+        int amount = obj["amount"];
+        string target = obj["target"];
+
+        if (!amount) amount = 1;
+        if (!cur) cur = 0;
+
+        // 到达/对话类目标：所在房间路径前缀匹配目标即达成
+        if ((obj["type"] == OBJ_REACH || obj["type"] == OBJ_TALK) &&
+            stringp(target) && target != "" && stringp(here) &&
+            strsrch(here, target) == 0)
+        {
+            cur = amount;
+            progress[key] = cur;
+        }
+
+        if (cur < amount)
+            done = 0;
+    }
+
+    sub["progress"] = progress;
+    active[quest_id] = sub;
+    player->set(QUEST_CHAIN_ACTIVE, active);
+    QUEST_CHAIN_D->save_player_quest_state(player);
+
+    return done;
+}
+
+// ═══════════════════════════════════════════
+// 辅助方法
+// ═══════════════════════════════════════════
+
+// 获取玩家境界索引（委托 quest_chain_d，统一语义 0=炼气 1=筑基 ...）
+int get_player_realm_index(object player)
+{
+    return QUEST_CHAIN_D->get_player_realm_index(player);
+}
+
+// 章节是否已解锁（境界 + 前置章节）
 int is_chapter_unlocked(object player, int chapter)
 {
     mapping ch_data;
-    int *completed_chapters;
 
+    if (!player) return 0;
     if (chapter < 0 || chapter >= CHAPTER_COUNT)
         return 0;
 
     ch_data = quest_chapters[chapter];
     if (!ch_data) return 0;
+
+    // 未落地章节（chain_id 为空）视为未解锁
+    if (!stringp(ch_data["chain_id"]) || ch_data["chain_id"] == "")
+        return 0;
 
     // 检查境界
     if (get_player_realm_index(player) < ch_data["realm_min"])
@@ -684,234 +569,99 @@ int is_chapter_unlocked(object player, int chapter)
 
     // 检查前置章节
     if (ch_data["prereq_chapter"] < 0)
-        return 1;  // 第一章无条件
+        return 1;
 
-    completed_chapters = player->query(MQ_KEY_COMP_CHAPTERS);
-    if (!pointerp(completed_chapters))
-        return 0;
-
-    return (member_array(ch_data["prereq_chapter"], completed_chapters) != -1);
+    return is_chapter_completed(player, ch_data["prereq_chapter"]);
 }
 
-// 检查章节内所有节点是否完成
-int check_chapter_complete(object player, int chapter)
+// 章节是否已完成（链内全部节点完成）
+int is_chapter_completed(object player, int chapter)
 {
-    string *node_ids;
     mapping ch_data;
+    mapping completed;
+    string *qids;
+    int i;
+
+    if (!player) return 0;
 
     ch_data = quest_chapters[chapter];
     if (!ch_data) return 0;
 
-    node_ids = ch_data["node_ids"];
-    foreach (string nid in node_ids)
+    qids = chain_defs[ch_data["chain_id"]];
+    if (!arrayp(qids) || sizeof(qids) == 0) return 0;
+
+    completed = player->query(QUEST_CHAIN_COMPLETED);
+    if (!mapp(completed)) return 0;
+
+    for (i = 0; i < sizeof(qids); i++)
     {
-        if (!is_node_completed(player, nid))
+        if (!completed[qids[i]])
             return 0;
     }
-
     return 1;
 }
 
-// 检查节点是否已完成
-int is_node_completed(object player, string node_id)
-{
-    string *completed;
-
-    completed = player->query(MQ_KEY_COMP_NODES);
-    if (!pointerp(completed)) return 0;
-
-    return (member_array(node_id, completed) != -1);
-}
-
-// 检查章节是否已完成
-int is_chapter_completed(object player, int chapter)
-{
-    int *completed;
-
-    completed = player->query(MQ_KEY_COMP_CHAPTERS);
-    if (!pointerp(completed)) return 0;
-
-    return (member_array(chapter, completed) != -1);
-}
-
-// 在指定章节中找下一个未完成的节点
-string find_next_in_chapter(object player, int chapter)
+// 查找下一个可接取的主线节点（跨章节：从当前进度向后找）
+string find_next_available_quest(object player)
 {
     mapping ch_data;
-    string *node_ids;
+    string *qids;
+    int i, ch;
 
-    ch_data = quest_chapters[chapter];
-    if (!ch_data) return "";
+    if (!player) return "";
 
-    node_ids = ch_data["node_ids"];
-    foreach (string nid in node_ids)
+    for (ch = 0; ch < CHAPTER_COUNT; ch++)
     {
-        if (!is_node_completed(player, nid))
-        {
-            // 检查前置
-            mapping nd = quest_nodes[nid];
-            if (nd && nd["prereq_node"] && nd["prereq_node"] != 0)
-            {
-                if (!is_node_completed(player, nd["prereq_node"]))
-                    continue;
-            }
-            return nid;
-        }
-    }
-
-    return "";
-}
-
-// 查找下一个可用节点（跨章节）
-string find_next_available_node(object player, int start_chapter)
-{
-    mapping ch_data;
-    string *node_ids;
-
-    for (int ch = start_chapter; ch < CHAPTER_COUNT; ch++)
-    {
-        if (!is_chapter_unlocked(player, ch))
-            continue;
-
         ch_data = quest_chapters[ch];
         if (!ch_data) continue;
+        if (!is_chapter_unlocked(player, ch)) continue;
 
-        node_ids = ch_data["node_ids"];
-        foreach (string nid in node_ids)
+        qids = chain_defs[ch_data["chain_id"]];
+        if (!arrayp(qids)) continue;
+
+        for (i = 0; i < sizeof(qids); i++)
         {
-            if (is_node_completed(player, nid))
-                continue;
-
-            mapping nd = quest_nodes[nid];
-            if (!nd) continue;
-
-            // 检查前置
-            if (nd["prereq_node"] && nd["prereq_node"] != 0)
-            {
-                if (!is_node_completed(player, nd["prereq_node"]))
-                    continue;
-            }
-
-            // 检查境界
-            if (get_player_realm_index(player) < nd["realm_min"])
-                continue;
-
-            return nid;
+            if (QUEST_CHAIN_D->is_quest_available(qids[i], player))
+                return qids[i];
         }
     }
-
     return "";
 }
 
-// 将节点 ID 加入已完成列表
-void add_completed_node(object player, string node_id)
-{
-    string *completed;
-
-    completed = player->query(MQ_KEY_COMP_NODES);
-    if (!pointerp(completed))
-        completed = ({});
-
-    if (member_array(node_id, completed) == -1)
-        completed += ({ node_id });
-
-    player->set(MQ_KEY_COMP_NODES, completed);
-}
-
-// 将章节加入已完成列表
-void add_completed_chapter(object player, int chapter)
-{
-    int *completed;
-
-    completed = player->query(MQ_KEY_COMP_CHAPTERS);
-    if (!pointerp(completed))
-        completed = ({});
-
-    if (member_array(chapter, completed) == -1)
-        completed += ({ chapter });
-
-    player->set(MQ_KEY_COMP_CHAPTERS, completed);
-}
-
-// 发放节点奖励
-int award_node_reward(object player, string node_id)
-{
-    mapping node, rewards;
-
-    if (undefinedp(quest_nodes[node_id]))
-        return 0;
-
-    node = quest_nodes[node_id];
-    rewards = node["rewards"];
-
-    // 发放经验
-    if (rewards["exp"] > 0)
-        player->add("combat_exp", rewards["exp"]);
-
-    // 发放灵石
-    if (rewards["coin"] > 0)
-    {
-        // 通过经济系统发放（简化：直接给钱）
-        object coin;
-        coin = new ("/clone/money/coin");
-        if (coin)
-        {
-            coin->set_amount(rewards["coin"]);
-            coin->move(player);
-        }
-    }
-
-    tell_object(player, sprintf(
-        HIG "主线任务【%s】完成！获得经验 %d，灵石 %d。\n" NOR,
-        node["name"], rewards["exp"], rewards["coin"]));
-
-    return 1;
-}
-
-// 发放章节完成奖励
+// 发放章节完成奖励（title + item + 里程碑经验/灵石）
 int award_chapter_reward(object player, int chapter)
 {
     mapping ch_data, reward;
     string title_name;
+    string item_path;
+
+    if (!player) return 0;
 
     ch_data = quest_chapters[chapter];
     if (!ch_data) return 0;
-
     reward = ch_data["chapter_reward"];
+    if (!mapp(reward)) return 0;
 
-    // 发放经验奖励
+    // 经验 / 灵石（里程碑奖励）
     if (reward["exp"] > 0)
         player->add("combat_exp", reward["exp"]);
-
-    // 发放灵石奖励
     if (reward["coin"] > 0)
-    {
-        object coin;
-        coin = new ("/clone/money/coin");
-        if (coin)
-        {
-            coin->set_amount(reward["coin"]);
-            coin->move(player);
-        }
-    }
+        MONEY_D->pay_player(player, reward["coin"] * 100);
 
-    // 发放称号
+    // 称号
     title_name = reward["title"];
     if (stringp(title_name) && title_name != "")
-    {
         player->set("title", title_name);
-    }
 
-    // 发放物品
-    if (stringp(reward["item"]) && reward["item"] != "")
+    // 物品
+    item_path = reward["item"];
+    if (stringp(item_path) && item_path != "")
     {
-        object item;
-        item = new (reward["item"]);
+        object item = new(item_path);
         if (item)
         {
             item->move(player);
-            tell_object(player, sprintf(
-                "获得特殊物品：%s。\n", item->query("name")));
+            tell_object(player, sprintf("获得特殊物品：%s。\n", item->query("name")));
         }
     }
 
@@ -927,47 +677,28 @@ int award_chapter_reward(object player, int chapter)
     return 1;
 }
 
+// 目标文本（进度面板用）
+string obj_target_text(mixed objectives)
+{
+    if (!arrayp(objectives) || sizeof(objectives) == 0)
+        return "无";
+    return objectives[0]["target"];
+}
+
 // 查询章节信息
 mixed query_chapter_info(int chapter)
 {
     if (undefinedp(quest_chapters[chapter]))
         return 0;
-
     return quest_chapters[chapter];
 }
 
 // 查询节点信息
 mixed query_node_info(string node_id)
 {
-    if (undefinedp(quest_nodes[node_id]))
+    if (undefinedp(quest_defs[node_id]))
         return 0;
-
-    return quest_nodes[node_id];
-}
-
-// 获取当前章节
-int query_current_chapter(object player)
-{
-    if (!player) return -1;
-    return player->query(MQ_KEY_CHAPTER);
-}
-
-// 获取当前节点 ID
-string query_current_node_id(object player)
-{
-    if (!player) return "";
-    return player->query(MQ_KEY_NODE);
-}
-
-// 获取章节节点数量
-int get_chapter_node_count(int chapter)
-{
-    mapping ch_data;
-
-    ch_data = quest_chapters[chapter];
-    if (!ch_data) return 0;
-
-    return sizeof(ch_data["node_ids"]);
+    return quest_defs[node_id];
 }
 
 // 获取章节节点 ID 列表
@@ -975,14 +706,11 @@ string *get_chapter_node_ids(int chapter)
 {
     mapping ch_data;
 
+    if (chapter < 0 || chapter >= CHAPTER_COUNT)
+        return ({});
+
     ch_data = quest_chapters[chapter];
     if (!ch_data) return ({});
 
-    return ch_data["node_ids"];
-}
-
-// 防止主动 destruct
-int clean_up()
-{
-    return 1;
+    return chain_defs[ch_data["chain_id"]];
 }
