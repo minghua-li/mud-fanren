@@ -37,3 +37,7 @@ verified: '2026-08-13'
 - 材料来源：d/yueguo/tainan/obj/ 下每材料一文件（inherit ITEM + is_material + material_id + value），对齐 #67 tiejing.c 先例；坊市 fangshi.c goods 表加条目 + create() 里 ECONOMY_D->register_goods(<类型>, <基准灵石价>, <周转量>) 注册经济定价（类型如 ore_silver/ore_gold/ore_xuantie/ore_gengjing，herb_huanglong 先例为自定义类型合法）。材料稀有度↔价格：铁精2/银精5/金精15/玄铁30/庚精80 灵石（1E §1.5 材料表）。
 - 验证（可复跑）：`python3 tools/check/forge_verify.py`（148 断言 exit 0：括号状态机/接口签名/配方字段+攻防单侧/材料↔坊市引用完整性/register_goods 全覆盖/FORGE_D 宏/help 前向原型 + LPC 原文守卫（forge 函数体：境界/技能/材料检查、扣减、query_success_rate 接线、FORGE_STEPS、roll_quality、new treasure、tier_name；treasure.check_realm；lianqi 场所检查）+ 同构模拟 8 场景（材料不足不扣/境界拒绝/技能拒绝/成功属性齐全/品质倍率/失败耗材/端到端装备境界/1E 数据口径）+ 4 组突变实证（删境界检查/场所改指/删材料扣减→守卫红）。**守卫匹配字符串字面量必须用保留字符串的函数体提取器**（strip_lpc 会剥掉 "lianqi-shu"/"huadao_lianqi" 使守卫失配——本票踩坑）。模拟脚本解析 LPC mapping 字面量时：行首缩进去平（eval 顶层不容缩进）、`__DIR__"obj/x"` 拼接先替换成纯字符串、宏名（SECT_TIER_*）提供 namespace 值映射；LPC `([` 转 Python `{` 时先整体捕获含外括号的块再转换（只取内文会丢 dict 边界）。
 - 环境边界：无 fluffos driver 无法运行时编译/运行（与 #57/#60/#61 同）；lpcc 与项目 UTF-8 不兼容（#67 实证）。法宝 `::` 父类调用与 pow float 运算均为 FluffOS v2019 支持语法（既有先例 toptend.c/mdfived.c），但运行时行为仍需人工装驱动复验。
+
+## 档位与 move 判定（审查第 1 轮修订）
+
+基准成功率档位（02 图鉴 §4.3，审查第 1 轮对齐）：法器 75%、法宝 35%——青钢剑/赤铜盾 base_rate=75，玄铁重剑/庚精飞剑=35；实际综合成功率 = base + 炼器术/2 + 工坊加成，故高级炼器术（≥50 级）炼制法宝仍有可观成功率。另：F_MOVE->move 失败返回 notify_fail 字符串（truthy）而非 0，成品 move 判断必须用 != 1（背包满落地面分支），!move() 会漏判致法宝悬空丢失。
