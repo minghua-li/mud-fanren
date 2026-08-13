@@ -45,6 +45,7 @@ for name, num in [("SECT_FACILITY_PLANT",1),("SECT_FACILITY_ALCHEMY",2),("SECT_F
                   ("SECT_FACILITY_DEFENSE",4),("SECT_FACILITY_TRAINING",5),("SECT_FACILITY_SPECIAL",6)]:
     TYPE[name] = num
 UPG_COMMON = parse_define_mapping(hdr, "SECT_UPGRADE_COMMON")
+UPG_MARKET = parse_define_mapping(hdr, "SECT_UPGRADE_MARKET")
 UPG_DEFENSE = parse_define_mapping(hdr, "SECT_UPGRADE_DEFENSE")
 UPG_SPECIAL = parse_define_mapping(hdr, "SECT_UPGRADE_SPECIAL")
 UPG_PLANT = parse_define_mapping(hdr, "SECT_UPGRADE_PLANT")
@@ -87,7 +88,8 @@ def parse_entry(entry_text, key):
         e["effect"] = {"type": etype, "base": int(em.group(3)), "per_level": int(em.group(4))}
     um = re.search(r'"upgrade"\s*:\s*(SECT_UPGRADE_\w+)', entry_text)
     e["upgrade"] = {"SECT_UPGRADE_COMMON": UPG_COMMON, "SECT_UPGRADE_DEFENSE": UPG_DEFENSE,
-                    "SECT_UPGRADE_SPECIAL": UPG_SPECIAL, "SECT_UPGRADE_PLANT": UPG_PLANT}[um.group(1)] if um else {}
+                    "SECT_UPGRADE_SPECIAL": UPG_SPECIAL, "SECT_UPGRADE_PLANT": UPG_PLANT,
+                    "SECT_UPGRADE_MARKET": UPG_MARKET}[um.group(1)] if um else {}
     drm = re.search(r'"daily_reward"\s*:\s*\(\[\s*"exp"\s*:\s*([A-Za-z_]+|\d+)\s*,\s*"contrib"\s*:\s*([A-Za-z_]+|\d+)\s*,\s*"verb"\s*:\s*"([^"]+)"', entry_text)
     if drm:
         def num_or_macro(s):
@@ -392,8 +394,8 @@ r = use_facility(p, "huangfeng_danfang")
 check("丹房使用成功", r.startswith("ok:"), str(r))
 check("丹房扣贡献（走 add_contribution）", p.contribution == before - 100, "before=%d after=%d" % (before, p.contribution))
 check("丹房扣灵石 10", p.balance_wen == 100000 - 10*100)
-check("炼丹加成生效 query_danfang_bonus=5", query_effect_value(p, "alchemy_success") == 5)
-check("buff 记录在玩家属性", query_buff(p, "huangfeng_danfang") == 5)
+check("炼丹加成生效 query_danfang_bonus=10（§4.4.1 炼丹阁 +10%）", query_effect_value(p, "alchemy_success") == 10)
+check("buff 记录在玩家属性", query_buff(p, "huangfeng_danfang") == 10)
 
 # 贡献不足：先查贡献后扣灵石
 p.contribution = 0
@@ -418,25 +420,26 @@ check("成熟收获成功且产灵草", isinstance(cnt, int) and cnt >= 1, str(c
 check("收获物进背包", len(p.inv) >= before_inv + 1)
 check("地块回到空闲", p.plots["huangfeng_baiyaoyuan"].get(0) is None or p.plots["huangfeng_baiyaoyuan"].get(0) == 0)
 
-# 灵田升级→更多地块：外门弟子不能升级，内门可以
+# 灵田升级→更多地块：外门弟子不能升级，内门可以（Lv1→2 = 1000 灵石 + 5000 贡献，对齐 §4.4.1 灵药园）
 p.balance_wen += 300000   # 升级测试资源
-p.contribution += 2000
+p.contribution += 6000
 p.room = "huangfeng_baiyaoyuan"
 r = upgrade(p, "huangfeng_baiyaoyuan")
 check("外门弟子升级被拒", r == "只有内门弟子以上方可主持门派设施的升级。")
+before_bal, before_contrib = p.balance_wen, p.contribution
 p.rank = 1
 r = upgrade(p, "huangfeng_baiyaoyuan")
 check("内门弟子升级灵田成功", r == "ok", str(r))
 check("灵田升 2 级", facility_config["huangfeng_baiyaoyuan"]["level"] == 2)
 check("灵田地块增至 5 块", query_plot_count("huangfeng_baiyaoyuan") == 5)
-check("升级扣贡献 500+灵石 1000", True)  # 由 pay_cost 内部断言
+check("升级实扣灵石 1000", p.balance_wen == before_bal - 1000*100)
+check("升级实扣贡献 5000", p.contribution == before_contrib - 5000)
 p.rank = 0  # 还原
 
 # ---------- 场景 4：藏经阁阅读/抄录 ----------
-p.room = "huangfeng_yuexudian_room"  # 房间路径不影响逻辑；直接断言 check_access 用 key
-p.room = "huangfeng_cangjing"  # key 与 room 字段对齐（模拟 room→key 映射）
-p.room = "/d/yueguo/huangfeng/yuexudian"
-# check_access 用 p.room != key；此处以 key 即房间标识模拟（真实实现用 base_name 匹配 room 路径）
+# 注：真实实现用 base_name(environment(player)) 与配置 room 字段匹配识别设施房间
+# （sect_facility_d.c query_current_facility，由下方『LPC 原文守卫』做机器验证）；
+# 此处 Python 翻译以 p.room=key 模拟该匹配结果。
 p.room = "huangfeng_cangjing"
 r = transcribe(p, "huangfeng_cangjing", "changchun-gong")
 check("藏经阁抄录成功（耗贡献500）", r == "ok", str(r))
@@ -445,9 +448,10 @@ check("重复抄录被拒", transcribe(p, "huangfeng_cangjing", "changchun-gong"
 
 # ---------- 场景 5：坊市购买 ----------
 p.room = "huangfeng_fangshi"
+before_bal = p.balance_wen
 r = market_buy(p, "huangfeng_fangshi", "zidanshen")
 check("坊市购买紫丹参成功", r == "ok", str(r))
-check("坊市扣灵石 100", p.balance_wen == p.balance_wen + 100*100 - 100*100 or True)
+check("坊市实扣灵石 100", p.balance_wen == before_bal - 100*100)
 
 # ---------- 场景 6：每日修行（切磋） ----------
 p.room = "huangfeng_qingjianchang"
@@ -481,6 +485,48 @@ for s in nine:
 check("通用五类设施齐备",
       {1,2,3,4,5} <= {c["type"] for c in facility_config.values()})
 check("18 个设施条目", len(facility_config) == 18)
+
+# ---------- LPC 原文守卫（机器验证绑定 LPC 原文，非仅 Python 翻译） ----------
+# 针对审查意见：path_verify 的 Python 翻译不绑定 LPC 原文（改 LPC 不改翻译仍绿）。
+# 此段直接解析 LPC 原文关键函数体并断言顺序/匹配逻辑，另做一次 LPC 原文突变
+# 证明守卫对原文敏感（红→绿）。
+def extract_func(daemon_src, func_name):
+    m = re.search(r'\b' + func_name + r'\s*\([^)]*\)\s*\{(.*?)\n\}', daemon_src, re.S)
+    return m.group(1) if m else None
+
+def pay_order_ok(body):
+    """先查贡献（query_contribution<contrib）必须出现在 player_pay 之前（sect_facility_d.c:pay_cost）"""
+    if body is None: return False
+    i_contrib = body.find("query_contribution(player) < contrib")
+    i_pay = body.find("player_pay(player, stone * 100)")
+    return i_contrib != -1 and i_pay != -1 and i_contrib < i_pay
+
+def base_name_match_ok(body):
+    """设施房间识别用 base_name(environment(player)) 匹配配置 room（sect_facility_d.c:query_current_facility）"""
+    if body is None: return False
+    return "base_name(env)" in body and 'facility_config[key]["room"]' in body
+
+pay_body = extract_func(daemon, "pay_cost")
+cur_body = extract_func(daemon, "query_current_facility")
+check("LPC 原文 pay_cost：先查贡献（query_contribution）后扣灵石（player_pay）",
+      pay_order_ok(pay_body))
+check("LPC 原文 query_current_facility：base_name(env) 匹配配置 room",
+      base_name_match_ok(cur_body))
+
+# 突变实证（作用于 LPC 原文，非 Python 翻译）：颠倒 pay_cost 扣费顺序 → 守卫必须转红
+old_seq = ('    if (contrib > 0 && SECT_D->query_contribution(player) < contrib)\n'
+           '        return "门派贡献不足，需要 " + contrib + " 点贡献。";\n\n'
+           '    if (stone > 0 && !MONEY_D->player_pay(player, stone * 100))\n'
+           '        return "灵石不足，需要 " + stone + " 灵石。";')
+new_seq = ('    if (stone > 0 && !MONEY_D->player_pay(player, stone * 100))\n'
+           '        return "灵石不足，需要 " + stone + " 灵石。";\n\n'
+           '    if (contrib > 0 && SECT_D->query_contribution(player) < contrib)\n'
+           '        return "门派贡献不足，需要 " + contrib + " 点贡献。";')
+assert old_seq in daemon, "LPC pay_cost 顺序片段未找到，无法突变"
+mut_daemon = daemon.replace(old_seq, new_seq)
+mut_pay = extract_func(mut_daemon, "pay_cost")
+check("LPC 原文突变：颠倒扣费顺序后守卫转红（证明守卫绑定 LPC 原文）",
+      mut_pay is not None and not pay_order_ok(mut_pay))
 
 # ---------- 汇总 ----------
 print("===== #60 门派设施系统 路径验证 =====")
