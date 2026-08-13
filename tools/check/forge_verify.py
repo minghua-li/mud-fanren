@@ -36,7 +36,12 @@ def err(msg):
     print('FAIL: ' + msg)
 
 
+oks = 0
+
+
 def ok(msg):
+    global oks
+    oks += 1
     print('ok: ' + msg)
 
 
@@ -407,6 +412,7 @@ else:
         ('品质判定', r'roll_quality\(rate\)'),
         ('成品生成', r'new\("/d/yueguo/obj/treasure"\)'),
         ('境界名展示', r'tier_name\(tier_need\)'),
+        ('落地面判定', r'move\(player\)\s*!=\s*1'),
     ]
     for name, pat in guards_forge:
         if re.search(pat, forge_body):
@@ -425,6 +431,12 @@ if tre_body and re.search(r'query_cultivation_tier\(owner\)\s*>=\s*need', tre_bo
     ok('守卫[treasure.check_realm] 境界限制真实生效')
 else:
     err('守卫[treasure.check_realm] 缺失')
+# 拒绝分支守卫（审查盲区实证：放行分支改 return 0 或拒绝分支改 return 1 时脚本必须红）
+# 形态：境界达标放行（>= need return 1）之后紧跟拒绝返回（return 0）
+if tre_body and re.search(r'query_cultivation_tier\(owner\)\s*>=\s*need\)\s*return\s+1;[\s\S]*?return\s+0;', tre_body):
+    ok('守卫[treasure.check_realm] 拒绝分支存在（放行后 return 0）')
+else:
+    err('守卫[treasure.check_realm] 拒绝分支缺失')
 
 lq_body = extract_func_raw(lianqi_src, 'main')
 if lq_body and re.search(r'query_current_facility\(me\)\s*!=\s*"huadao_lianqi"', lq_body):
@@ -672,15 +684,15 @@ if re.search(r'query_cultivation_tier\(player\)\s*<\s*tier_need', mut_body or ''
 else:
     ok('突变1 删境界检查 → 守卫红')
 
-# 突变2：treasure 境界检查改向 → 守卫红
+# 突变2：treasure 放行分支失效（>=need return 1 → return 0，境界限制失效）→ 拒绝分支守卫红
 mut_tre = read_file(os.path.join(mut_dir, 'd/yueguo/obj/treasure.c'))
 mut_tre = mut_tre.replace('if (SECT_D->query_cultivation_tier(owner) >= need) return 1;',
                           'if (SECT_D->query_cultivation_tier(owner) >= need) return 0;')
 mut_body = extract_func(mut_tre, 'check_realm')
-if re.search(r'query_cultivation_tier\(owner\)\s*>=\s*need', mut_body or ''):
-    ok('突变2 境界检查取反（>=need return 1 → return 0）守卫仍绿（需行为级判定）')
+if re.search(r'query_cultivation_tier\(owner\)\s*>=\s*need\)\s*return\s+1;[\s\S]*?return\s+0;', mut_body or ''):
+    err('突变2 失败：放行分支改 return 0 后守卫仍绿')
 else:
-    err('突变2 失败')
+    ok('突变2 放行分支失效（return 1→0）→ 守卫红')
 
 # 突变3：lianqi 场所检查改指向别处 → 守卫红
 mut_lq = read_file(os.path.join(mut_dir, 'cmds/usr/lianqi.c'))
@@ -700,12 +712,34 @@ if re.search(r'consume_material\(player,', mut_body or ''):
 else:
     ok('突变4 删材料扣减 → 守卫红')
 
+# 突变5：treasure check_realm 拒绝分支失效（return 0 → return 1，境界限制完全失效）→ 守卫红
+mut_tre2 = read_file(os.path.join(mut_dir, 'd/yueguo/obj/treasure.c'))
+mut_tre2 = mut_tre2.replace('''    if (SECT_D->query_cultivation_tier(owner) >= need) return 1;
+    return 0;''',
+                            '''    if (SECT_D->query_cultivation_tier(owner) >= need) return 1;
+    return 1;''')
+mut_body = extract_func(mut_tre2, 'check_realm')
+if re.search(r'query_cultivation_tier\(owner\)\s*>=\s*need\)\s*return\s+1;[\s\S]*?return\s+0;', mut_body or ''):
+    err('突变5 失败：拒绝分支改 return 1 后守卫仍绿')
+else:
+    ok('突变5 check_realm 拒绝分支失效（return 0→1）→ 守卫红')
+
+# 突变6：treasure check_realm 判定反转（>= 改 <，境界不足反而放行）→ 守卫红
+mut_tre3 = read_file(os.path.join(mut_dir, 'd/yueguo/obj/treasure.c'))
+mut_tre3 = mut_tre3.replace('if (SECT_D->query_cultivation_tier(owner) >= need) return 1;',
+                            'if (SECT_D->query_cultivation_tier(owner) < need) return 1;')
+mut_body = extract_func(mut_tre3, 'check_realm')
+if re.search(r'query_cultivation_tier\(owner\)\s*>=\s*need\)\s*return\s+1;[\s\S]*?return\s+0;', mut_body or ''):
+    err('突变6 失败：判定反转后守卫仍绿')
+else:
+    ok('突变6 check_realm 判定反转（>= 改 <）→ 守卫红')
+
 shutil.rmtree(mut_dir, ignore_errors=True)
 
 # ═══════════ 结果 ═══════════
 
 print('\n═══════════════════════════════════')
-print('断言总数: %d（含循环展开）, 失败: %d' % (fails, fails))
+print('断言总数: %d, 失败: %d' % (oks, fails))
 if fails:
     print('FAILED: 存在失败项')
     sys.exit(1)
