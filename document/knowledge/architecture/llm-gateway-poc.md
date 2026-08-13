@@ -33,7 +33,7 @@ Phase 1 会复用本网关验证过的输出契约与安全模型，因此目录
 | `llm_client.py` | OpenAI 兼容 Chat Completions 客户端（纯标准库 urllib）+ 本地配置读取 |
 | `safety.py` | 指令安全过滤（白名单三层 + 条数上限 + 字符集校验） |
 | `mock_llm.py` | 无 API key 时的演示/自测解析器（真实效果靠 LLM） |
-| `selftest.py` | 三条验收自测（fake MUD 服务器 + mock/注入替身，55 断言） |
+| `selftest.py` | 三条验收自测（fake MUD 服务器 + mock/注入替身，85 断言） |
 
 ### 端口编码约定（与 master-object-callbacks 一致）
 
@@ -47,7 +47,9 @@ Phase 1 会复用本网关验证过的输出契约与安全模型，因此目录
 {"commands": ["go east", "list", "pawn gold"], "confirm": ["kill npc"], "reason": "一句话"}
 ```
 
-- `commands`：安全可直接执行，≤8 条；`confirm`：高危意图，PoC 默认拦截。
+- `commands`：安全可直接执行，≤8 条；`confirm`：高危意图，默认拦截；
+  `--allow-confirm` 开启时仅 DANGEROUS 动词（kill/drop/give 等）可放行，
+  安全/未知动词出现在 confirm 视为模型格式错误仍拦截。
 - prompt 限定动词白名单，且明确「不知道路线先输出 look」。
 
 ### 安全分层（safety.py，不可放宽）

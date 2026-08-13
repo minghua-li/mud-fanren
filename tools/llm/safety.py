@@ -97,11 +97,27 @@ def check_command(cmd: str) -> str:
     raise SafetyError(f"非白名单动词被拒绝: {verb}")
 
 
+def check_confirm_command(cmd: str) -> str:
+    """confirm 高危确认路径的校验：仅 DANGEROUS 动词可放行。
+
+    allow_confirm 开启时，confirm 数组放行的是「玩家显式确认的高危意图」——
+    因此只放行已知高危动词（kill/drop/give 等）；DENIED 管理命令绝不放行；
+    安全动词/未知动词出现在 confirm 是模型格式错误，一律拦截。
+    """
+    verb = _format_check(cmd)
+    if verb in DENIED_VERBS:
+        raise SafetyError(f"管理命令拒绝: {verb}")
+    if verb in DANGEROUS_VERBS:
+        return verb
+    raise SafetyError(f"非高危动词不应出现在 confirm: {verb}")
+
+
 def split_commands(payload: dict, allow_confirm: bool = False) -> tuple[list[str], list[str]]:
     """从 LLM 返回的 JSON 中提取并分类指令。
 
     参数 allow_confirm：玩家显式 opt-in（--allow-confirm）后，模型自报的
-    confirm 高危数组才放行；默认 False 时 confirm 一律拦截。
+    confirm 高危数组才放行（且仅 DANGEROUS 动词可放行）；默认 False 时
+    confirm 一律拦截。
     无论开关如何，两条底线不变：commands 数组中的危险动词/管理命令仍被拦截
     （模型违规输出不因开关放行）；confirm 中的 DENIED 管理命令仍被拒绝。
 
@@ -126,7 +142,7 @@ def split_commands(payload: dict, allow_confirm: bool = False) -> tuple[list[str
         except SafetyError as e:
             blocked.append(f"{cmd} —— {e}")
     # confirm 列表（模型自报的危险意图）：默认不执行；allow_confirm 开启时
-    # 玩家已显式 opt-in，放行（仍做格式校验 + DENIED 管理命令绝不放行）
+    # 玩家已显式 opt-in，仅放行 DANGEROUS 动词（check_confirm_command）
     raw_confirm = payload.get("confirm") or []
     if isinstance(raw_confirm, list):
         for cmd in raw_confirm:
@@ -134,11 +150,8 @@ def split_commands(payload: dict, allow_confirm: bool = False) -> tuple[list[str
                 continue
             if allow_confirm:
                 try:
-                    verb = _format_check(cmd)
-                    if verb in DENIED_VERBS:
-                        blocked.append(f"{cmd} —— 管理命令拒绝(confirm): {verb}")
-                    else:
-                        allowed.append(cmd)
+                    check_confirm_command(cmd)
+                    allowed.append(cmd)
                 except SafetyError as e:
                     blocked.append(f"{cmd} —— {e}")
             else:

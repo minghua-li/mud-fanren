@@ -53,7 +53,8 @@ export LLM_MODEL="gpt-4o-mini"
 ```
 
 > 网关只从环境变量 / 本地配置文件读取，代码库与提交中不含任何密钥。
-> 不支持本地 API（如 ollama）时 `api_key` 可留空，网关仅凭 api_base 发起请求。
+> 本地 API（如 ollama，`http://localhost:11434/v1`）不需要密钥：
+> 只配置 `LLM_API_BASE` 即可，网关会把「自定义了 API 地址」视为已配置。
 
 ### 3. 运行网关
 
@@ -81,13 +82,13 @@ python -m tools.llm.gateway --port 5555 --mock
   会被回写；其余动词（含 wiz/admin/管理调试命令）一律拒绝。
 - **高危意图拦截**：kill/hit/fight/steal/give/drop/quit 等出现在 LLM 输出中
   即被拦截，绝不注入连接。`--allow-confirm` 可放行模型标为高危(confirm)的指令
-  （玩家显式 opt-in，PoC 不推荐）；但 commands 中的危险动词与管理命令
-  （shutdown/exec/update 等）无论开关如何都一律拦截。
+  （玩家显式 opt-in，且仅高危动词可放行，PoC 不推荐）；但 commands 中的危险
+  动词与管理命令（shutdown/exec/update 等）无论开关如何都一律拦截。
 - **指令条数上限**：单次最多 8 条，防多命令连续执行失控。
 - **格式校验**：每条指令只允许 `[a-z][a-z0-9_-]` 字符，杜绝 `;`、`|`、`$()` 等注入。
 - **LLM 异常降级**：调用失败 / 返回非 JSON / 未配置密钥 → 安全中止，零指令注入。
 
-实现见 `safety.py`；全部行为有 `selftest.py` 实测覆盖（55 项断言全绿）。
+实现见 `safety.py`；全部行为有 `selftest.py` 实测覆盖（85 项断言全绿）。
 
 ## 自测
 

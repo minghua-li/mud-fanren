@@ -347,9 +347,38 @@ def test_c3_fail_safe() -> None:
     )
     check("commands 中的危险动词仍拦截", allowed2 == ["go east"], repr(allowed2))
     check("confirm 中的管理命令仍拒绝", any("shutdown" in b for b in blocked2), repr(blocked2))
+    # confirm 数组只放行高危动词：安全动词/未知动词出现在 confirm 是模型格式错误
+    _a4, b4 = split_commands({"commands": [], "confirm": ["look", "foobar x"]}, allow_confirm=True)
+    check("confirm 中的安全动词拦截", any("look" in b for b in b4), repr(b4))
+    check("confirm 中的未知动词拦截", any("foobar" in b for b in b4), repr(b4))
     # 默认（不开开关）confirm 全拦（回归 3a 语义）
     _a3, b3 = split_commands({"commands": [], "confirm": ["drop gold"]})
     check("默认 confirm 全拦", any("drop gold" in b for b in b3), repr(b3))
+
+    # 3f：allow_confirm 接线层端到端——LlmGateway(allow_confirm=True) 经 handle_ai
+    # 把 confirm 高危回写连接（第 1 轮死开关 bug 恰在接线层，此用例防回归）
+    server4 = FakeMudServer()
+
+    def confirm_chat(cfg, system, user):
+        return {"commands": ["go east"], "confirm": ["drop gold"], "reason": "高危测试"}
+
+    gw_mod.chat_completion = confirm_chat
+    try:
+        gw = make_gateway(server4, mock=False, allow_confirm=True,
+                          llm_cfg=LLMConfig(api_key="test-key"))
+        gw.handle_ai("把金条丢在地上")
+        got = server4.wait_received(2)
+        check("allow_confirm 接线生效(confirm 被回写)", got == ["go east", "drop gold"], repr(got))
+        gw.close()
+    finally:
+        gw_mod.chat_completion = orig_chat
+        server4.close()
+
+    # 3g：本地 ollama 场景——自定义 api_base 无 key 也可发起（#68 含本地 ollama）
+    check("ollama: 自定义 api_base 无 key configured=True",
+          LLMConfig(api_base="http://localhost:11434/v1", api_key="").configured, "")
+    check("未配置: configured=False",
+          not LLMConfig().configured, "")
 
 
 def test_extract_json() -> None:

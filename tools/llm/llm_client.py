@@ -76,8 +76,14 @@ class LLMConfig:
 
     @property
     def configured(self) -> bool:
-        """是否具备发起真实请求的条件（有 key 即可；本地 ollama 可留空 key）。"""
-        return bool(self.api_key)
+        """是否具备发起真实请求的条件。
+
+        有 api_key 即可；本地 API（如 ollama）不要求 key——只要显式配置了
+        自定义 api_base（非默认云端地址）就视为可用。完全未配置 → False。
+        """
+        if self.api_key:
+            return True
+        return self.api_base != DEFAULT_API_BASE
 
     def describe(self) -> str:
         """展示配置来源（绝不含密钥本体）。"""
