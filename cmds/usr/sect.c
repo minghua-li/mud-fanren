@@ -78,11 +78,17 @@ int show_panel(object me)
     mixed *require = SECT_D->query_next_rank_require(me);
     string *learned = SECT_D->query_learned_skills(me);
 
+    // 门派声望（REPUTATION_D 查询；c3 面板需展示声望信息）
+    int sect_rep = REPUTATION_D->query_reputation_value(me, sect_id);
+    string rep_name = REPUTATION_D->get_reputation_level_name(
+                          REPUTATION_D->query_reputation_level(me, sect_id));
+
     output += sprintf("宗门：" HIY "%s" NOR "  阶位：" HIG "%s" NOR "\n",
                       SECT_D->query_sect_name(sect_id), SECT_D->query_rank_name(me));
     output += sprintf("修为：%s  门派贡献：" HIY "%d" NOR "\n",
                       SECT_D->query_realm_display(me), contrib);
-    output += sprintf("已学功法：%d 门\n", sizeof(learned));
+    output += sprintf("门派声望：" HIY "%d" NOR "（%s）  已学功法：" HIY "%d" NOR " 门\n",
+                      sect_rep, rep_name, sizeof(learned));
 
     if (arrayp(require))
         output += sprintf("下一阶晋升：需%s + 贡献%d\n",
