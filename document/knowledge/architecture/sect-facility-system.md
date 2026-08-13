@@ -1,12 +1,24 @@
 ---
-id: sect-facility-system
-claim: 门派设施系统由 SECT_FACILITY_D（adm/daemons/sect_facility_d.c）配置驱动承载，18 个设施条目按 9 宗配置，消耗走 SECT_D->add_contribution 与 MONEY_D->player_pay，房间匹配用 base_name(environment(player)) 对照配置 room 字段
-tags: [daemon, dbase, command, room, mapping, lpc-syntax]
-modules: [adm-daemons, cmds, include, d-areas]
+claim: 门派设施系统由 SECT_FACILITY_D（adm/daemons/sect_facility_d.c）配置驱动承载，18 个设施条目按 9 宗配置，消耗走
+  SECT_D->add_contribution 与 MONEY_D->player_pay，房间匹配用 base_name(environment(player))
+  对照配置 room 字段
 cluster: architecture
+id: sect-facility-system
 kind: pattern
+modules:
+- adm-daemons
+- cmds
+- include
+- d-areas
 status: current
-verified: "2026-08-13"
+tags:
+- daemon
+- dbase
+- command
+- room
+- mapping
+- lpc-syntax
+verified: '2026-08-13'
 ---
 
 ## Why
@@ -24,3 +36,14 @@ verified: "2026-08-13"
 - 升级设施是"弟子捐献"模式：内门弟子以上（rank>=1）在设施房间内 `facility upgrade`，扣灵石+贡献，设施等级为全门共享（daemon 内存态，重启丢失——与 mansion_d/sect_hq_d 一致的有意取舍）。
 - 数值对齐来源：02-扩充内容/02-区域游戏玩法.md §4.4（炼丹/炼器 +10%、护山大阵 30000/15000、100000/50000、500000/200000、坊市 15000/8000、灵药园贡献 5000、炼器坊 20000/10000）与 mansion.h（PLOT_*/GARDEN_MAINTENANCE/LAND_*）。升级档映射规则：§4.4.1 建筑行（一次性建设成本）→ Lv1→2，下一通用建筑档 → Lv2→3（如藏经阁 50000/20000→100000/50000、坊市 15000/8000→30000/15000、炼器工坊 SECT_UPGRADE_FORGE 20000/10000→30000/15000）；灵田灵石走 mansion.h 土地升级档（凡土→灵土 1000），贡献对齐灵药园 5000/20000。
 - 验证（双层，均入库可复跑）：① `python3 tools/facility/static_check.py`（71 断言静态验收：括号状态机/字符串截断/exits 双向/接口签名/设施配置↔房间一致）；② `python3 tools/facility/path_verify.py`（87 断言：Python 翻译层端到端 + 场景 10 命令层中文名→id 解析全链路 + LPC 原文守卫——pay_cost 扣费顺序、base_name 房间匹配、三处 add_contribution 接口、plant 灵石扣费、use_facility grant_buff、resolve 中文名匹配、四函数体 resolve_* 接线、命令层 facility.c 透传，含 7 组 LPC 原文/命令层突变实证（颠倒顺序→红；add_contribution 换 player->add→红；plant 扣费删→红；grant_buff 移除→红；中文名分支删→红；命令层硬编码 id→红；4 处接线删→红）。注意分层语义：Python 翻译层验证的是翻译镜像对 LPC 配置字面量的忠实性；LPC 原文守卫验证的是原文关键逻辑顺序——两者都不等于执行 LPC（环境无 fluffos driver），运行时行为仍需人工装驱动复验。
+
+## 业务口径裁决
+
+## 业务口径裁决（round 136，票面评论 id 5278201169）
+
+c5「设施效果/消耗与九宗档案『设施』节及 02-区域游戏玩法.md §4 一致」的两处设计偏离经产品业务仲裁确认接受（第 3 轮两路复审分歧由此弥合）：
+
+1. **坊市效果=弟子购买折扣（每级 -5%），非文档「交易抽税5%产生门派资金」**。文档抽税条款属 §4「宗门驻地玩法」玩家自建宗门语境（#22 sect_hq_d 的 HQ_FIELD_FUNDS 宗门资金账本、掌门设税率、宣战攻防消费）——玩家是宗门所有者；本票是 NPC 九宗固定设施，玩家以弟子身份加入，无玩家可经营的资金账本，抽税无去向无受益。九宗档案「设施」节对坊市仅描述「修仙者交易」，与现实现一致。后续若做玩家自建宗门坊市（#22 扩展），抽税条款方才生效。
+2. **灵田升级灵石沿用 mansion.h LAND_UPGRADE_COST（Lv1→2=1000、Lv2→3=10000），贡献对齐 §4.4.1 灵药园建设贡献（5000/20000）**。灵田是唯一与洞府土地体系完整映射的设施（地块 2/5/8=LAND_MAX_PLOTS、维护 10=GARDEN_MAINTENANCE 凡土、生长速度），升级灵石走同体系档位是有意设计；文档灵药园 10000 灵石属一次性建设成本模型下的档位取舍。灵田定位为「贡献驱动」设施，与 c3 贡献体系打通一致。
+
+调整后 c5 判定基准：档案「设施」节全量对齐；§4 对齐与 NPC 九宗设施相关的数值条款（炼丹/炼器 +10%、护山大阵三档、坊市建设成本 15000/8000、藏经阁 50000/20000、炼器坊 20000/10000 等，按一次性建设成本→逐级升级映射规则），两处上述偏离除外。
