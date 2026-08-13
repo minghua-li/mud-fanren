@@ -102,4 +102,5 @@
 - `teleport-network` — 传送网络节点哪些已落地、哪些还是占位路径；九宗驻地目录与 sect_id 对齐约定 — world/teleport-network.md
 - `facility-c5-arbitration` — 遇到 NPC 九宗设施与 02-区域游戏玩法.md §4 的口径争议时，坊市抽税条款归属玩家自建宗门、灵田灵石走 mansion.h 土地档，均已业务仲裁接受 — design/facility-c5-arbitration.md
 - `llm-sidecar` — LPC LLM_D 与 Python sidecar 的 TCP 协议契约、两级超时、LPC 侧白名单防御、开关双闸 — tech/llm-sidecar.md
+- `pill-system` — PILL_D 丹方/成功率/品质/炼丹术等级、clone/pill 丹药实体、筑基丹接 breakthrough/pill_bonus 突破、shop_d 13 个 MISS 引用改指 /clone/pill/* — items/pill-system.md
 - `sect-skill-cultivation-chain` — 九宗 force/knowledge 类功法修炼链路：习得→learn 传功 NPC→xiulian/效果，传功 NPC 契约与 valid_xiulian sect 分支 — skill/sect-skill-cultivation-chain.md

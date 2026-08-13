@@ -267,6 +267,13 @@
 //宗门任务链与宗门事件（九宗档案落地）
 #define SECT_QUEST_D          "/adm/daemons/sect_quest_d"
 
+//炼器系统（法宝炼制链路：配方/五步流程/品质判定）
+#define FORGE_D               "/adm/daemons/forge_d"
+
+//丹药炼制系统（#73：PILL_D 丹方/成功率/品质，炼丹命令 liandan）
+#define PILL_D                "/adm/daemons/pill_d"
+#define DAN_BASE              "/inherit/item/dan"
+
 //生活技能系统
 #define PROFESSION_D(x)	("/kungfu/profession/" + x)
 

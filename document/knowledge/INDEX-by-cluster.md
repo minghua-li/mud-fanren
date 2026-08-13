@@ -6,6 +6,7 @@
 - [`character-attribute-system`](knowledge/architecture/character-attribute-system.md) — F_ATTRIBUTE 的 query_str/int/con/dex() 组合了先天基础值、临时装备加成和技能等级加成（最低 10），并支持 Chem/HitRate/PoisonRate 等战斗修饰符
 - [`data-persistence`](knowledge/architecture/data-persistence.md) — 数据通过 save_object()/restore_object() 序列化为 .o 文件，F_SAVE 要求对象实现 query_save_file() 返回路径，按首字母分片存储于 /data/
 - [`error-handling-crash-logging`](knowledge/architecture/error-handling-crash-logging.md) — master.c 的 log_error() 按文件所有者路由编译/运行时错误到对应巫师家目录，crash() 广播并记录日志到 /log/static/CRASHES
+- [`forge-crafting-system`](knowledge/architecture/forge-crafting-system.md) — 法宝炼制链路由 FORGE_D（adm/daemons/forge_d.c）配方驱动承载，成品由通用基类 d/yueguo/obj/treasure.c（继承 EQUIP）运行时生成，境界限制走 SECT_D->query_cultivation_tier，设施加成接 SECT_FACILITY_D->query_forge_bonus，材料供给接 #67 坊市 goods 表与 ECONOMY_D 定价
 - [`gb-to-utf8-noop`](knowledge/pitfall/gb-to-utf8-noop.md) — simul_efun/chinese.c 的 gb_to_utf8()/utf8_to_gb() 为空操作直接 return input，6666 端口玩家收到 GBK 编码乱码
 - [`init-add-action-registration`](knowledge/architecture/init-add-action-registration.md) — 玩家进入房间时触发 init()，房间在此处通过 add_action() 注册命令动词，回调需返回 0（继续匹配）或 1（消费输入）
 - [`llm-gateway-poc`](knowledge/architecture/llm-gateway-poc.md) — tools/llm/gateway.py 是 Phase 0 外挂 LLM 网关：telnet 连 5555/6666 按端口选 GBK/UTF-8 编码，ai 前缀输入经 LLM 解析、safety.py 分层过滤后回写执行
@@ -15,6 +16,7 @@
 - [`message-system-pattern`](knowledge/architecture/message-system-pattern.md) — LPC 消息系统分三级：write() 发给当前玩家、tell_object() 发给指定对象、message_vision() 发给房间所有人（$N 自动替换为玩家名）
 - [`player-login-flow`](knowledge/architecture/player-login-flow.md) — 登录流程分 login ob（验证）和 player ob（游戏体）两层，通过 exec() 转移交互连接；数据存于 /data/login/ 和 /data/user/ 按首字母分片
 - [`quest-system`](knowledge/architecture/quest-system.md) — 任务系统在 /quest/ 下按门派/区域分目录组织，标准模式是守护进程（aquest/bquest）加数字后缀，区域级任务直接放在命名目录下
+- [`sect-facility-system`](knowledge/architecture/sect-facility-system.md) — 门派设施系统由 SECT_FACILITY_D（adm/daemons/sect_facility_d.c）配置驱动承载，18 个设施条目按 9 宗配置，消耗走 SECT_D->add_contribution 与 MONEY_D->player_pay，房间匹配用 base_name(environment(player)) 对照配置 room 字段
 - [`sect-id-divergence`](knowledge/architecture/sect-id-divergence.md) — 门派 ID 以 .knowledge/factions/sects/ 九宗档案命名为权威（tianque_fort/guiling_sect 等），reputation_d.c 的 faction_info 已于 2026-08-12 对齐
 - [`sect-system`](knowledge/architecture/sect-system.md) — 门派系统由 SECT_D（adm/daemons/sect_d.c）承载，玩家门派数据存 "sect/" 路径，境界门槛用 tier（境界索引*3+小阶段）比较，realm 属性可能未设置需 exp 兜底
 - [`simul-efun-global-functions`](knowledge/architecture/simul-efun-global-functions.md) — simul_efun.c 中定义的函数对所有对象全局可见（无需 inherit），包括 message_vision/find_player/wizhood/utf8_to_gb 等核心函数

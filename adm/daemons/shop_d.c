@@ -26,18 +26,18 @@ inherit F_SAVE;
 nosave mixed *item_catalog = ({
   // ===================== 黄枫谷 =====================
   // -- 基础 --
-  ({"hfg_hp1", "止血草", "pill", "/obj/remedy/cao", 100, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "huangfeng_valley", "快速止血的草药", -1}),
+  ({"hfg_hp1", "止血草", "pill", "/clone/pill/cao", 100, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "huangfeng_valley", "快速止血的草药", -1}),
   ({"hfg_tal1", "低阶火球符", "item", "/obj/item/fire_talisman", 200, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "huangfeng_valley", "释放火球攻击", -1}),
   ({"hfg_tal2", "低阶护盾符", "item", "/obj/item/shield_talisman", 200, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "huangfeng_valley", "生成灵力护盾", -1}),
-  ({"hfg_pill1", "聚气丹", "pill", "/obj/remedy/juqi", 300, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "huangfeng_valley", "回复少量灵力", -1}),
+  ({"hfg_pill1", "聚气丹", "pill", "/clone/pill/juqi", 300, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "huangfeng_valley", "回复少量灵力", -1}),
   // -- 中级 --
   ({"hfg_swd1", "黄枫制式长剑", "weapon", "/obj/weapon/huangfeng_sword", 5000, REP_LEVEL_FRIENDLY, 100, SHOP_TIER_INTERMEDIATE, "huangfeng_valley", "黄枫谷弟子标配法器", 50}),
   ({"hfg_arm1", "黄枫法袍", "armor", "/obj/armor/huangfeng_robe", 5000, REP_LEVEL_FRIENDLY, 100, SHOP_TIER_INTERMEDIATE, "huangfeng_valley", "黄枫谷制式法袍", 50}),
-  ({"hfg_pill2", "筑基丹", "pill", "/obj/remedy/zhuji", 8000, REP_LEVEL_FRIENDLY, 200, SHOP_TIER_INTERMEDIATE, "huangfeng_valley", "筑基期突破辅助丹药", 20}),
+  ({"hfg_pill2", "筑基丹", "pill", "/clone/pill/zhuji", 8000, REP_LEVEL_FRIENDLY, 200, SHOP_TIER_INTERMEDIATE, "huangfeng_valley", "筑基期突破辅助丹药", 20}),
   ({"hfg_sk1", "基础符箓术", "skill", "/obj/skill/basic_talisman", 10000, REP_LEVEL_FRIENDLY, 200, SHOP_TIER_INTERMEDIATE, "huangfeng_valley", "黄枫谷基础符箓制作法", 30}),
   // -- 高级 --
   ({"hfg_swd2", "中阶飞剑", "weapon", "/obj/weapon/feijian", 30000, REP_LEVEL_TRUST, 500, SHOP_TIER_ADVANCED, "huangfeng_valley", "中阶法器飞剑", 10}),
-  ({"hfg_pill3", "凝丹丸", "pill", "/obj/remedy/ningdan", 25000, REP_LEVEL_TRUST, 400, SHOP_TIER_ADVANCED, "huangfeng_valley", "结丹期辅助丹药", 15}),
+  ({"hfg_pill3", "凝丹丸", "pill", "/clone/pill/ningdan", 25000, REP_LEVEL_TRUST, 400, SHOP_TIER_ADVANCED, "huangfeng_valley", "筑基期辅助丹药", 15}),
   ({"hfg_item1", "灵晶", "item", "/obj/item/lingjing", 20000, REP_LEVEL_TRUST, 300, SHOP_TIER_ADVANCED, "huangfeng_valley", "蕴含精纯灵力的水晶", 20}),
   ({"hfg_mat1", "天玄石", "item", "/obj/item/tianxuan_stone", 40000, REP_LEVEL_TRUST, 600, SHOP_TIER_ADVANCED, "huangfeng_valley", "稀有的炼器材料", 10}),
   // -- 核心 --
@@ -49,27 +49,27 @@ nosave mixed *item_catalog = ({
   ({"hfg_item3", "古传送阵秘钥", "item", "/obj/item/teleport_key", 300000, REP_LEVEL_ADORE, 10000, SHOP_TIER_SECRET, "huangfeng_valley", "黄枫谷古传送阵通行密钥", 1}),
 
   // ===================== 掩月宗 =====================
-  ({"yym_hp1", "月华草", "pill", "/obj/remedy/yuehua_cao", 100, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "yanyue_sect", "掩月宗特产疗伤灵草", -1}),
-  ({"yym_pill1", "月华丹", "pill", "/obj/remedy/yuehua_dan", 5000, REP_LEVEL_FRIENDLY, 100, SHOP_TIER_INTERMEDIATE, "yanyue_sect", "掩月宗月华秘制丹药", 30}),
+  ({"yym_hp1", "月华草", "pill", "/clone/pill/yuehua_cao", 100, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "yanyue_sect", "掩月宗特产疗伤灵草", -1}),
+  ({"yym_pill1", "月华丹", "pill", "/clone/pill/yuehua_dan", 5000, REP_LEVEL_FRIENDLY, 100, SHOP_TIER_INTERMEDIATE, "yanyue_sect", "掩月宗月华秘制丹药", 30}),
   ({"yym_swd1", "月华刃", "weapon", "/obj/weapon/yuehua_ren", 40000, REP_LEVEL_TRUST, 500, SHOP_TIER_ADVANCED, "yanyue_sect", "蕴含月华之力的法器", 8}),
   ({"yym_sk1", "掩月心法", "skill", "/obj/skill/yanyue_xinfa", 250000, REP_LEVEL_RESPECT, 5000, SHOP_TIER_CORE, "yanyue_sect", "掩月宗核心功法", 2}),
   ({"yym_arm1", "月影法袍", "armor", "/obj/armor/yueying_pao", 60000, REP_LEVEL_TRUST, 800, SHOP_TIER_ADVANCED, "yanyue_sect", "可融入月影的隐匿法袍", 5}),
 
   // ===================== 灵兽山 =====================
-  ({"lsm_hp1", "灵兽丸", "pill", "/obj/nicheng/shouwan", 150, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "lingshou_mountain", "驯兽用灵丹", -1}),
+  ({"lsm_hp1", "灵兽丸", "pill", "/clone/pill/shouwan", 150, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "lingshou_mountain", "驯兽用灵丹", -1}),
   ({"lsm_item1", "御兽环", "item", "/obj/item/shouhuan", 6000, REP_LEVEL_FRIENDLY, 150, SHOP_TIER_INTERMEDIATE, "lingshou_mountain", "控制妖兽的法器", 20}),
   ({"lsm_arm1", "灵兽甲", "armor", "/obj/armor/shoujia", 35000, REP_LEVEL_TRUST, 500, SHOP_TIER_ADVANCED, "lingshou_mountain", "以妖兽皮所制法袍", 8}),
-  ({"lsm_pill1", "兽王丹", "pill", "/obj/remedy/shouwang", 50000, REP_LEVEL_TRUST, 800, SHOP_TIER_ADVANCED, "lingshou_mountain", "大幅提升灵兽战力", 5}),
+  ({"lsm_pill1", "兽王丹", "pill", "/clone/pill/shouwang", 50000, REP_LEVEL_TRUST, 800, SHOP_TIER_ADVANCED, "lingshou_mountain", "大幅提升灵兽战力", 5}),
 
   // ===================== 星宫 =====================
-  ({"spa_hp1", "星辰丹", "pill", "/obj/remedy/xingchen", 200, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "star_palace", "引星辰之力炼制的灵丹", -1}),
+  ({"spa_hp1", "星辰丹", "pill", "/clone/pill/xingchen", 200, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "star_palace", "引星辰之力炼制的灵丹", -1}),
   ({"spa_item1", "星罗盘", "item", "/obj/item/xingluopan", 8000, REP_LEVEL_FRIENDLY, 200, SHOP_TIER_INTERMEDIATE, "star_palace", "乱星海导航法器", 15}),
   ({"spa_swd1", "星辰剑", "weapon", "/obj/weapon/xingchen_jian", 50000, REP_LEVEL_TRUST, 800, SHOP_TIER_ADVANCED, "star_palace", "引星辰之力的飞剑", 5}),
   ({"spa_sk1", "周天星斗诀", "skill", "/obj/skill/xingdou_jue", 300000, REP_LEVEL_RESPECT, 6000, SHOP_TIER_CORE, "star_palace", "星宫镇派功法", 1}),
   ({"spa_item2", "星核碎片", "item", "/obj/item/xinghe_suipian", 100000, REP_LEVEL_ADORE, 8000, SHOP_TIER_SECRET, "star_palace", "星辰核心的碎片，蕴含恐怖能量", 2}),
 
   // ===================== 逆星盟 =====================
-  ({"ram_pill1", "匿息丹", "pill", "/obj/remedy/nixi", 250, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "rebel_alliance", "隐藏气息的丹药", -1}),
+  ({"ram_pill1", "匿息丹", "pill", "/clone/pill/nixi", 250, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "rebel_alliance", "隐藏气息的丹药", -1}),
   ({"ram_swd1", "暗影匕", "weapon", "/obj/weapon/anying_bi", 45000, REP_LEVEL_TRUST, 600, SHOP_TIER_ADVANCED, "rebel_alliance", "逆星盟刺客专用匕首", 5}),
   ({"ram_sk1", "隐息诀", "skill", "/obj/skill/yinxi_jue", 80000, REP_LEVEL_TRUST, 1000, SHOP_TIER_ADVANCED, "rebel_alliance", "顶尖隐匿功法", 3}),
 
@@ -80,17 +80,17 @@ nosave mixed *item_catalog = ({
   ({"gyp_item4", "虚空珠", "item", "/obj/item/xukong_zhu", 300000, REP_LEVEL_RESPECT, 5000, SHOP_TIER_CORE, "guangyuan_pavilion", "可跨界传送的稀世珍宝", 2}),
 
   // ===================== 天渊城 =====================
-  ({"tyc_hp1", "军需丹", "pill", "/obj/remedy/junxu", 300, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "tianyuan_city", "天渊城制式军用丹药", -1}),
+  ({"tyc_hp1", "军需丹", "pill", "/clone/pill/junxu", 300, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "tianyuan_city", "天渊城制式军用丹药", -1}),
   ({"tyc_arm1", "天渊战甲", "armor", "/obj/armor/tianyuan_armor", 25000, REP_LEVEL_FRIENDLY, 300, SHOP_TIER_INTERMEDIATE, "tianyuan_city", "天渊城制式战甲", 20}),
   ({"tyc_swd1", "灭魔剑", "weapon", "/obj/weapon/miemo_jian", 60000, REP_LEVEL_TRUST, 1000, SHOP_TIER_ADVANCED, "tianyuan_city", "克制魔族的法器", 5}),
   ({"tyc_sk1", "天渊军体拳", "skill", "/obj/skill/junti_quan", 150000, REP_LEVEL_RESPECT, 4000, SHOP_TIER_CORE, "tianyuan_city", "天渊城高阶战斗功法", 3}),
 
   // ===================== 九国盟 =====================
-  ({"ngm_pill1", "行军丹", "pill", "/obj/remedy/xingjun", 200, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "nine_nations_alliance", "九国盟军用丹药", -1}),
+  ({"ngm_pill1", "行军丹", "pill", "/clone/pill/xingjun", 200, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "nine_nations_alliance", "九国盟军用丹药", -1}),
   ({"ngm_swd1", "九国制式长刀", "weapon", "/obj/weapon/guo_dao", 35000, REP_LEVEL_TRUST, 500, SHOP_TIER_ADVANCED, "nine_nations_alliance", "九国盟制式法器", 10}),
 
   // ===================== 慕兰法士 =====================
-  ({"mlf_pill1", "法士灵液", "pill", "/obj/remedy/lingye", 300, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "mulan_legalists", "慕兰法士秘制灵液", -1}),
+  ({"mlf_pill1", "法士灵液", "pill", "/clone/pill/lingye", 300, REP_LEVEL_NEUTRAL, 0, SHOP_TIER_BASIC, "mulan_legalists", "慕兰法士秘制灵液", -1}),
   ({"mlf_sk1", "慕兰咒术", "skill", "/obj/skill/mulan_zhoushu", 80000, REP_LEVEL_TRUST, 1500, SHOP_TIER_ADVANCED, "mulan_legalists", "慕兰法士的独特咒术", 3}),
 });
 

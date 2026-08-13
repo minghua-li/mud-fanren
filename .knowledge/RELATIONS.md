@@ -155,6 +155,9 @@ sect-quest-system -> 1D-门派种族声望 : 事件/任务声望奖励走 REPUTA
 main-quest-system -> 1G-任务副本奇遇 : 主线节点按 1G §二 第零章/第一章任务表逐段取材
 main-quest-system -> sect-quest-system : 同走 quest_chain_d 框架，主线 QUEST_TYPE_MAIN 难度系数 2.5，宗门 QUEST_TYPE_SIDE 1.5
 main-quest-system -> teleport-network : 主线目标房间依赖 #67 越国世俗区与 #58 九宗驻地地图
+pill-system  ->  1E-法宝丹药经济 : 1E §2 丹药体系 + §4.1 数据结构 的 LPC 落地
+pill-system  ->  realm-storage-convention : 筑基丹经 breakthrough/pill_bonus temp 接 #61 突破概率（realm 修炼系统接口）
+pill-system  ->  sect-facility-system : 炼丹成功率消费 #60 query_danfang_bonus 丹房加成钩子
 sect-skill-cultivation-chain  ->  realm-storage-convention : 修炼链路依赖 #61 境界/修为体系与 realm 存储约定
 sect-skill-cultivation-chain  ->  sect-quest-system : #59 任务奖励 grant_skill 是习得路径之一，与修炼链路衔接
 sect-skill-cultivation-chain  ->  sect-system : 门派功法清单动态取自 SECT_D（sect_config），与 #57 门派系统契约一致
