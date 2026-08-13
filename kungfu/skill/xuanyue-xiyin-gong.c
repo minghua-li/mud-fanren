@@ -13,8 +13,8 @@ string type() { return "martial"; }
 
 int valid_learn(object me)
 {
-    if (SECT_D->query_cultivation_tier(me) < SECT_TIER_ZHU)
-        return notify_fail("「玄月吸阴功」需筑基期以上修为方可修习。\n");
+    if (SECT_D->query_cultivation_tier(me) < SECT_TIER_JIE)
+        return notify_fail("「玄月吸阴功」需结丹期以上修为方可修习。\n");
     return 1;
 }
 

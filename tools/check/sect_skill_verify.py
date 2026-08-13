@@ -253,6 +253,18 @@ if qyj_body:
     ck('青元剑诀后三层结丹门槛', 'SECT_TIER_JIE' in qyj_body, '缺结丹分段')
     ck('青元剑诀等级分段（<=30/<=60）', 'lv <= 30' in qyj_body and 'lv <= 60' in qyj_body, '缺等级分段')
 
+# 2.5 长春功：灵根检查守卫（档案黄枫谷.md:27「需灵根」；round-1 修订 #3，
+#     审查指出该修复未被脚本守卫——补原文守卫断言）
+with open('kungfu/skill/changchun-gong.c', encoding='utf-8') as f:
+    ccg_src = f.read()
+ccg_body = extract_func(ccg_src, 'valid_learn')
+ck('长春功 valid_learn 可提取', ccg_body is not None)
+if ccg_body:
+    ck('长春功灵根存在性检查', 'SPIRIT_ROOT_DATA' in ccg_body and 'mapp(root)' in ccg_body,
+       '缺灵根检查（档案「需灵根」）')
+    ck('长春功无境界门槛（炼气可修）', 'SECT_TIER_ZHU' not in ccg_body and 'SECT_TIER_JIE' not in ccg_body,
+       '不应有境界门槛')
+
 # 2.5 突变实证说明：脚本内不做「替换构造」式的恒真断言（mutant 由 replace 构造则
 #    断言恒真，无判别力）。真正的判别力来自 2.1 的 learn_skill 函数体原文守卫（删接线
 #    → set_after=-1 红）与 2.3/2.4 的功法文件守卫；外部红→绿突变实证见交付说明
@@ -460,6 +472,9 @@ def valid_learn_sim(sid, player):
     if 'SECT_TIER_JIE' in body:
         if tier < 6:
             return False, '需结丹'
+    if 'SECT_TIER_YING' in body:
+        if tier < 9:
+            return False, '需元婴'
     # 灵根存在性（长春功「需灵根」，档案黄枫谷.md:27）
     if 'SPIRIT_ROOT_DATA' in body and 'ROOT_QUALITY_T0' not in body:
         root = player.query('spirit_root')
@@ -513,11 +528,35 @@ for sid, info in skill_defs.items():
     with open(path, encoding='utf-8') as f:
         src = f.read()
     body = extract_func(src, 'valid_learn') or ''
-    if 'SECT_TIER_ZHU' not in body and 'SECT_TIER_JIE' not in body and 'ROOT_QUALITY_T0' not in body:
+    if 'SECT_TIER_ZHU' not in body and 'SECT_TIER_JIE' not in body and 'SECT_TIER_YING' not in body and 'ROOT_QUALITY_T0' not in body:
         # 玩家必有灵根（attribute.c generate_spirit_root：无灵根不在玩家生成概率中）
         ok, why = valid_learn_sim(sid, MockPlayer(realm='炼气3层',
                                   spirit_root={'quality_idx': 3, 'variant': None}))
         ck('场景9 炼气可修 %s' % sid, ok, why)
+
+# 场景 10：档案境界成长线门槛逐一对齐（第 2 轮审查 c2 修正，7 处）
+# 依据各档案「十、境界成长线」：毒术/暗术=筑基(鬼灵门.md:91)、役虫术=筑基(灵兽山.md:91/御灵宗.md:89)、
+#   重剑剑法=筑基(巨剑门.md:84)、阵法术=筑基(天阙堡.md:80)、玄月吸阴功=结丹(掩月宗.md:90)、
+#   傀儡术=元婴(灵兽山.md:93)
+ARCHIVE_GATES = {
+    'dushu': ('zhu', '筑基'), 'anshu': ('zhu', '筑基'), 'yichong-shu': ('zhu', '筑基'),
+    'zhongjian-jianfa': ('zhu', '筑基'), 'zhenfa-shu': ('zhu', '筑基'),
+    'xuanyue-xiyin-gong': ('jie', '结丹'), 'kuilei-shu': ('ying', '元婴'),
+}
+for sid, (gate, cn) in ARCHIVE_GATES.items():
+    with open('kungfu/skill/%s.c' % sid, encoding='utf-8') as f:
+        src = f.read()
+    body = extract_func(src, 'valid_learn') or ''
+    marker = {'zhu': 'SECT_TIER_ZHU', 'jie': 'SECT_TIER_JIE', 'ying': 'SECT_TIER_YING'}[gate]
+    ck('场景10 %s 门槛=%s（档案成长线）' % (sid, cn), marker in body,
+       '实现门槛与档案成长线不符')
+    # 红绿：低一境界被拒，达标境界放行
+    low = {'zhu': '炼气5层', 'jie': '筑基初期', 'ying': '结丹初期'}[gate]
+    hi = {'zhu': '筑基初期', 'jie': '结丹初期', 'ying': '元婴初期'}[gate]
+    ok, why = valid_learn_sim(sid, MockPlayer(realm=low, spirit_root={'quality_idx': 3, 'variant': None}))
+    ck('场景10 %s 低境界被拒' % sid, not ok, why)
+    ok, why = valid_learn_sim(sid, MockPlayer(realm=hi, spirit_root={'quality_idx': 3, 'variant': None}))
+    ck('场景10 %s 达标境界放行' % sid, ok, why)
 
 # ═══════════ 汇总 ═══════════
 print('')

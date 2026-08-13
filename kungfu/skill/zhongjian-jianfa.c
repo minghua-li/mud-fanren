@@ -13,7 +13,8 @@ string type() { return "martial"; }
 
 int valid_learn(object me)
 {
-    // 重剑剑法：炼气期即可修习（九宗档案无更高境界限制）
+    if (SECT_D->query_cultivation_tier(me) < SECT_TIER_ZHU)
+        return notify_fail("「重剑剑法」需筑基期以上修为方可修习。\n");
     return 1;
 }
 

@@ -13,8 +13,8 @@ string type() { return "knowledge"; }
 
 int valid_learn(object me)
 {
-    if (SECT_D->query_cultivation_tier(me) < SECT_TIER_ZHU)
-        return notify_fail("「傀儡术」需筑基期以上修为方可修习。\n");
+    if (SECT_D->query_cultivation_tier(me) < SECT_TIER_YING)
+        return notify_fail("「傀儡术」需元婴期以上修为方可修习。\n");
     return 1;
 }
 
