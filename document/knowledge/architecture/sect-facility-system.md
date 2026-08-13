@@ -10,6 +10,8 @@ modules:
 - cmds
 - include
 - d-areas
+related:
+- forge-crafting-system
 status: current
 tags:
 - daemon
