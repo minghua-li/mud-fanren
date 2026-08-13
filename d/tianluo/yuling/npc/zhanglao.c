@@ -35,6 +35,20 @@ void create()
                 "御灵宗长老说道：万蛊诀养蛊役虫，我御灵宗虫兽双修，天南魔道谁人不知。\n",
                 "御灵宗长老冷冷道：灵兽山本就是我御灵宗的分支，数千年暗桩，终有一日要回归。\n"
         }));
+        // —— 传功（#72）：本门功法 + 基本武学，供本门弟子 learn 请教 ——
+        set_skill("force", 200);
+        set_skill("dodge", 200);
+        set_skill("parry", 200);
+        set_skill("unarmed", 200);
+        set_skill("wangu-jue", 200);
         setup();
         carry_object("/clone/misc/cloth")->wear();
+}
+
+// 传功：仅御灵宗弟子可请教（learn 命令），外人不得偷学本门功法
+int recognize_apprentice(object ob)
+{
+        if (SECT_D->query_player_sect(ob) != "yuling_sect")
+                return 0;
+        return 1;
 }

@@ -35,6 +35,21 @@ void create()
                 "传功长老说道：道门术法以清虚为本，你且随我静心修习。\n",
                 "传功长老说道：清虚剑典剑符双修，道剑一出，剑意清正。\n"
         }));
+        // —— 传功（#72）：本门功法 + 基本武学，供本门弟子 learn 请教 ——
+        set_skill("force", 200);
+        set_skill("dodge", 200);
+        set_skill("parry", 200);
+        set_skill("sword", 200);
+        set_skill("daomen-shufa", 200);
+        set_skill("qingxu-jian-dian", 200);
         setup();
         carry_object("/clone/misc/cloth")->wear();
+}
+
+// 传功：仅清虚门弟子可请教（learn 命令），外人不得偷学本门功法
+int recognize_apprentice(object ob)
+{
+        if (SECT_D->query_player_sect(ob) != "qingxu_sect")
+                return 0;
+        return 1;
 }
