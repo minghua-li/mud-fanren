@@ -11,66 +11,70 @@ inherit F_DBASE;
 inherit F_SAVE;
 
 // -------- 势力定义 --------
+// 门派 ID 以 .knowledge/factions/sects/ 档案与 1D 文档为准
 nosave mapping faction_info = ([
-  "huangfeng_valley": ([
-    "name": "黄枫谷", "type": FACTION_TYPE_RIGHTEOUS,
-    "desc": "越国七派之一，以符箓和阵法著称"
-  ]),
+  // 越国七派
   "yanyue_sect": ([
     "name": "掩月宗", "type": FACTION_TYPE_RIGHTEOUS,
-    "desc": "越国七派之一，以月华功法闻名"
+    "desc": "越国七派之首，提倡双修之术，标志性法器天月神舟"
   ]),
-  "tianque_sect": ([
-    "name": "天阙堡", "type": FACTION_TYPE_RIGHTEOUS,
-    "desc": "越国七派之一，擅防御和炼器"
-  ]),
-  "qianyuan_sect": ([
-    "name": "千元派", "type": FACTION_TYPE_RIGHTEOUS,
-    "desc": "越国七派之一，主修符道和丹药"
-  ]),
-  "biling_sect": ([
-    "name": "碧灵派", "type": FACTION_TYPE_RIGHTEOUS,
-    "desc": "越国七派之一，以灵植和药道著称"
-  ]),
-  "huayang_sect": ([
-    "name": "化阳派", "type": FACTION_TYPE_RIGHTEOUS,
-    "desc": "越国七派之一，修火系功法"
+  "huangfeng_valley": ([
+    "name": "黄枫谷", "type": FACTION_TYPE_RIGHTEOUS,
+    "desc": "越国七派之一，山门在建州太岳山脉，以丹药符箓起家，兼修剑道"
   ]),
   "lingshou_mountain": ([
     "name": "灵兽山", "type": FACTION_TYPE_RIGHTEOUS,
-    "desc": "越国七派之一，后叛投魔道，擅御兽之术"
+    "desc": "越国七派之一，擅长御兽役虫，实为御灵宗安插的暗桩"
   ]),
-  "six_pulse_sword": ([
-    "name": "六脉剑宗", "type": FACTION_TYPE_RIGHTEOUS,
-    "desc": "正道剑修大宗，剑法天下无双"
+  "qingxu_sect": ([
+    "name": "清虚门", "type": FACTION_TYPE_RIGHTEOUS,
+    "desc": "越国七派之一，道门传承，清心寡欲，飞行法器雪虹绫"
   ]),
+  "huadao_dock": ([
+    "name": "化刀坞", "type": FACTION_TYPE_RIGHTEOUS,
+    "desc": "越国七派之一，刀修汇聚，炼器工艺突出"
+  ]),
+  "tianque_fort": ([
+    "name": "天阙堡", "type": FACTION_TYPE_RIGHTEOUS,
+    "desc": "越国七派之一，筑堡建州，擅防御与阵法，镇派法宝为黄色大印"
+  ]),
+  "jujian_gate": ([
+    "name": "巨剑门", "type": FACTION_TYPE_RIGHTEOUS,
+    "desc": "越国七派之一，全男弟子黑衣背负无鞘巨剑，体剑双修"
+  ]),
+  // 魔道六宗（天罗国）
+  "hehuan_sect": ([
+    "name": "合欢宗", "type": FACTION_TYPE_EVIL,
+    "desc": "魔道六宗之一，双修魅惑，弟子多俊男美女，擅长阴阳采补"
+  ]),
+  "tiansha_sect": ([
+    "name": "天煞宗", "type": FACTION_TYPE_EVIL,
+    "desc": "魔道六宗之一，杀戮功法，以杀证道，煞气越重功法越强"
+  ]),
+  "guiling_sect": ([
+    "name": "鬼灵门", "type": FACTION_TYPE_EVIL,
+    "desc": "魔道六宗之一，驱鬼役妖，毒术暗术，镇派功法血灵大法"
+  ]),
+  "yuling_sect": ([
+    "name": "御灵宗", "type": FACTION_TYPE_EVIL,
+    "desc": "魔道六宗之一，万灵归宗，虫兽双修，与越国灵兽山同源"
+  ]),
+  "tianmo_sect": ([
+    "name": "天魔宗", "type": FACTION_TYPE_EVIL,
+    "desc": "魔道六宗之一，天魔功法，召唤天魔附体，短时暴增战力"
+  ]),
+  "yinluo_sect": ([
+    "name": "阴罗宗", "type": FACTION_TYPE_EVIL,
+    "desc": "魔道六宗之一，毒功暗杀，兼掌情报"
+  ]),
+  // 天南超级势力
   "righteous_alliance": ([
     "name": "正道盟", "type": FACTION_TYPE_RIGHTEOUS,
-    "desc": "天南正道联盟，统领正道各派"
+    "desc": "天南正道联盟，统领正道各派，与魔道六宗对峙"
   ]),
   "demon_six_sects": ([
     "name": "魔道六宗", "type": FACTION_TYPE_EVIL,
-    "desc": "天南魔道核心势力"
-  ]),
-  "ghost_spirit_sect": ([
-    "name": "鬼灵门", "type": FACTION_TYPE_EVIL,
-    "desc": "魔道六宗之一，擅御鬼和幻术"
-  ]),
-  "blood_reincarnation": ([
-    "name": "血影宗", "type": FACTION_TYPE_EVIL,
-    "desc": "魔道六宗之一，以血煞功法著称"
-  ]),
-  "heavenly_corpse": ([
-    "name": "天尸宗", "type": FACTION_TYPE_EVIL,
-    "desc": "魔道六宗之一，炼尸控尸"
-  ]),
-  "yin_sect": ([
-    "name": "阴煞宗", "type": FACTION_TYPE_EVIL,
-    "desc": "魔道六宗之一，修阴寒功法"
-  ]),
-  "soul_refining": ([
-    "name": "炼魂宗", "type": FACTION_TYPE_EVIL,
-    "desc": "魔道六宗之一，炼魂夺舍"
+    "desc": "天罗国魔道六宗联盟，实力远超越国七派"
   ]),
   "star_palace": ([
     "name": "星宫", "type": FACTION_TYPE_NEUTRAL,
@@ -137,12 +141,13 @@ nosave mapping race_info = ([
 nosave mixed *mutex_relations = ({
   ({ "righteous_alliance", "demon_six_sects", MUTEX_STRONG }),
   ({ "star_palace", "rebel_alliance", MUTEX_STRONG }),
-  ({ "lingshou_mountain", "huangfeng_valley", MUTEX_STRONG }),
+  // 灵兽山叛出后与其余越国六派敌对
   ({ "lingshou_mountain", "yanyue_sect", MUTEX_STRONG }),
-  ({ "lingshou_mountain", "tianque_sect", MUTEX_STRONG }),
-  ({ "lingshou_mountain", "qianyuan_sect", MUTEX_STRONG }),
-  ({ "lingshou_mountain", "biling_sect", MUTEX_STRONG }),
-  ({ "lingshou_mountain", "huayang_sect", MUTEX_STRONG }),
+  ({ "lingshou_mountain", "huangfeng_valley", MUTEX_STRONG }),
+  ({ "lingshou_mountain", "qingxu_sect", MUTEX_STRONG }),
+  ({ "lingshou_mountain", "huadao_dock", MUTEX_STRONG }),
+  ({ "lingshou_mountain", "tianque_fort", MUTEX_STRONG }),
+  ({ "lingshou_mountain", "jujian_gate", MUTEX_STRONG }),
   ({ "nine_nations_alliance", "mulan_legalists", MUTEX_STRONG }),
   ({ "demon", "jiaochi", MUTEX_WEAK }),
   ({ "demon", "demon_six_sects", MUTEX_STRONG }),
