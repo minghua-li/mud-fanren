@@ -57,6 +57,11 @@ int main(object me, string arg)
 	if (cd > 0)
 		return notify_fail(sprintf("经脉尚未恢复，还需 %d 秒才能再次尝试突破。\n", cd));
 
+	// 修为检查前置（避免 lingshi 分支先扣灵石后才发现修为不足——审查第 1 轮发现）
+	if (ROOT_REFINE_D->query_xiuwei(me) < need)
+		return notify_fail(sprintf("修为不足：突破需修为 %d（当前 %d）。请继续打坐修炼（dazuo）。\n",
+		                            need, ROOT_REFINE_D->query_xiuwei(me)));
+
 	// 突破方式
 	method = BREAK_METHOD_NATURAL;
 	if (stringp(arg) && arg == "lingshi")
