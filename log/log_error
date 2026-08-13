@@ -60134,3 +60134,1562 @@
   pattern = replace_string(pattern,"\"","");
 	pattern = replace_string(pattern,"'","")
                                              ^
+/feature/attribute.c line 1176: syntax error, unexpected '*', expecting L_COLON_COLON or '('
+  int *speed_table = (
+        ^
+/feature/attribute.c line 1179: Illegal LHS
+  });
+      ^
+/feature/attribute.c line 1181: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int idx = root[SR_QUALITY_IDX]
+          ^
+/feature/attribute.c line 1181: Illegal LHS
+  int idx = root[S"quality_idx"];
+	i
+                                  ^
+/feature/attribute.c line 1182: Undefined variable 'idx'
+  if (idx < 0 || idx >= ROOT_QUALITY_TOTAL
+            ^
+/feature/attribute.c line 1185: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int base_speed = speed_table[idx]
+                 ^
+/adm/daemons/economyd.c line 59: Undefined function init_region_modifiers
+  init_region_modifiers()
+                                 ^
+/adm/daemons/economyd.c line 142: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  mapping info = goods[type]
+                      ^
+/adm/daemons/economyd.c line 142: Illegal LHS
+  mapping info = goods[type];
+        if (!mapp(info)) return 1.0
+                                     ^
+/adm/daemons/economyd.c line 143: Undefined variable 'info'
+  if (!mapp(info)) return 1.0
+                         ^
+/adm/daemons/economyd.c line 153: Undefined function calculate_price_ratio
+  return calculate_price_ratio(type)
+                                            ^
+/adm/daemons/economyd.c line 153: Type of returned value doesn't match function return type ( unknown vs float )
+  return calculate_price_ratio(type);
+                                             ^
+/adm/daemons/inflationd.c line 60: Undefined function init_sink_stats
+  init_sink_stats()
+                           ^
+/adm/daemons/inflationd.c line 92: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int total = stats["total_spirit_stones"]
+                   ^
+/adm/daemons/inflationd.c line 92: Illegal LHS
+  int total = stats["total_spirit_stones"];
+        int players = stats["active_players"]
+                                                   ^
+/adm/daemons/inflationd.c line 93: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int players = stats["active_players"]
+                     ^
+/adm/daemons/inflationd.c line 93: Illegal LHS
+  int players = stats["active_players"];
+                                                ^
+/adm/daemons/inflationd.c line 95: Undefined variable 'players'
+  if (players <= 0) return 0
+                        ^
+/adm/daemons/daily_task_d.c line 67: Undefined function init_task_templates
+  init_task_templates()
+                               ^
+/adm/daemons/daily_task_d.c line 70: Undefined function schedule_daily_reset
+  schedule_daily_reset()
+                                ^
+/adm/daemons/daily_task_d.c line 428: Undefined function get_today_date
+  set("last_reset_date", get_today_date())
+                                                 ^
+/adm/daemons/daily_task_d.c line 892: Undefined function query_streak
+  streak = query_streak(player)
+                                       ^
+/adm/daemons/daily_task_d.c line 892: Bad assignment ( int vs unknown ).
+  streak = query_streak(player);
+        streak_bonus = get_streak_bonus(streak)
+                                        ^
+/adm/daemons/daily_task_d.c line 968: Undefined function update_streak
+  streak_updated = update_streak(player)
+                                                ^
+/adm/daemons/teleport_d.c line 47: Undefined function init_teleport_nodes
+  init_teleport_nodes()
+                           ^
+/adm/daemons/teleport_d.c line 97: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 115: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 133: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 151: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 169: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/activity_d.c line 453: Undefined function check_consecutive_days
+  check_consecutive_days(player)
+                                    ^
+/adm/daemons/activity_d.c line 469: Undefined function check_daily_reward_available
+  check_daily_reward_available(player)
+                                          ^
+/adm/daemons/activity_d.c line 470: Undefined function check_weekly_reward_available
+  check_weekly_reward_available(player)
+                                           ^
+/adm/daemons/activity_d.c line 808: Undefined function refresh_daily_task_pool
+  return refresh_daily_task_pool(player)
+                                            ^
+/adm/daemons/activity_d.c line 808: Type of returned value doesn't match function return type ( unknown vs string * )
+  return refresh_daily_task_pool(player);
+                                             ^
+/adm/daemons/main_quest_d.c line 71: Undefined function initialize_chapters
+  initialize_chapters()
+                           ^
+/adm/daemons/main_quest_d.c line 72: Undefined function initialize_nodes
+  initialize_nodes()
+                        ^
+/adm/daemons/main_quest_d.c line 424: Undefined function find_next_available_node
+  node_id = find_next_available_node(player, chapter)
+                                                         ^
+/adm/daemons/main_quest_d.c line 424: Bad assignment ( string vs unknown ).
+  node_id = find_next_available_node(player, chapter);
+    if (node_id && node_id != ""
+                                                          ^
+/adm/daemons/main_quest_d.c line 523: Undefined function add_completed_node
+  add_completed_node(player, node_id)
+                                         ^
+/adm/daemons/main_quest_d.c line 528: Undefined function check_chapter_complete
+  if (check_chapter_complete(player, chapter)
+                                                 ^
+/feature/attribute.c line 1176: syntax error, unexpected '*', expecting L_COLON_COLON or '('
+  int *speed_table = (
+        ^
+/feature/attribute.c line 1179: Illegal LHS
+  });
+      ^
+/feature/attribute.c line 1181: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int idx = root[SR_QUALITY_IDX]
+          ^
+/feature/attribute.c line 1181: Illegal LHS
+  int idx = root[S"quality_idx"];
+	i
+                                  ^
+/feature/attribute.c line 1182: Undefined variable 'idx'
+  if (idx < 0 || idx >= ROOT_QUALITY_TOTAL
+            ^
+/feature/attribute.c line 1185: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int base_speed = speed_table[idx]
+                 ^
+/adm/daemons/economyd.c line 59: Undefined function init_region_modifiers
+  init_region_modifiers()
+                                 ^
+/adm/daemons/economyd.c line 142: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  mapping info = goods[type]
+                      ^
+/adm/daemons/economyd.c line 142: Illegal LHS
+  mapping info = goods[type];
+        if (!mapp(info)) return 1.0
+                                     ^
+/adm/daemons/economyd.c line 143: Undefined variable 'info'
+  if (!mapp(info)) return 1.0
+                         ^
+/adm/daemons/economyd.c line 153: Undefined function calculate_price_ratio
+  return calculate_price_ratio(type)
+                                            ^
+/adm/daemons/economyd.c line 153: Type of returned value doesn't match function return type ( unknown vs float )
+  return calculate_price_ratio(type);
+                                             ^
+/adm/daemons/inflationd.c line 60: Undefined function init_sink_stats
+  init_sink_stats()
+                           ^
+/adm/daemons/inflationd.c line 92: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int total = stats["total_spirit_stones"]
+                   ^
+/adm/daemons/inflationd.c line 92: Illegal LHS
+  int total = stats["total_spirit_stones"];
+        int players = stats["active_players"]
+                                                   ^
+/adm/daemons/inflationd.c line 93: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int players = stats["active_players"]
+                     ^
+/adm/daemons/inflationd.c line 93: Illegal LHS
+  int players = stats["active_players"];
+                                                ^
+/adm/daemons/inflationd.c line 95: Undefined variable 'players'
+  if (players <= 0) return 0
+                        ^
+/adm/daemons/daily_task_d.c line 67: Undefined function init_task_templates
+  init_task_templates()
+                               ^
+/adm/daemons/daily_task_d.c line 70: Undefined function schedule_daily_reset
+  schedule_daily_reset()
+                                ^
+/adm/daemons/daily_task_d.c line 428: Undefined function get_today_date
+  set("last_reset_date", get_today_date())
+                                                 ^
+/adm/daemons/daily_task_d.c line 892: Undefined function query_streak
+  streak = query_streak(player)
+                                       ^
+/adm/daemons/daily_task_d.c line 892: Bad assignment ( int vs unknown ).
+  streak = query_streak(player);
+        streak_bonus = get_streak_bonus(streak)
+                                        ^
+/adm/daemons/daily_task_d.c line 968: Undefined function update_streak
+  streak_updated = update_streak(player)
+                                                ^
+/adm/daemons/teleport_d.c line 47: Undefined function init_teleport_nodes
+  init_teleport_nodes()
+                           ^
+/adm/daemons/teleport_d.c line 97: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 115: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 133: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 151: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 169: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/activity_d.c line 453: Undefined function check_consecutive_days
+  check_consecutive_days(player)
+                                    ^
+/adm/daemons/activity_d.c line 469: Undefined function check_daily_reward_available
+  check_daily_reward_available(player)
+                                          ^
+/adm/daemons/activity_d.c line 470: Undefined function check_weekly_reward_available
+  check_weekly_reward_available(player)
+                                           ^
+/adm/daemons/activity_d.c line 808: Undefined function refresh_daily_task_pool
+  return refresh_daily_task_pool(player)
+                                            ^
+/adm/daemons/activity_d.c line 808: Type of returned value doesn't match function return type ( unknown vs string * )
+  return refresh_daily_task_pool(player);
+                                             ^
+/adm/daemons/main_quest_d.c line 71: Undefined function initialize_chapters
+  initialize_chapters()
+                           ^
+/adm/daemons/main_quest_d.c line 72: Undefined function initialize_nodes
+  initialize_nodes()
+                        ^
+/adm/daemons/main_quest_d.c line 424: Undefined function find_next_available_node
+  node_id = find_next_available_node(player, chapter)
+                                                         ^
+/adm/daemons/main_quest_d.c line 424: Bad assignment ( string vs unknown ).
+  node_id = find_next_available_node(player, chapter);
+    if (node_id && node_id != ""
+                                                          ^
+/adm/daemons/main_quest_d.c line 523: Undefined function add_completed_node
+  add_completed_node(player, node_id)
+                                         ^
+/adm/daemons/main_quest_d.c line 528: Undefined function check_chapter_complete
+  if (check_chapter_complete(player, chapter)
+                                                 ^
+/feature/attribute.c line 1176: syntax error, unexpected '*', expecting L_COLON_COLON or '('
+  int *speed_table = (
+        ^
+/feature/attribute.c line 1179: Illegal LHS
+  });
+      ^
+/feature/attribute.c line 1181: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int idx = root[SR_QUALITY_IDX]
+          ^
+/feature/attribute.c line 1181: Illegal LHS
+  int idx = root[S"quality_idx"];
+	i
+                                  ^
+/feature/attribute.c line 1182: Undefined variable 'idx'
+  if (idx < 0 || idx >= ROOT_QUALITY_TOTAL
+            ^
+/feature/attribute.c line 1185: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int base_speed = speed_table[idx]
+                 ^
+/adm/daemons/economyd.c line 59: Undefined function init_region_modifiers
+  init_region_modifiers()
+                                 ^
+/adm/daemons/economyd.c line 142: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  mapping info = goods[type]
+                      ^
+/adm/daemons/economyd.c line 142: Illegal LHS
+  mapping info = goods[type];
+        if (!mapp(info)) return 1.0
+                                     ^
+/adm/daemons/economyd.c line 143: Undefined variable 'info'
+  if (!mapp(info)) return 1.0
+                         ^
+/adm/daemons/economyd.c line 153: Undefined function calculate_price_ratio
+  return calculate_price_ratio(type)
+                                            ^
+/adm/daemons/economyd.c line 153: Type of returned value doesn't match function return type ( unknown vs float )
+  return calculate_price_ratio(type);
+                                             ^
+/adm/daemons/inflationd.c line 60: Undefined function init_sink_stats
+  init_sink_stats()
+                           ^
+/adm/daemons/inflationd.c line 92: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int total = stats["total_spirit_stones"]
+                   ^
+/adm/daemons/inflationd.c line 92: Illegal LHS
+  int total = stats["total_spirit_stones"];
+        int players = stats["active_players"]
+                                                   ^
+/adm/daemons/inflationd.c line 93: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int players = stats["active_players"]
+                     ^
+/adm/daemons/inflationd.c line 93: Illegal LHS
+  int players = stats["active_players"];
+                                                ^
+/adm/daemons/inflationd.c line 95: Undefined variable 'players'
+  if (players <= 0) return 0
+                        ^
+/adm/daemons/daily_task_d.c line 67: Undefined function init_task_templates
+  init_task_templates()
+                               ^
+/adm/daemons/daily_task_d.c line 70: Undefined function schedule_daily_reset
+  schedule_daily_reset()
+                                ^
+/adm/daemons/daily_task_d.c line 428: Undefined function get_today_date
+  set("last_reset_date", get_today_date())
+                                                 ^
+/adm/daemons/daily_task_d.c line 892: Undefined function query_streak
+  streak = query_streak(player)
+                                       ^
+/adm/daemons/daily_task_d.c line 892: Bad assignment ( int vs unknown ).
+  streak = query_streak(player);
+        streak_bonus = get_streak_bonus(streak)
+                                        ^
+/adm/daemons/daily_task_d.c line 968: Undefined function update_streak
+  streak_updated = update_streak(player)
+                                                ^
+/adm/daemons/teleport_d.c line 47: Undefined function init_teleport_nodes
+  init_teleport_nodes()
+                           ^
+/adm/daemons/teleport_d.c line 97: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 115: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 133: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 151: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 169: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/activity_d.c line 453: Undefined function check_consecutive_days
+  check_consecutive_days(player)
+                                    ^
+/adm/daemons/activity_d.c line 469: Undefined function check_daily_reward_available
+  check_daily_reward_available(player)
+                                          ^
+/adm/daemons/activity_d.c line 470: Undefined function check_weekly_reward_available
+  check_weekly_reward_available(player)
+                                           ^
+/adm/daemons/activity_d.c line 808: Undefined function refresh_daily_task_pool
+  return refresh_daily_task_pool(player)
+                                            ^
+/adm/daemons/activity_d.c line 808: Type of returned value doesn't match function return type ( unknown vs string * )
+  return refresh_daily_task_pool(player);
+                                             ^
+/adm/daemons/main_quest_d.c line 71: Undefined function initialize_chapters
+  initialize_chapters()
+                           ^
+/adm/daemons/main_quest_d.c line 72: Undefined function initialize_nodes
+  initialize_nodes()
+                        ^
+/adm/daemons/main_quest_d.c line 424: Undefined function find_next_available_node
+  node_id = find_next_available_node(player, chapter)
+                                                         ^
+/adm/daemons/main_quest_d.c line 424: Bad assignment ( string vs unknown ).
+  node_id = find_next_available_node(player, chapter);
+    if (node_id && node_id != ""
+                                                          ^
+/adm/daemons/main_quest_d.c line 523: Undefined function add_completed_node
+  add_completed_node(player, node_id)
+                                         ^
+/adm/daemons/main_quest_d.c line 528: Undefined function check_chapter_complete
+  if (check_chapter_complete(player, chapter)
+                                                 ^
+/feature/attribute.c line 1176: syntax error, unexpected '*', expecting L_COLON_COLON or '('
+  int *speed_table = (
+        ^
+/feature/attribute.c line 1179: Illegal LHS
+  });
+      ^
+/feature/attribute.c line 1181: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int idx = root[SR_QUALITY_IDX]
+          ^
+/feature/attribute.c line 1181: Illegal LHS
+  int idx = root[S"quality_idx"];
+	i
+                                  ^
+/feature/attribute.c line 1182: Undefined variable 'idx'
+  if (idx < 0 || idx >= ROOT_QUALITY_TOTAL
+            ^
+/feature/attribute.c line 1185: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int base_speed = speed_table[idx]
+                 ^
+/adm/daemons/economyd.c line 59: Undefined function init_region_modifiers
+  init_region_modifiers()
+                                 ^
+/adm/daemons/economyd.c line 142: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  mapping info = goods[type]
+                      ^
+/adm/daemons/economyd.c line 142: Illegal LHS
+  mapping info = goods[type];
+        if (!mapp(info)) return 1.0
+                                     ^
+/adm/daemons/economyd.c line 143: Undefined variable 'info'
+  if (!mapp(info)) return 1.0
+                         ^
+/adm/daemons/economyd.c line 153: Undefined function calculate_price_ratio
+  return calculate_price_ratio(type)
+                                            ^
+/adm/daemons/economyd.c line 153: Type of returned value doesn't match function return type ( unknown vs float )
+  return calculate_price_ratio(type);
+                                             ^
+/adm/daemons/inflationd.c line 60: Undefined function init_sink_stats
+  init_sink_stats()
+                           ^
+/adm/daemons/inflationd.c line 92: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int total = stats["total_spirit_stones"]
+                   ^
+/adm/daemons/inflationd.c line 92: Illegal LHS
+  int total = stats["total_spirit_stones"];
+        int players = stats["active_players"]
+                                                   ^
+/adm/daemons/inflationd.c line 93: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int players = stats["active_players"]
+                     ^
+/adm/daemons/inflationd.c line 93: Illegal LHS
+  int players = stats["active_players"];
+                                                ^
+/adm/daemons/inflationd.c line 95: Undefined variable 'players'
+  if (players <= 0) return 0
+                        ^
+/adm/daemons/daily_task_d.c line 67: Undefined function init_task_templates
+  init_task_templates()
+                               ^
+/adm/daemons/daily_task_d.c line 70: Undefined function schedule_daily_reset
+  schedule_daily_reset()
+                                ^
+/adm/daemons/daily_task_d.c line 428: Undefined function get_today_date
+  set("last_reset_date", get_today_date())
+                                                 ^
+/adm/daemons/daily_task_d.c line 892: Undefined function query_streak
+  streak = query_streak(player)
+                                       ^
+/adm/daemons/daily_task_d.c line 892: Bad assignment ( int vs unknown ).
+  streak = query_streak(player);
+        streak_bonus = get_streak_bonus(streak)
+                                        ^
+/adm/daemons/daily_task_d.c line 968: Undefined function update_streak
+  streak_updated = update_streak(player)
+                                                ^
+/adm/daemons/teleport_d.c line 47: Undefined function init_teleport_nodes
+  init_teleport_nodes()
+                           ^
+/adm/daemons/teleport_d.c line 97: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 115: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 133: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 151: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 169: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/activity_d.c line 453: Undefined function check_consecutive_days
+  check_consecutive_days(player)
+                                    ^
+/adm/daemons/activity_d.c line 469: Undefined function check_daily_reward_available
+  check_daily_reward_available(player)
+                                          ^
+/adm/daemons/activity_d.c line 470: Undefined function check_weekly_reward_available
+  check_weekly_reward_available(player)
+                                           ^
+/adm/daemons/activity_d.c line 808: Undefined function refresh_daily_task_pool
+  return refresh_daily_task_pool(player)
+                                            ^
+/adm/daemons/activity_d.c line 808: Type of returned value doesn't match function return type ( unknown vs string * )
+  return refresh_daily_task_pool(player);
+                                             ^
+/adm/daemons/main_quest_d.c line 71: Undefined function initialize_chapters
+  initialize_chapters()
+                           ^
+/adm/daemons/main_quest_d.c line 72: Undefined function initialize_nodes
+  initialize_nodes()
+                        ^
+/adm/daemons/main_quest_d.c line 424: Undefined function find_next_available_node
+  node_id = find_next_available_node(player, chapter)
+                                                         ^
+/adm/daemons/main_quest_d.c line 424: Bad assignment ( string vs unknown ).
+  node_id = find_next_available_node(player, chapter);
+    if (node_id && node_id != ""
+                                                          ^
+/adm/daemons/main_quest_d.c line 523: Undefined function add_completed_node
+  add_completed_node(player, node_id)
+                                         ^
+/adm/daemons/main_quest_d.c line 528: Undefined function check_chapter_complete
+  if (check_chapter_complete(player, chapter)
+                                                 ^
+/feature/attribute.c line 1176: syntax error, unexpected '*', expecting L_COLON_COLON or '('
+  int *speed_table = (
+        ^
+/feature/attribute.c line 1179: Illegal LHS
+  });
+      ^
+/feature/attribute.c line 1181: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int idx = root[SR_QUALITY_IDX]
+          ^
+/feature/attribute.c line 1181: Illegal LHS
+  int idx = root[S"quality_idx"];
+	i
+                                  ^
+/feature/attribute.c line 1182: Undefined variable 'idx'
+  if (idx < 0 || idx >= ROOT_QUALITY_TOTAL
+            ^
+/feature/attribute.c line 1185: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int base_speed = speed_table[idx]
+                 ^
+/adm/daemons/economyd.c line 59: Undefined function init_region_modifiers
+  init_region_modifiers()
+                                 ^
+/adm/daemons/economyd.c line 142: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  mapping info = goods[type]
+                      ^
+/adm/daemons/economyd.c line 142: Illegal LHS
+  mapping info = goods[type];
+        if (!mapp(info)) return 1.0
+                                     ^
+/adm/daemons/economyd.c line 143: Undefined variable 'info'
+  if (!mapp(info)) return 1.0
+                         ^
+/adm/daemons/economyd.c line 153: Undefined function calculate_price_ratio
+  return calculate_price_ratio(type)
+                                            ^
+/adm/daemons/economyd.c line 153: Type of returned value doesn't match function return type ( unknown vs float )
+  return calculate_price_ratio(type);
+                                             ^
+/adm/daemons/inflationd.c line 60: Undefined function init_sink_stats
+  init_sink_stats()
+                           ^
+/adm/daemons/inflationd.c line 92: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int total = stats["total_spirit_stones"]
+                   ^
+/adm/daemons/inflationd.c line 92: Illegal LHS
+  int total = stats["total_spirit_stones"];
+        int players = stats["active_players"]
+                                                   ^
+/adm/daemons/inflationd.c line 93: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int players = stats["active_players"]
+                     ^
+/adm/daemons/inflationd.c line 93: Illegal LHS
+  int players = stats["active_players"];
+                                                ^
+/adm/daemons/inflationd.c line 95: Undefined variable 'players'
+  if (players <= 0) return 0
+                        ^
+/adm/daemons/daily_task_d.c line 67: Undefined function init_task_templates
+  init_task_templates()
+                               ^
+/adm/daemons/daily_task_d.c line 70: Undefined function schedule_daily_reset
+  schedule_daily_reset()
+                                ^
+/adm/daemons/daily_task_d.c line 428: Undefined function get_today_date
+  set("last_reset_date", get_today_date())
+                                                 ^
+/adm/daemons/daily_task_d.c line 892: Undefined function query_streak
+  streak = query_streak(player)
+                                       ^
+/adm/daemons/daily_task_d.c line 892: Bad assignment ( int vs unknown ).
+  streak = query_streak(player);
+        streak_bonus = get_streak_bonus(streak)
+                                        ^
+/adm/daemons/daily_task_d.c line 968: Undefined function update_streak
+  streak_updated = update_streak(player)
+                                                ^
+/adm/daemons/teleport_d.c line 47: Undefined function init_teleport_nodes
+  init_teleport_nodes()
+                           ^
+/adm/daemons/teleport_d.c line 97: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 115: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 133: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 151: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 169: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/activity_d.c line 453: Undefined function check_consecutive_days
+  check_consecutive_days(player)
+                                    ^
+/adm/daemons/activity_d.c line 469: Undefined function check_daily_reward_available
+  check_daily_reward_available(player)
+                                          ^
+/adm/daemons/activity_d.c line 470: Undefined function check_weekly_reward_available
+  check_weekly_reward_available(player)
+                                           ^
+/adm/daemons/activity_d.c line 808: Undefined function refresh_daily_task_pool
+  return refresh_daily_task_pool(player)
+                                            ^
+/adm/daemons/activity_d.c line 808: Type of returned value doesn't match function return type ( unknown vs string * )
+  return refresh_daily_task_pool(player);
+                                             ^
+/adm/daemons/main_quest_d.c line 71: Undefined function initialize_chapters
+  initialize_chapters()
+                           ^
+/adm/daemons/main_quest_d.c line 72: Undefined function initialize_nodes
+  initialize_nodes()
+                        ^
+/adm/daemons/main_quest_d.c line 424: Undefined function find_next_available_node
+  node_id = find_next_available_node(player, chapter)
+                                                         ^
+/adm/daemons/main_quest_d.c line 424: Bad assignment ( string vs unknown ).
+  node_id = find_next_available_node(player, chapter);
+    if (node_id && node_id != ""
+                                                          ^
+/adm/daemons/main_quest_d.c line 523: Undefined function add_completed_node
+  add_completed_node(player, node_id)
+                                         ^
+/adm/daemons/main_quest_d.c line 528: Undefined function check_chapter_complete
+  if (check_chapter_complete(player, chapter)
+                                                 ^
+/feature/attribute.c line 1176: syntax error, unexpected '*', expecting L_COLON_COLON or '('
+  int *speed_table = (
+        ^
+/feature/attribute.c line 1179: Illegal LHS
+  });
+      ^
+/feature/attribute.c line 1181: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int idx = root[SR_QUALITY_IDX]
+          ^
+/feature/attribute.c line 1181: Illegal LHS
+  int idx = root[S"quality_idx"];
+	i
+                                  ^
+/feature/attribute.c line 1182: Undefined variable 'idx'
+  if (idx < 0 || idx >= ROOT_QUALITY_TOTAL
+            ^
+/feature/attribute.c line 1185: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int base_speed = speed_table[idx]
+                 ^
+/adm/daemons/economyd.c line 59: Undefined function init_region_modifiers
+  init_region_modifiers()
+                                 ^
+/adm/daemons/economyd.c line 142: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  mapping info = goods[type]
+                      ^
+/adm/daemons/economyd.c line 142: Illegal LHS
+  mapping info = goods[type];
+        if (!mapp(info)) return 1.0
+                                     ^
+/adm/daemons/economyd.c line 143: Undefined variable 'info'
+  if (!mapp(info)) return 1.0
+                         ^
+/adm/daemons/economyd.c line 153: Undefined function calculate_price_ratio
+  return calculate_price_ratio(type)
+                                            ^
+/adm/daemons/economyd.c line 153: Type of returned value doesn't match function return type ( unknown vs float )
+  return calculate_price_ratio(type);
+                                             ^
+/adm/daemons/inflationd.c line 60: Undefined function init_sink_stats
+  init_sink_stats()
+                           ^
+/adm/daemons/inflationd.c line 92: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int total = stats["total_spirit_stones"]
+                   ^
+/adm/daemons/inflationd.c line 92: Illegal LHS
+  int total = stats["total_spirit_stones"];
+        int players = stats["active_players"]
+                                                   ^
+/adm/daemons/inflationd.c line 93: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int players = stats["active_players"]
+                     ^
+/adm/daemons/inflationd.c line 93: Illegal LHS
+  int players = stats["active_players"];
+                                                ^
+/adm/daemons/inflationd.c line 95: Undefined variable 'players'
+  if (players <= 0) return 0
+                        ^
+/adm/daemons/daily_task_d.c line 67: Undefined function init_task_templates
+  init_task_templates()
+                               ^
+/adm/daemons/daily_task_d.c line 70: Undefined function schedule_daily_reset
+  schedule_daily_reset()
+                                ^
+/adm/daemons/daily_task_d.c line 428: Undefined function get_today_date
+  set("last_reset_date", get_today_date())
+                                                 ^
+/adm/daemons/daily_task_d.c line 892: Undefined function query_streak
+  streak = query_streak(player)
+                                       ^
+/adm/daemons/daily_task_d.c line 892: Bad assignment ( int vs unknown ).
+  streak = query_streak(player);
+        streak_bonus = get_streak_bonus(streak)
+                                        ^
+/adm/daemons/daily_task_d.c line 968: Undefined function update_streak
+  streak_updated = update_streak(player)
+                                                ^
+/adm/daemons/teleport_d.c line 47: Undefined function init_teleport_nodes
+  init_teleport_nodes()
+                           ^
+/adm/daemons/teleport_d.c line 97: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 115: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 133: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 151: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 169: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/activity_d.c line 453: Undefined function check_consecutive_days
+  check_consecutive_days(player)
+                                    ^
+/adm/daemons/activity_d.c line 469: Undefined function check_daily_reward_available
+  check_daily_reward_available(player)
+                                          ^
+/adm/daemons/activity_d.c line 470: Undefined function check_weekly_reward_available
+  check_weekly_reward_available(player)
+                                           ^
+/adm/daemons/activity_d.c line 808: Undefined function refresh_daily_task_pool
+  return refresh_daily_task_pool(player)
+                                            ^
+/adm/daemons/activity_d.c line 808: Type of returned value doesn't match function return type ( unknown vs string * )
+  return refresh_daily_task_pool(player);
+                                             ^
+/adm/daemons/main_quest_d.c line 71: Undefined function initialize_chapters
+  initialize_chapters()
+                           ^
+/adm/daemons/main_quest_d.c line 72: Undefined function initialize_nodes
+  initialize_nodes()
+                        ^
+/adm/daemons/main_quest_d.c line 424: Undefined function find_next_available_node
+  node_id = find_next_available_node(player, chapter)
+                                                         ^
+/adm/daemons/main_quest_d.c line 424: Bad assignment ( string vs unknown ).
+  node_id = find_next_available_node(player, chapter);
+    if (node_id && node_id != ""
+                                                          ^
+/adm/daemons/main_quest_d.c line 523: Undefined function add_completed_node
+  add_completed_node(player, node_id)
+                                         ^
+/adm/daemons/main_quest_d.c line 528: Undefined function check_chapter_complete
+  if (check_chapter_complete(player, chapter)
+                                                 ^
+/feature/attribute.c line 1176: syntax error, unexpected '*', expecting L_COLON_COLON or '('
+  int *speed_table = (
+        ^
+/feature/attribute.c line 1179: Illegal LHS
+  });
+      ^
+/feature/attribute.c line 1181: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int idx = root[SR_QUALITY_IDX]
+          ^
+/feature/attribute.c line 1181: Illegal LHS
+  int idx = root[S"quality_idx"];
+	i
+                                  ^
+/feature/attribute.c line 1182: Undefined variable 'idx'
+  if (idx < 0 || idx >= ROOT_QUALITY_TOTAL
+            ^
+/feature/attribute.c line 1185: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int base_speed = speed_table[idx]
+                 ^
+/adm/daemons/economyd.c line 59: Undefined function init_region_modifiers
+  init_region_modifiers()
+                                 ^
+/adm/daemons/economyd.c line 142: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  mapping info = goods[type]
+                      ^
+/adm/daemons/economyd.c line 142: Illegal LHS
+  mapping info = goods[type];
+        if (!mapp(info)) return 1.0
+                                     ^
+/adm/daemons/economyd.c line 143: Undefined variable 'info'
+  if (!mapp(info)) return 1.0
+                         ^
+/adm/daemons/economyd.c line 153: Undefined function calculate_price_ratio
+  return calculate_price_ratio(type)
+                                            ^
+/adm/daemons/economyd.c line 153: Type of returned value doesn't match function return type ( unknown vs float )
+  return calculate_price_ratio(type);
+                                             ^
+/adm/daemons/inflationd.c line 60: Undefined function init_sink_stats
+  init_sink_stats()
+                           ^
+/adm/daemons/inflationd.c line 92: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int total = stats["total_spirit_stones"]
+                   ^
+/adm/daemons/inflationd.c line 92: Illegal LHS
+  int total = stats["total_spirit_stones"];
+        int players = stats["active_players"]
+                                                   ^
+/adm/daemons/inflationd.c line 93: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int players = stats["active_players"]
+                     ^
+/adm/daemons/inflationd.c line 93: Illegal LHS
+  int players = stats["active_players"];
+                                                ^
+/adm/daemons/inflationd.c line 95: Undefined variable 'players'
+  if (players <= 0) return 0
+                        ^
+/adm/daemons/daily_task_d.c line 67: Undefined function init_task_templates
+  init_task_templates()
+                               ^
+/adm/daemons/daily_task_d.c line 70: Undefined function schedule_daily_reset
+  schedule_daily_reset()
+                                ^
+/adm/daemons/daily_task_d.c line 428: Undefined function get_today_date
+  set("last_reset_date", get_today_date())
+                                                 ^
+/adm/daemons/daily_task_d.c line 892: Undefined function query_streak
+  streak = query_streak(player)
+                                       ^
+/adm/daemons/daily_task_d.c line 892: Bad assignment ( int vs unknown ).
+  streak = query_streak(player);
+        streak_bonus = get_streak_bonus(streak)
+                                        ^
+/adm/daemons/daily_task_d.c line 968: Undefined function update_streak
+  streak_updated = update_streak(player)
+                                                ^
+/adm/daemons/teleport_d.c line 47: Undefined function init_teleport_nodes
+  init_teleport_nodes()
+                           ^
+/adm/daemons/teleport_d.c line 97: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 115: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 133: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 151: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 169: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/activity_d.c line 453: Undefined function check_consecutive_days
+  check_consecutive_days(player)
+                                    ^
+/adm/daemons/activity_d.c line 469: Undefined function check_daily_reward_available
+  check_daily_reward_available(player)
+                                          ^
+/adm/daemons/activity_d.c line 470: Undefined function check_weekly_reward_available
+  check_weekly_reward_available(player)
+                                           ^
+/adm/daemons/activity_d.c line 808: Undefined function refresh_daily_task_pool
+  return refresh_daily_task_pool(player)
+                                            ^
+/adm/daemons/activity_d.c line 808: Type of returned value doesn't match function return type ( unknown vs string * )
+  return refresh_daily_task_pool(player);
+                                             ^
+/adm/daemons/main_quest_d.c line 71: Undefined function initialize_chapters
+  initialize_chapters()
+                           ^
+/adm/daemons/main_quest_d.c line 72: Undefined function initialize_nodes
+  initialize_nodes()
+                        ^
+/adm/daemons/main_quest_d.c line 424: Undefined function find_next_available_node
+  node_id = find_next_available_node(player, chapter)
+                                                         ^
+/adm/daemons/main_quest_d.c line 424: Bad assignment ( string vs unknown ).
+  node_id = find_next_available_node(player, chapter);
+    if (node_id && node_id != ""
+                                                          ^
+/adm/daemons/main_quest_d.c line 523: Undefined function add_completed_node
+  add_completed_node(player, node_id)
+                                         ^
+/adm/daemons/main_quest_d.c line 528: Undefined function check_chapter_complete
+  if (check_chapter_complete(player, chapter)
+                                                 ^
+/adm/daemons/root_refine_d.c line 120: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int strength = ob->query(ROOT_PROP_STRENGTH)
+                  ^
+/adm/daemons/root_refine_d.c line 120: Illegal LHS
+  int strength = ob->qu"spirit_root/strength");
+    if (!strength) strength = 0
+                                                   ^
+/adm/daemons/root_refine_d.c line 121: Undefined variable 'strength'
+  if (!strength) strength = 0
+                    ^
+/adm/daemons/root_refine_d.c line 128: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int purity = ob->query(ROOT_PROP_PURITY)
+                ^
+/adm/daemons/root_refine_d.c line 128: Illegal LHS
+  int purity = ob->qu"spirit_root/purity");
+    if (!purity) purity = 50;  // 默认精纯度 50
+                                               ^
+/adm/daemons/root_refine_d.c line 129: Undefined variable 'purity'
+  if (!purity) purity = 50;  // 默认精纯度 50
+                  ^
+/feature/attribute.c line 1176: syntax error, unexpected '*', expecting L_COLON_COLON or '('
+  int *speed_table = (
+        ^
+/feature/attribute.c line 1179: Illegal LHS
+  });
+      ^
+/feature/attribute.c line 1181: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int idx = root[SR_QUALITY_IDX]
+          ^
+/feature/attribute.c line 1181: Illegal LHS
+  int idx = root[S"quality_idx"];
+	i
+                                  ^
+/feature/attribute.c line 1182: Undefined variable 'idx'
+  if (idx < 0 || idx >= ROOT_QUALITY_TOTAL
+            ^
+/feature/attribute.c line 1185: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int base_speed = speed_table[idx]
+                 ^
+/adm/daemons/economyd.c line 59: Undefined function init_region_modifiers
+  init_region_modifiers()
+                                 ^
+/adm/daemons/economyd.c line 142: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  mapping info = goods[type]
+                      ^
+/adm/daemons/economyd.c line 142: Illegal LHS
+  mapping info = goods[type];
+        if (!mapp(info)) return 1.0
+                                     ^
+/adm/daemons/economyd.c line 143: Undefined variable 'info'
+  if (!mapp(info)) return 1.0
+                         ^
+/adm/daemons/economyd.c line 153: Undefined function calculate_price_ratio
+  return calculate_price_ratio(type)
+                                            ^
+/adm/daemons/economyd.c line 153: Type of returned value doesn't match function return type ( unknown vs float )
+  return calculate_price_ratio(type);
+                                             ^
+/adm/daemons/inflationd.c line 60: Undefined function init_sink_stats
+  init_sink_stats()
+                           ^
+/adm/daemons/inflationd.c line 92: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int total = stats["total_spirit_stones"]
+                   ^
+/adm/daemons/inflationd.c line 92: Illegal LHS
+  int total = stats["total_spirit_stones"];
+        int players = stats["active_players"]
+                                                   ^
+/adm/daemons/inflationd.c line 93: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int players = stats["active_players"]
+                     ^
+/adm/daemons/inflationd.c line 93: Illegal LHS
+  int players = stats["active_players"];
+                                                ^
+/adm/daemons/inflationd.c line 95: Undefined variable 'players'
+  if (players <= 0) return 0
+                        ^
+/adm/daemons/daily_task_d.c line 67: Undefined function init_task_templates
+  init_task_templates()
+                               ^
+/adm/daemons/daily_task_d.c line 70: Undefined function schedule_daily_reset
+  schedule_daily_reset()
+                                ^
+/adm/daemons/daily_task_d.c line 428: Undefined function get_today_date
+  set("last_reset_date", get_today_date())
+                                                 ^
+/adm/daemons/daily_task_d.c line 892: Undefined function query_streak
+  streak = query_streak(player)
+                                       ^
+/adm/daemons/daily_task_d.c line 892: Bad assignment ( int vs unknown ).
+  streak = query_streak(player);
+        streak_bonus = get_streak_bonus(streak)
+                                        ^
+/adm/daemons/daily_task_d.c line 968: Undefined function update_streak
+  streak_updated = update_streak(player)
+                                                ^
+/adm/daemons/teleport_d.c line 47: Undefined function init_teleport_nodes
+  init_teleport_nodes()
+                           ^
+/adm/daemons/teleport_d.c line 97: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 115: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 133: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 151: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 169: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/activity_d.c line 453: Undefined function check_consecutive_days
+  check_consecutive_days(player)
+                                    ^
+/adm/daemons/activity_d.c line 469: Undefined function check_daily_reward_available
+  check_daily_reward_available(player)
+                                          ^
+/adm/daemons/activity_d.c line 470: Undefined function check_weekly_reward_available
+  check_weekly_reward_available(player)
+                                           ^
+/adm/daemons/activity_d.c line 808: Undefined function refresh_daily_task_pool
+  return refresh_daily_task_pool(player)
+                                            ^
+/adm/daemons/activity_d.c line 808: Type of returned value doesn't match function return type ( unknown vs string * )
+  return refresh_daily_task_pool(player);
+                                             ^
+/adm/daemons/main_quest_d.c line 71: Undefined function initialize_chapters
+  initialize_chapters()
+                           ^
+/adm/daemons/main_quest_d.c line 72: Undefined function initialize_nodes
+  initialize_nodes()
+                        ^
+/adm/daemons/main_quest_d.c line 424: Undefined function find_next_available_node
+  node_id = find_next_available_node(player, chapter)
+                                                         ^
+/adm/daemons/main_quest_d.c line 424: Bad assignment ( string vs unknown ).
+  node_id = find_next_available_node(player, chapter);
+    if (node_id && node_id != ""
+                                                          ^
+/adm/daemons/main_quest_d.c line 523: Undefined function add_completed_node
+  add_completed_node(player, node_id)
+                                         ^
+/adm/daemons/main_quest_d.c line 528: Undefined function check_chapter_complete
+  if (check_chapter_complete(player, chapter)
+                                                 ^
+/adm/daemons/race/human.c line 67: Undefined variable 'SPIRIT_ROOT_DATA'
+  if (userp(ob) && undefinedp(ob->query(SPIRIT_ROOT_DATA))
+                                                                 ^
+/feature/attribute.c line 1176: syntax error, unexpected '*', expecting L_COLON_COLON or '('
+  int *speed_table = (
+        ^
+/feature/attribute.c line 1179: Illegal LHS
+  });
+      ^
+/feature/attribute.c line 1181: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int idx = root[SR_QUALITY_IDX]
+          ^
+/feature/attribute.c line 1181: Illegal LHS
+  int idx = root[S"quality_idx"];
+	i
+                                  ^
+/feature/attribute.c line 1182: Undefined variable 'idx'
+  if (idx < 0 || idx >= ROOT_QUALITY_TOTAL
+            ^
+/feature/attribute.c line 1185: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int base_speed = speed_table[idx]
+                 ^
+/adm/daemons/economyd.c line 59: Undefined function init_region_modifiers
+  init_region_modifiers()
+                                 ^
+/adm/daemons/economyd.c line 142: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  mapping info = goods[type]
+                      ^
+/adm/daemons/economyd.c line 142: Illegal LHS
+  mapping info = goods[type];
+        if (!mapp(info)) return 1.0
+                                     ^
+/adm/daemons/economyd.c line 143: Undefined variable 'info'
+  if (!mapp(info)) return 1.0
+                         ^
+/adm/daemons/economyd.c line 153: Undefined function calculate_price_ratio
+  return calculate_price_ratio(type)
+                                            ^
+/adm/daemons/economyd.c line 153: Type of returned value doesn't match function return type ( unknown vs float )
+  return calculate_price_ratio(type);
+                                             ^
+/adm/daemons/inflationd.c line 60: Undefined function init_sink_stats
+  init_sink_stats()
+                           ^
+/adm/daemons/inflationd.c line 92: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int total = stats["total_spirit_stones"]
+                   ^
+/adm/daemons/inflationd.c line 92: Illegal LHS
+  int total = stats["total_spirit_stones"];
+        int players = stats["active_players"]
+                                                   ^
+/adm/daemons/inflationd.c line 93: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int players = stats["active_players"]
+                     ^
+/adm/daemons/inflationd.c line 93: Illegal LHS
+  int players = stats["active_players"];
+                                                ^
+/adm/daemons/inflationd.c line 95: Undefined variable 'players'
+  if (players <= 0) return 0
+                        ^
+/adm/daemons/daily_task_d.c line 67: Undefined function init_task_templates
+  init_task_templates()
+                               ^
+/adm/daemons/daily_task_d.c line 70: Undefined function schedule_daily_reset
+  schedule_daily_reset()
+                                ^
+/adm/daemons/daily_task_d.c line 428: Undefined function get_today_date
+  set("last_reset_date", get_today_date())
+                                                 ^
+/adm/daemons/daily_task_d.c line 892: Undefined function query_streak
+  streak = query_streak(player)
+                                       ^
+/adm/daemons/daily_task_d.c line 892: Bad assignment ( int vs unknown ).
+  streak = query_streak(player);
+        streak_bonus = get_streak_bonus(streak)
+                                        ^
+/adm/daemons/daily_task_d.c line 968: Undefined function update_streak
+  streak_updated = update_streak(player)
+                                                ^
+/adm/daemons/teleport_d.c line 47: Undefined function init_teleport_nodes
+  init_teleport_nodes()
+                           ^
+/adm/daemons/teleport_d.c line 97: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 115: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 133: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 151: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 169: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/activity_d.c line 453: Undefined function check_consecutive_days
+  check_consecutive_days(player)
+                                    ^
+/adm/daemons/activity_d.c line 469: Undefined function check_daily_reward_available
+  check_daily_reward_available(player)
+                                          ^
+/adm/daemons/activity_d.c line 470: Undefined function check_weekly_reward_available
+  check_weekly_reward_available(player)
+                                           ^
+/adm/daemons/activity_d.c line 808: Undefined function refresh_daily_task_pool
+  return refresh_daily_task_pool(player)
+                                            ^
+/adm/daemons/activity_d.c line 808: Type of returned value doesn't match function return type ( unknown vs string * )
+  return refresh_daily_task_pool(player);
+                                             ^
+/adm/daemons/main_quest_d.c line 71: Undefined function initialize_chapters
+  initialize_chapters()
+                           ^
+/adm/daemons/main_quest_d.c line 72: Undefined function initialize_nodes
+  initialize_nodes()
+                        ^
+/adm/daemons/main_quest_d.c line 424: Undefined function find_next_available_node
+  node_id = find_next_available_node(player, chapter)
+                                                         ^
+/adm/daemons/main_quest_d.c line 424: Bad assignment ( string vs unknown ).
+  node_id = find_next_available_node(player, chapter);
+    if (node_id && node_id != ""
+                                                          ^
+/adm/daemons/main_quest_d.c line 523: Undefined function add_completed_node
+  add_completed_node(player, node_id)
+                                         ^
+/adm/daemons/main_quest_d.c line 528: Undefined function check_chapter_complete
+  if (check_chapter_complete(player, chapter)
+                                                 ^
+/feature/attribute.c line 1176: syntax error, unexpected '*', expecting L_COLON_COLON or '('
+  int *speed_table = (
+        ^
+/feature/attribute.c line 1179: Illegal LHS
+  });
+      ^
+/feature/attribute.c line 1181: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int idx = root[SR_QUALITY_IDX]
+          ^
+/feature/attribute.c line 1181: Illegal LHS
+  int idx = root[S"quality_idx"];
+	i
+                                  ^
+/feature/attribute.c line 1182: Undefined variable 'idx'
+  if (idx < 0 || idx >= ROOT_QUALITY_TOTAL
+            ^
+/feature/attribute.c line 1185: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int base_speed = speed_table[idx]
+                 ^
+/adm/daemons/economyd.c line 59: Undefined function init_region_modifiers
+  init_region_modifiers()
+                                 ^
+/adm/daemons/economyd.c line 142: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  mapping info = goods[type]
+                      ^
+/adm/daemons/economyd.c line 142: Illegal LHS
+  mapping info = goods[type];
+        if (!mapp(info)) return 1.0
+                                     ^
+/adm/daemons/economyd.c line 143: Undefined variable 'info'
+  if (!mapp(info)) return 1.0
+                         ^
+/adm/daemons/economyd.c line 153: Undefined function calculate_price_ratio
+  return calculate_price_ratio(type)
+                                            ^
+/adm/daemons/economyd.c line 153: Type of returned value doesn't match function return type ( unknown vs float )
+  return calculate_price_ratio(type);
+                                             ^
+/adm/daemons/inflationd.c line 60: Undefined function init_sink_stats
+  init_sink_stats()
+                           ^
+/adm/daemons/inflationd.c line 92: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int total = stats["total_spirit_stones"]
+                   ^
+/adm/daemons/inflationd.c line 92: Illegal LHS
+  int total = stats["total_spirit_stones"];
+        int players = stats["active_players"]
+                                                   ^
+/adm/daemons/inflationd.c line 93: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int players = stats["active_players"]
+                     ^
+/adm/daemons/inflationd.c line 93: Illegal LHS
+  int players = stats["active_players"];
+                                                ^
+/adm/daemons/inflationd.c line 95: Undefined variable 'players'
+  if (players <= 0) return 0
+                        ^
+/adm/daemons/daily_task_d.c line 67: Undefined function init_task_templates
+  init_task_templates()
+                               ^
+/adm/daemons/daily_task_d.c line 70: Undefined function schedule_daily_reset
+  schedule_daily_reset()
+                                ^
+/adm/daemons/daily_task_d.c line 428: Undefined function get_today_date
+  set("last_reset_date", get_today_date())
+                                                 ^
+/adm/daemons/daily_task_d.c line 892: Undefined function query_streak
+  streak = query_streak(player)
+                                       ^
+/adm/daemons/daily_task_d.c line 892: Bad assignment ( int vs unknown ).
+  streak = query_streak(player);
+        streak_bonus = get_streak_bonus(streak)
+                                        ^
+/adm/daemons/daily_task_d.c line 968: Undefined function update_streak
+  streak_updated = update_streak(player)
+                                                ^
+/adm/daemons/teleport_d.c line 47: Undefined function init_teleport_nodes
+  init_teleport_nodes()
+                           ^
+/adm/daemons/teleport_d.c line 97: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 115: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 133: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 151: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 169: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/activity_d.c line 453: Undefined function check_consecutive_days
+  check_consecutive_days(player)
+                                    ^
+/adm/daemons/activity_d.c line 469: Undefined function check_daily_reward_available
+  check_daily_reward_available(player)
+                                          ^
+/adm/daemons/activity_d.c line 470: Undefined function check_weekly_reward_available
+  check_weekly_reward_available(player)
+                                           ^
+/adm/daemons/activity_d.c line 808: Undefined function refresh_daily_task_pool
+  return refresh_daily_task_pool(player)
+                                            ^
+/adm/daemons/activity_d.c line 808: Type of returned value doesn't match function return type ( unknown vs string * )
+  return refresh_daily_task_pool(player);
+                                             ^
+/adm/daemons/main_quest_d.c line 71: Undefined function initialize_chapters
+  initialize_chapters()
+                           ^
+/adm/daemons/main_quest_d.c line 72: Undefined function initialize_nodes
+  initialize_nodes()
+                        ^
+/adm/daemons/main_quest_d.c line 424: Undefined function find_next_available_node
+  node_id = find_next_available_node(player, chapter)
+                                                         ^
+/adm/daemons/main_quest_d.c line 424: Bad assignment ( string vs unknown ).
+  node_id = find_next_available_node(player, chapter);
+    if (node_id && node_id != ""
+                                                          ^
+/adm/daemons/main_quest_d.c line 523: Undefined function add_completed_node
+  add_completed_node(player, node_id)
+                                         ^
+/adm/daemons/main_quest_d.c line 528: Undefined function check_chapter_complete
+  if (check_chapter_complete(player, chapter)
+                                                 ^
+/feature/attribute.c line 1176: syntax error, unexpected '*', expecting L_COLON_COLON or '('
+  int *speed_table = (
+        ^
+/feature/attribute.c line 1179: Illegal LHS
+  });
+      ^
+/feature/attribute.c line 1181: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int idx = root[SR_QUALITY_IDX]
+          ^
+/feature/attribute.c line 1181: Illegal LHS
+  int idx = root[S"quality_idx"];
+	i
+                                  ^
+/feature/attribute.c line 1182: Undefined variable 'idx'
+  if (idx < 0 || idx >= ROOT_QUALITY_TOTAL
+            ^
+/feature/attribute.c line 1185: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int base_speed = speed_table[idx]
+                 ^
+/adm/daemons/economyd.c line 59: Undefined function init_region_modifiers
+  init_region_modifiers()
+                                 ^
+/adm/daemons/economyd.c line 142: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  mapping info = goods[type]
+                      ^
+/adm/daemons/economyd.c line 142: Illegal LHS
+  mapping info = goods[type];
+        if (!mapp(info)) return 1.0
+                                     ^
+/adm/daemons/economyd.c line 143: Undefined variable 'info'
+  if (!mapp(info)) return 1.0
+                         ^
+/adm/daemons/economyd.c line 153: Undefined function calculate_price_ratio
+  return calculate_price_ratio(type)
+                                            ^
+/adm/daemons/economyd.c line 153: Type of returned value doesn't match function return type ( unknown vs float )
+  return calculate_price_ratio(type);
+                                             ^
+/adm/daemons/inflationd.c line 60: Undefined function init_sink_stats
+  init_sink_stats()
+                           ^
+/adm/daemons/inflationd.c line 92: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int total = stats["total_spirit_stones"]
+                   ^
+/adm/daemons/inflationd.c line 92: Illegal LHS
+  int total = stats["total_spirit_stones"];
+        int players = stats["active_players"]
+                                                   ^
+/adm/daemons/inflationd.c line 93: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int players = stats["active_players"]
+                     ^
+/adm/daemons/inflationd.c line 93: Illegal LHS
+  int players = stats["active_players"];
+                                                ^
+/adm/daemons/inflationd.c line 95: Undefined variable 'players'
+  if (players <= 0) return 0
+                        ^
+/adm/daemons/daily_task_d.c line 67: Undefined function init_task_templates
+  init_task_templates()
+                               ^
+/adm/daemons/daily_task_d.c line 70: Undefined function schedule_daily_reset
+  schedule_daily_reset()
+                                ^
+/adm/daemons/daily_task_d.c line 428: Undefined function get_today_date
+  set("last_reset_date", get_today_date())
+                                                 ^
+/adm/daemons/daily_task_d.c line 892: Undefined function query_streak
+  streak = query_streak(player)
+                                       ^
+/adm/daemons/daily_task_d.c line 892: Bad assignment ( int vs unknown ).
+  streak = query_streak(player);
+        streak_bonus = get_streak_bonus(streak)
+                                        ^
+/adm/daemons/daily_task_d.c line 968: Undefined function update_streak
+  streak_updated = update_streak(player)
+                                                ^
+/adm/daemons/teleport_d.c line 47: Undefined function init_teleport_nodes
+  init_teleport_nodes()
+                           ^
+/adm/daemons/teleport_d.c line 97: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 115: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 133: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 151: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 169: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/activity_d.c line 453: Undefined function check_consecutive_days
+  check_consecutive_days(player)
+                                    ^
+/adm/daemons/activity_d.c line 469: Undefined function check_daily_reward_available
+  check_daily_reward_available(player)
+                                          ^
+/adm/daemons/activity_d.c line 470: Undefined function check_weekly_reward_available
+  check_weekly_reward_available(player)
+                                           ^
+/adm/daemons/activity_d.c line 808: Undefined function refresh_daily_task_pool
+  return refresh_daily_task_pool(player)
+                                            ^
+/adm/daemons/activity_d.c line 808: Type of returned value doesn't match function return type ( unknown vs string * )
+  return refresh_daily_task_pool(player);
+                                             ^
+/adm/daemons/main_quest_d.c line 71: Undefined function initialize_chapters
+  initialize_chapters()
+                           ^
+/adm/daemons/main_quest_d.c line 72: Undefined function initialize_nodes
+  initialize_nodes()
+                        ^
+/adm/daemons/main_quest_d.c line 424: Undefined function find_next_available_node
+  node_id = find_next_available_node(player, chapter)
+                                                         ^
+/adm/daemons/main_quest_d.c line 424: Bad assignment ( string vs unknown ).
+  node_id = find_next_available_node(player, chapter);
+    if (node_id && node_id != ""
+                                                          ^
+/adm/daemons/main_quest_d.c line 523: Undefined function add_completed_node
+  add_completed_node(player, node_id)
+                                         ^
+/adm/daemons/main_quest_d.c line 528: Undefined function check_chapter_complete
+  if (check_chapter_complete(player, chapter)
+                                                 ^
+/feature/attribute.c line 1176: syntax error, unexpected '*', expecting L_COLON_COLON or '('
+  int *speed_table = (
+        ^
+/feature/attribute.c line 1179: Illegal LHS
+  });
+      ^
+/feature/attribute.c line 1181: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int idx = root[SR_QUALITY_IDX]
+          ^
+/feature/attribute.c line 1181: Illegal LHS
+  int idx = root[S"quality_idx"];
+	i
+                                  ^
+/feature/attribute.c line 1182: Undefined variable 'idx'
+  if (idx < 0 || idx >= ROOT_QUALITY_TOTAL
+            ^
+/feature/attribute.c line 1185: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int base_speed = speed_table[idx]
+                 ^
+/adm/daemons/economyd.c line 59: Undefined function init_region_modifiers
+  init_region_modifiers()
+                                 ^
+/adm/daemons/economyd.c line 142: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  mapping info = goods[type]
+                      ^
+/adm/daemons/economyd.c line 142: Illegal LHS
+  mapping info = goods[type];
+        if (!mapp(info)) return 1.0
+                                     ^
+/adm/daemons/economyd.c line 143: Undefined variable 'info'
+  if (!mapp(info)) return 1.0
+                         ^
+/adm/daemons/economyd.c line 153: Undefined function calculate_price_ratio
+  return calculate_price_ratio(type)
+                                            ^
+/adm/daemons/economyd.c line 153: Type of returned value doesn't match function return type ( unknown vs float )
+  return calculate_price_ratio(type);
+                                             ^
+/adm/daemons/inflationd.c line 60: Undefined function init_sink_stats
+  init_sink_stats()
+                           ^
+/adm/daemons/inflationd.c line 92: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int total = stats["total_spirit_stones"]
+                   ^
+/adm/daemons/inflationd.c line 92: Illegal LHS
+  int total = stats["total_spirit_stones"];
+        int players = stats["active_players"]
+                                                   ^
+/adm/daemons/inflationd.c line 93: syntax error, unexpected L_IDENTIFIER, expecting L_COLON_COLON or '('
+  int players = stats["active_players"]
+                     ^
+/adm/daemons/inflationd.c line 93: Illegal LHS
+  int players = stats["active_players"];
+                                                ^
+/adm/daemons/inflationd.c line 95: Undefined variable 'players'
+  if (players <= 0) return 0
+                        ^
+/adm/daemons/daily_task_d.c line 67: Undefined function init_task_templates
+  init_task_templates()
+                               ^
+/adm/daemons/daily_task_d.c line 70: Undefined function schedule_daily_reset
+  schedule_daily_reset()
+                                ^
+/adm/daemons/daily_task_d.c line 428: Undefined function get_today_date
+  set("last_reset_date", get_today_date())
+                                                 ^
+/adm/daemons/daily_task_d.c line 892: Undefined function query_streak
+  streak = query_streak(player)
+                                       ^
+/adm/daemons/daily_task_d.c line 892: Bad assignment ( int vs unknown ).
+  streak = query_streak(player);
+        streak_bonus = get_streak_bonus(streak)
+                                        ^
+/adm/daemons/daily_task_d.c line 968: Undefined function update_streak
+  streak_updated = update_streak(player)
+                                                ^
+/adm/daemons/teleport_d.c line 47: Undefined function init_teleport_nodes
+  init_teleport_nodes()
+                           ^
+/adm/daemons/teleport_d.c line 97: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 115: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 133: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 151: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/teleport_d.c line 169: Undefined function register_node
+  ]))
+         ^
+/adm/daemons/activity_d.c line 453: Undefined function check_consecutive_days
+  check_consecutive_days(player)
+                                    ^
+/adm/daemons/activity_d.c line 469: Undefined function check_daily_reward_available
+  check_daily_reward_available(player)
+                                          ^
+/adm/daemons/activity_d.c line 470: Undefined function check_weekly_reward_available
+  check_weekly_reward_available(player)
+                                           ^
+/adm/daemons/activity_d.c line 808: Undefined function refresh_daily_task_pool
+  return refresh_daily_task_pool(player)
+                                            ^
+/adm/daemons/activity_d.c line 808: Type of returned value doesn't match function return type ( unknown vs string * )
+  return refresh_daily_task_pool(player);
+                                             ^
+/adm/daemons/main_quest_d.c line 71: Undefined function initialize_chapters
+  initialize_chapters()
+                           ^
+/adm/daemons/main_quest_d.c line 72: Undefined function initialize_nodes
+  initialize_nodes()
+                        ^
+/adm/daemons/main_quest_d.c line 424: Undefined function find_next_available_node
+  node_id = find_next_available_node(player, chapter)
+                                                         ^
+/adm/daemons/main_quest_d.c line 424: Bad assignment ( string vs unknown ).
+  node_id = find_next_available_node(player, chapter);
+    if (node_id && node_id != ""
+                                                          ^
+/adm/daemons/main_quest_d.c line 523: Undefined function add_completed_node
+  add_completed_node(player, node_id)
+                                         ^
+/adm/daemons/main_quest_d.c line 528: Undefined function check_chapter_complete
+  if (check_chapter_complete(player, chapter)
+                                                 ^

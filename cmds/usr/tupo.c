@@ -18,21 +18,23 @@ inherit F_CLEAN_UP;
 #define TUPO_STONE_COST  5000    // 灵石灌注辅助突破消耗
 #define TUPO_STONE_BONUS 10      // 灵石灌注成功率加成（%）
 
+int help(object me);
+
 int main(object me, string arg)
 {
-	int idx, need, method, result;
+	int idx, need, method, result, cd;
 	string chain;
 
 	seteuid(getuid());
+
+	if (stringp(arg) && arg == "help")
+		return help(me);
 
 	if (me->is_busy())
 		return notify_fail("你现在正忙着呢，无法静心突破。\n");
 
 	if (me->is_fighting())
 		return notify_fail("战斗中无法突破。\n");
-
-	if (stringp(arg) && arg == "help")
-		return help(me);
 
 	idx = ROOT_REFINE_D->query_player_realm_index(me);
 	if (idx <= 0)
@@ -49,6 +51,11 @@ int main(object me, string arg)
 			return notify_fail(sprintf("你尚未修炼至炼气大圆满（还需修为 %d）。请继续打坐修炼（dazuo）。\n", next));
 		return notify_fail("你尚未修炼至当前境界的圆满，无法尝试大境界突破。\n");
 	}
+
+	// 冷却检查前置（避免 lingshi 分支先扣灵石后才发现冷却未过）
+	cd = ROOT_REFINE_D->query_break_cooldown_remaining(me);
+	if (cd > 0)
+		return notify_fail(sprintf("经脉尚未恢复，还需 %d 秒才能再次尝试突破。\n", cd));
 
 	// 突破方式
 	method = BREAK_METHOD_NATURAL;

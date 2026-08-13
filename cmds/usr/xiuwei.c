@@ -10,6 +10,8 @@
 
 inherit F_CLEAN_UP;
 
+int help(object me);
+
 int main(object me, string arg)
 {
 	int idx, layer, xiuwei, need, prob, cd;

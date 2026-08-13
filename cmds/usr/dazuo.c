@@ -24,12 +24,16 @@ inherit F_CLEAN_UP;
 int do_dazuo(object me);
 int halt_dazuo(object me);
 int do_stone_cultivation(object me, int amount);
+int help(object me);
 
 int main(object me, string arg)
 {
 	int ticks, amount;
 
 	seteuid(getuid());
+
+	if (stringp(arg) && arg == "help")
+		return help(me);
 
 	if (me->is_busy() || me->query_temp("pending/dazuo"))
 		return notify_fail("你现在正忙着呢。\n");
@@ -40,8 +44,9 @@ int main(object me, string arg)
 	if (me->query("qi") < me->query("max_qi") / 5)
 		return notify_fail("你现在的气太少了，无法静心打坐。\n");
 
-	if (stringp(arg) && arg == "help")
-		return help(me);
+	// 检查灵根：无灵根无法引气入体（打坐与灵石灌注均需灵根）
+	if (!mapp(me->query(SPIRIT_ROOT_DATA)))
+		return notify_fail("你尚未检测灵根，无法引气入体。请先前往修仙门派的「测灵殿」检测灵根（root 查看）。\n");
 
 	// 灵石灌注修炼：dazuo lingshi <N>
 	if (stringp(arg) && sscanf(arg, "lingshi %d", amount) == 1)
@@ -58,10 +63,6 @@ int main(object me, string arg)
 		ticks = DAZUO_DEFAULT_TICKS;
 	if (ticks > DAZUO_MAX_HEARTBEAT)
 		ticks = DAZUO_MAX_HEARTBEAT;
-
-	// 检查灵根：无灵根无法引气入体
-	if (!mapp(me->query(SPIRIT_ROOT_DATA)))
-		return notify_fail("你尚未检测灵根，无法引气入体。请先前往修仙门派的「测灵殿」检测灵根（root 查看）。\n");
 
 	me->set_temp("pending/dazuo", 1);
 	me->set_temp("dazuo_ticks", ticks);

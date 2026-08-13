@@ -43,7 +43,7 @@ verified: "2026-08-13"
 
 - `sect_d`：`query_cultivation_tier` 用 `parse_realm`（"炼气N层" → index0+层数 → stage；"筑基初期" → index1+阶段词），promote 门槛 `SECT_TIER_*` 与 tier 对齐（内门=炼气后期 tier2、筑基 tier3）——**realm 真实写入后 promote 即可按真实境界卡门槛**
 - `economy_bridge_d`：`chinese_to_realm_code` 按子串（"炼气"→qige）→ A1 灵石灌注比率
-- `achievement_d`：`ach_check_realm` 读 realm + realm_sub 子串比较
+- `achievement_d`：`ach_check_realm` 用 `member_array` **精确匹配** realm（realm_order 无"炼气1层"→ri=-1→境界成就静默失败），且其成就定义目标子阶段为"1层"/"13层"（与 realm_sub 存的"初期"/"大圆满"语义不符）——**与 `"炼气1层"` 格式不兼容**。此为既有缺陷（基线无 realm 时成就同样失败），非 #61 引入；要修复需改 ach_realm_compare 的匹配方式（子串/索引比较），属 achievement 系统自身改造，未做。
 - `activity_d`：`realm_index_map` 的 key 是 `"炼气期"` 格式（带"期"），与 `"炼气1层"` 不命中 → 兜底为凡人档（安全但奖励保守）；要精确需 activity_d 改子串匹配（未做，属其自身改造）
 
 ## How to apply

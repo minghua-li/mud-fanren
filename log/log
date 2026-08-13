@@ -1,3 +1,4 @@
-/inherit/misc/bboard.c line 185: Warning: Unused local variable 'str'
-  }
-   ^
+/include/globals.h line 227: Warning: redefinition of #define F_TRIGGER
+
+  //随机迷�
+  ^
