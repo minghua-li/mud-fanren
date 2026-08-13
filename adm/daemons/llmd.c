@@ -219,6 +219,9 @@ void write_callback(int fd)
 		return;
 	}
 	// watchdog：LLM_WATCHDOG_TIME 秒未收到响应 → 超时清理、零注入
+	// （handle 存表备用但刻意不 remove_call_out：LPC 的 remove_call_out 按
+	//   函数名整体移除（见 economyd.c:62 先例），会误伤其他玩家同函数的挂起；
+	//   靠「响应到达即删 pending，watchdog 触发时查表为空则空跑」精确失效，单线程安全）
 	h = call_out("watchdog_timeout", LLM_WATCHDOG_TIME, fd);
 	m["watchdog"] = h;
 	pending[fd] = m;

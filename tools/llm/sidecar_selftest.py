@@ -253,6 +253,37 @@ def lpc_braces_ok(path: Path) -> bool:
     return True
 
 
+def lpc_func_body(src: str, func_sig: str) -> str:
+    """提取 LPC 函数体（签名行到函数结束的 } 的原始源码；找不到返回空串）。
+
+    用于函数体级守卫：比全文子串检查更精确地绑定真实 LPC 代码的关键行为。
+    跳过前向声明（签名行以 ; 结尾，如 `void watchdog_timeout(int fd);`）。
+    """
+    idx = 0
+    while True:
+        idx = src.find(func_sig, idx)
+        if idx == -1:
+            return ""
+        line_end = src.find("\n", idx)
+        if line_end == -1:
+            line_end = len(src)
+        if src[idx:line_end].rstrip().endswith(";"):
+            idx = line_end + 1  # 前向声明，继续找定义
+            continue
+        brace = src.find("{", idx)
+        if brace == -1:
+            return ""
+        depth = 0
+        for i in range(brace, len(src)):
+            if src[i] == "{":
+                depth += 1
+            elif src[i] == "}":
+                depth -= 1
+                if depth == 0:
+                    return src[brace:i + 1]
+        return ""
+
+
 def test_lpc_static() -> None:
     section("c2/c3/c4：LPC 静态校验（llmd.c / ai.c / globals.h）")
     llmd = LLMD_PATH.read_text(encoding="utf-8")
@@ -287,12 +318,31 @@ def test_lpc_static() -> None:
           'set("llm_enabled", 0)' in llmd and "is_llm_enabled" in llmd, "")
     check("llmd.c 玩家 opt-in（env/llm）", "env/llm" in llmd, "")
 
+    # ── LPC 原文函数体级守卫（回应审查：模拟与真代码挂钩，防回归）──
+    # 注意：用原始函数体（不剥字符串）——守卫要检查的正是字符串内容（提示文案）。
+    # watchdog_timeout 函数体：超时路径必须清理 pending、且绝无注入调用
+    wd_body = lpc_func_body(llmd, "void watchdog_timeout(int fd)")
+    check("watchdog_timeout 函数体含清理（cleanup_fd）", "cleanup_fd" in wd_body, "")
+    check("watchdog_timeout 函数体含超时提示", "tell_object" in wd_body, "")
+    check("watchdog_timeout 函数体零注入（无 force_me(/inject_commands(）",
+          "force_me(" not in wd_body and "inject_commands(" not in wd_body,
+          f"发现注入调用: {wd_body[:200]}")
+    # inject_commands 函数体：注入真走 force_me
+    inj_body = lpc_func_body(llmd, "void inject_commands(object me, string *cmds, int mode)")
+    check("inject_commands 函数体含 me->force_me(", "me->force_me(" in inj_body, "")
+    # handle_response 函数体：错误路径提示「未注入任何指令」+ commands 注入
+    hr_body = lpc_func_body(llmd, "protected void handle_response(int fd, string line)")
+    check("handle_response 错误路径含「未注入任何指令」提示",
+          "未注入任何指令" in hr_body and "inject_commands(" in hr_body, "")
+
     # c4：ai.c 集成点
     check("ai.c 调 LLM_D->is_llm_enabled", "is_llm_enabled" in ai, "")
     check("ai.c 检查玩家 opt-in", "player_opted_in" in ai, "")
     check("ai.c 提示 set llm on", "set llm on" in ai, "")
     check("ai.c 走 request_parse", "request_parse" in ai, "")
     check("ai.c 支持 confirm yes/no", "confirm yes" in ai and "confirm no" in ai, "")
+    check("ai.c 裸 confirm 提示（不把 confirm 当自然语言发给 sidecar）",
+          'arg == "confirm"' in ai and "notify_fail" in ai, "")
 
     # 括号配对状态机
     check("llmd.c 括号配对", lpc_braces_ok(LLMD_PATH), "")
@@ -376,6 +426,14 @@ class LpcLlmD:
     """llmd.c 的忠实翻译模拟（pending 表 / watchdog / 注入 / 零注入路径）。
 
     只建模与验收相关的行为；socket 层用直接调用代替。
+    每个方法标注对应的 llmd.c 源行号（审查第 1 轮指出此前缺标注，已补）：
+      request          → llmd.c:153 request_parse + :200 write_callback（合并简化）
+      tick             → 模拟时钟推进（触发 watchdog 调度，无直接对应）
+      _watchdog        → llmd.c:268 watchdog_timeout
+      sidecar_response → llmd.c:230 read_callback + :281 handle_response（合并）
+      disconnect       → llmd.c:254 close_callback
+      confirm_pending  → llmd.c:344 confirm_pending
+      _cleanup         → llmd.c:413 cleanup_fd
     """
 
     WATCHDOG = 15

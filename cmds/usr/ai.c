@@ -46,6 +46,9 @@ int main(object me, string arg)
 			return LLM_D->confirm_pending(me, 0);
 		return notify_fail("格式：ai confirm yes（执行）或 ai confirm no（取消）。\n");
 	}
+	// 裸 confirm（漏了 yes/no）→ 提示，不要把 "confirm" 当自然语言发给 sidecar
+	if (arg == "confirm")
+		return notify_fail("格式：ai confirm yes（执行待确认高危指令）或 ai confirm no（取消）。\n");
 
 	tell_object(me, HIG "正在理解你的意图，请稍候……\n" NOR);
 	LLM_D->request_parse(me, arg);

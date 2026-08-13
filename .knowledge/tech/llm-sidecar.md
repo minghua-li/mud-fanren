@@ -65,9 +65,13 @@ prompt 组装 / LLM 调用 / safety 过滤（复用 #69 llm_client/safety/mock�
    `LLM_SIDECAR_PORT` 一致。
 7. **每请求一连接**：read_callback 按 `\n` 定界缓冲（TCP 分片是常态），
    未收完整行等下次回调；响应后 cleanup_fd（socket_close + map_delete）。
-8. **LPC 无 catch/remove_call_out 先例**：本实现用 `catch(expr)` 单表达式 +
-   watchdog 靠 pending 表存在性空跑（响应已处理则 watchdog 自然失效），
-   不依赖 remove_call_out(handle)。
+8. **watchdog 取消不依赖 remove_call_out**：本仓 remove_call_out 先例是按**函数名**整体移除
+   （economyd.c:62 `remove_call_out("auto_save")`、bidd.c:45 等）——若按函数名移除
+   watchdog_timeout 会误伤其他玩家同函数的挂起 call_out；llmd.c 选择「响应到达即删
+   pending，watchdog 触发时查表为空则空跑」精确失效（单线程安全，handle 存表备用）。
+   catch(expr) 单表达式本仓有大量先例（taskd.c:276 `err=catch(obj=new(...))`、
+   storyd.c:154 `catch(ob = load_object(name))`、masternew.c:16 等），llmd.c 的
+   `err = catch(data = json_parse(line))` 与 `catch(ctx["realm"] = ...)` 同形态。
 9. **force_me 前提**：LLM_D 需 `seteuid(ROOT_UID)`（master.c valid_seteuid 返 1
    允许），feature/command.c 的 force_me 检查 previous_object euid == ROOT_UID。
 
