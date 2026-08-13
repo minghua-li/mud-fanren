@@ -285,7 +285,7 @@ nosave mapping quest_defs = ([
     "yuling_quest_2": ([
         "id": "yuling_quest_2", "sect": "yuling_sect", "chain_id": "chain_yuling",
         "name": "魔道争霸", "type": QUEST_TYPE_SIDE, "refresh": REFRESH_ONCE,
-        "realm_range": ({ 2, 2 }),
+        "realm_range": ({ 3, 3 }),
         "prerequisites": ([ "quests": ({ "yuling_quest_1" }) ]),
         "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/tianluo/yuling/shanmen", "amount": 1 ]) }),
         "rewards": ([ "exp": 3000, "coin": 150, "reputation": ({ ([ "faction": "yuling_sect", "value": 150 ]) }), "contribution": 600 ]),
@@ -355,7 +355,7 @@ nosave mapping event_defs = ([
     "lingshou_ev_xunluo": ([
         "id": "lingshou_ev_xunluo", "sect": "lingshou_mountain",
         "name": "警戒巡逻", "desc": "维护警戒虫网，防御外敌。",
-        "conditions": ([ EV_COND_REALM_MIN: 0, EV_COND_REALM_MAX: 1 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 0, EV_COND_REALM_MAX: 0 ]),
         "rewards": ([ EV_REWARD_EXP: 800, EV_REWARD_REP: 100, EV_REWARD_CONTRIB: 300 ]),
     ]),
     "lingshou_ev_anzhuang": ([
@@ -395,7 +395,7 @@ nosave mapping event_defs = ([
     "huadao_ev_lianqi": ([
         "id": "huadao_ev_lianqi", "sect": "huadao_dock",
         "name": "炼器坊劳作", "desc": "参与炼器，积累手艺。",
-        "conditions": ([ EV_COND_REALM_MIN: 0, EV_COND_REALM_MAX: 1 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 0, EV_COND_REALM_MAX: 0 ]),
         "rewards": ([ EV_REWARD_EXP: 800, EV_REWARD_REP: 100, EV_REWARD_CONTRIB: 300 ]),
     ]),
     "huadao_ev_daojian": ([
@@ -415,7 +415,7 @@ nosave mapping event_defs = ([
     "tianque_ev_zhenfa": ([
         "id": "tianque_ev_zhenfa", "sect": "tianque_fort",
         "name": "阵法修习", "desc": "布阵、护山大阵维护。",
-        "conditions": ([ EV_COND_REALM_MIN: 0, EV_COND_REALM_MAX: 1 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 0, EV_COND_REALM_MAX: 0 ]),
         "rewards": ([ EV_REWARD_EXP: 800, EV_REWARD_REP: 100, EV_REWARD_CONTRIB: 300 ]),
     ]),
     "tianque_ev_shoucheng": ([
@@ -680,9 +680,12 @@ int accept_quest(object player, string quest_id)
 
 // 推进任务目标进度（OBJ_REACH/OBJ_TALK 按当前位置判定）
 // 返回目标是否全部达成
+// 注意：必须取整张活跃任务表 active 修改子表再整表写回——
+// get_player_active_quest 返回的是单任务子 mapping，直接 set 会覆盖整个活跃表
 int quest_progress(object player, string quest_id)
 {
     mapping active;
+    mapping sub;
     mapping template;
     mapping objectives;
     mapping progress;
@@ -691,14 +694,16 @@ int quest_progress(object player, string quest_id)
 
     if (!objectp(player)) return 0;
 
-    active = QUEST_CHAIN_D->get_player_active_quest(player, quest_id);
+    active = player->query(QUEST_CHAIN_ACTIVE);
     if (!mapp(active)) return 0;
+    sub = active[quest_id];
+    if (!mapp(sub)) return 0;
 
     template = quest_defs[quest_id];
     if (!mapp(template)) return 0;
 
     objectives = template["objectives"];
-    progress = active["progress"];
+    progress = sub["progress"];
     if (!mapp(progress)) progress = ([]);
 
     here = base_name(environment(player));
@@ -728,7 +733,8 @@ int quest_progress(object player, string quest_id)
             done = 0;
     }
 
-    active["progress"] = progress;
+    sub["progress"] = progress;
+    active[quest_id] = sub;
     player->set(QUEST_CHAIN_ACTIVE, active);
     QUEST_CHAIN_D->save_player_quest_state(player);
 
@@ -769,6 +775,8 @@ int report_quest(object player, string quest_id)
     {
         if (QUEST_CHAIN_D->complete_quest(player, quest_id))
         {
+            // 宗门任务完成 → 活跃度 +1（奖励 streak 加成真实可达，c6）
+            QUEST_CHAIN_D->update_daily_streak(player);
             tell_object(player, HIG "宗门任务「" + template["name"] + "」完成！\n" NOR);
             return 1;
         }
@@ -876,6 +884,9 @@ int trigger_event(object player, string event_id)
     if (!mapp(triggered)) triggered = ([]);
     triggered[event_id] = time();
     player->set(SECT_QUEST_TRIGGERED, triggered);
+
+    // 事件参与 → 活跃度 +1（事件奖励 streak 加成真实可达，c6）
+    QUEST_CHAIN_D->update_daily_streak(player);
 
     return 1;
 }

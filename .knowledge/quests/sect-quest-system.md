@@ -49,11 +49,14 @@
 
 ## 六、踩坑与约定
 
+- **写回整表**：`quest_chain_d.get_player_active_quest` 返回的是**单任务子 mapping**（`active[quest_id]`），不是整表——对子表 `player->set(QUEST_CHAIN_ACTIVE, sub)` 会把整个活跃任务表覆盖成子表形状，`complete_quest` 门槛 `active[quest_id]` 随即失败、任务链第一环就卡死（#59 审查第 1 轮致命 bug，已修）。正确写法：`mapping active = player->query(QUEST_CHAIN_ACTIVE); 改 active[quest_id][...]; player->set(QUEST_CHAIN_ACTIVE, active)`。
+- **活跃度真实接线**：streak 驱动点 = 日常任务完成（`quest_chain_d.complete_quest` DAILY 分支）+ **宗门任务完成 / 事件触发**（`sect_quest_d.report_quest` / `trigger_event` 成功后调 `QUEST_CHAIN_D->update_daily_streak`）。若只有 DAILY 分支而全树无 DAILY 模板，streak 恒 0、梯度是不可观测的死代码（#59 审查第 1 轮高优问题，已修）。
 - **境界索引兜底**：quest_chain_d.get_player_realm_index 优先读 `player->query("realm")`；缺失时按 combat_exp 兜底（阈值对齐 sect_d.exp_to_tier：10 万/百万/千万/5 千万/2 亿）——#61 未合入 main 时新玩家无 realm 属性，兜底保证奖励曲线不塌。
 - **quest_chain_d 基线是死代码**（#59 前无任何调用者），#59 通过 sect_quest_d.create → register_quest/register_chain 首次接线。
 - 任务模板额外带 `"sect"` 归属键（register_quest 不校验多余键，原样存储）。
 - 灵石奖励的 `coin` 以灵石为单位（quest_chain.h COIN_FLOOR=10 语义），落账乘 100 转文。
 - `query_sect_skill_info` 返回 mapping，取功法名要声明 mapping 变量（不能赋给 string）。
+- **可复跑验证脚本**：`tools/check/sect_quest_verify.py`（静态校验 + 同构模拟 + 突变验证，exit 0 全绿）随交付提交，供采纳 check 复用。
 
 ## 七、相关
 

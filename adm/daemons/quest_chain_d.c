@@ -88,6 +88,7 @@ int calc_drop_probability(object player, mapping quest_template, string item_typ
 // === 奖励结算（#59 宗门任务链接入） ===
 int grant_quest_rewards(object player, string quest_id);
 void grant_skill(object player, string sect_id, string skill_id);
+int update_daily_streak(object player);
 
 // === 内部工具 ===
 int get_player_realm_index(object player);
@@ -572,27 +573,8 @@ int complete_quest(object player, string quest_id)
     if (template["type"] == QUEST_TYPE_DAILY)
     {
         player->add(QUEST_CHAIN_DAILY_COUNT, 1);
-        // 活跃度梯度（c6）：连续活跃递增、断档衰减
-        // 按自然日计：同日多次完成不重复计；昨日活跃则连续+1；断档重置为 1
-        int today = time() / 86400;
-        int last_day = player->query(QUEST_CHAIN_LAST_DAY);
-        int streak = player->query(QUEST_CHAIN_DAILY_STREAK);
-        if (!streak) streak = 0;
-        if (last_day == today)
-        {
-            // 同日已计，连续天数不变
-        }
-        else if (last_day == today - 1)
-        {
-            streak++;
-        }
-        else
-        {
-            // 断档：连续活跃重置
-            streak = 1;
-        }
-        player->set(QUEST_CHAIN_DAILY_STREAK, streak);
-        player->set(QUEST_CHAIN_LAST_DAY, today);
+        // 活跃度梯度（c6）：连续活跃递增、断档衰减（按自然日）
+        update_daily_streak(player);
     }
     if (template["type"] == QUEST_TYPE_WEEKLY)
     {
@@ -601,6 +583,40 @@ int complete_quest(object player, string quest_id)
     
     save_player_quest_state(player);
     return 1;
+}
+
+// 更新连续活跃天数（按自然日计）；返回当前 streak
+// 同日多次完成不重复计；昨日活跃则连续 +1；断档（间隔 >1 天）重置为 1
+// 驱动点：日常任务完成（complete_quest）+ 宗门任务完成/事件触发（sect_quest_d）
+// 消费点：calc_daily_bonus（奖励加成：连续递增、断档回落）
+int update_daily_streak(object player)
+{
+    int today, last_day, streak;
+
+    if (!objectp(player)) return 0;
+
+    today = time() / 86400;
+    last_day = player->query(QUEST_CHAIN_LAST_DAY);
+    streak = player->query(QUEST_CHAIN_DAILY_STREAK);
+    if (!streak) streak = 0;
+
+    if (last_day == today)
+    {
+        // 同日已计，连续天数不变
+    }
+    else if (last_day == today - 1)
+    {
+        streak++;
+    }
+    else
+    {
+        // 断档：连续活跃重置
+        streak = 1;
+    }
+
+    player->set(QUEST_CHAIN_DAILY_STREAK, streak);
+    player->set(QUEST_CHAIN_LAST_DAY, today);
+    return streak;
 }
 
 // ═══════════════════════════════════════════
