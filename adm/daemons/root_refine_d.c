@@ -980,6 +980,11 @@ int query_major_breakthrough_probability(object ob, int realm)
     int aux_bonus = ob->query_temp("breakthrough/aux_bonus");
     prob += aux_bonus;
 
+    // 丹药辅助修正（#73 接线：突破辅助丹如筑基丹/结金丹服用后写入
+    // breakthrough/pill_bonus，与 #61 预留的读取端对接）
+    int pill_bonus = ob->query_temp("breakthrough/pill_bonus");
+    prob += pill_bonus;
+
     // 伪灵根结丹上限
     if (quality == SPIRIT_ROOT_PSEUDO && realm == REALM_CORE_FORMATION)
     {
