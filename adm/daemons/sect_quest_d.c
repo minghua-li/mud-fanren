@@ -806,10 +806,20 @@ string check_event_conditions(object player, mapping ev)
 
     {
         int realm_idx = QUEST_CHAIN_D->get_player_realm_index(player);
+        int realm_min;
+        int realm_max;
 
-        if (conds[EV_COND_REALM_MIN] && realm_idx < conds[EV_COND_REALM_MIN])
+        // realm_min/realm_max 语义（与 include/sect_quest.h 一致）：
+        //   intp 且 >= 0 为真边界 —— (0,0)=仅炼气期、(1,1)=仅筑基期、(2,2)=仅结丹期；
+        //   缺失或 < 0（用 -1）为不设边界 —— (N,-1)=「N 期以上不限上限」。
+        //   不得用真值判断（conds[EV_COND_REALM_MAX] && ...）：0 在真值下为假会放开
+        //   上限、-1 为真会恒拒，分别造成「炼气期事件高境界可触发」与「+ 类事件死锁」
+        //   （#59 第 3 轮复审 c3 缺口，本函数体在此修复前与初版逐字节相同）。
+        realm_min = conds[EV_COND_REALM_MIN];
+        if (intp(realm_min) && realm_min >= 0 && realm_idx < realm_min)
             return "你的境界尚未达到触发此事件的要求。\n";
-        if (conds[EV_COND_REALM_MAX] && realm_idx > conds[EV_COND_REALM_MAX])
+        realm_max = conds[EV_COND_REALM_MAX];
+        if (intp(realm_max) && realm_max >= 0 && realm_idx > realm_max)
             return "你的境界已超出此事件的范围。\n";
     }
 

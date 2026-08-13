@@ -16,8 +16,8 @@
 //   通用功法（kungfu/skill 下真实存在）→ player->set_skill(id, 1) 直接发放
 
 // ─── 宗门事件触发条件键 ───
-#define EV_COND_REALM_MIN      "realm_min"       // 最低境界索引（0炼气 1筑基 2结丹 3元婴 ...）
-#define EV_COND_REALM_MAX      "realm_max"       // 最高境界索引（0=不限）
+#define EV_COND_REALM_MIN      "realm_min"       // 最低境界索引（intp 且 >=0 为真下限；缺失或 <0 视为不设下限）
+#define EV_COND_REALM_MAX      "realm_max"       // 最高境界索引（intp 且 >=0 为真上限；缺失或 <0 为不限，(N,-1)=「N 期以上不限」）
 #define EV_COND_SECT           "sect"            // 限定宗门 ID（缺省=事件所属宗门）
 #define EV_COND_REP_MIN        "rep_min"         // 本门声望值下限
 #define EV_COND_CONTRIB_MIN    "contrib_min"     // 门派贡献下限

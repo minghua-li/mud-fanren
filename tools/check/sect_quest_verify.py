@@ -197,7 +197,7 @@ class Player:
     def __init__(self, realm_idx=0, exp=0):
         self.dbase = {
             "combat_exp": exp,
-            "realm": ["炼气", "筑基", "结丹", "元婴"][realm_idx],
+            "realm": REALM_NAMES[realm_idx] if realm_idx < len(REALM_NAMES) else REALM_NAMES[0],
             "sect/id": None,
             "sect/contribution": 0,
             "sect/learned": {},
@@ -419,13 +419,18 @@ def sect_report(p, qid):
     return "目标未完成"
 
 def check_event_conditions(p, ev):
-    """忠实翻译 sect_quest_d.check_event_conditions（realm_max >=0 真上限；缺失或 <0 不限）"""
+    """忠实翻译 sect_quest_d.check_event_conditions（与 LPC 原文逐字一致的语义）：
+    realm_min/realm_max：intp 且 >=0 为真边界；<0（-1）为不设边界。
+    缺失键在 LPC 中取值 0（intp 为真）→ 等同显式 0（仅 N 期），这里用 .get(k, 0) 模拟。"""
     conds = ev["conditions"]
     ridx = get_player_realm_index(p)
-    if conds.get("realm_min") and ridx < conds["realm_min"]:
+    # LPC: realm_min = conds[...]; if (intp(realm_min) && realm_min >= 0 && ridx < realm_min) → 境界不足
+    realm_min = conds.get("realm_min", 0)
+    if isinstance(realm_min, int) and realm_min >= 0 and ridx < realm_min:
         return "境界不足"
-    rmax = conds.get("realm_max")
-    if isinstance(rmax, int) and rmax >= 0 and ridx > rmax:
+    # LPC: realm_max = conds[...]; if (intp(realm_max) && realm_max >= 0 && ridx > realm_max) → 超出境界
+    realm_max = conds.get("realm_max", 0)
+    if isinstance(realm_max, int) and realm_max >= 0 and ridx > realm_max:
         return "超出境界"
     return None
 
@@ -619,6 +624,61 @@ for eid, exp in EVENT_EXPECT.items():
 assert QUEST["yuling_quest_2"]["realm_range"] == [3, 3]
 print("场景5 九宗任务链/事件数据齐备 + 档案对齐（27 事件逐条 + 4 处任务条件）✓")
 
+# ── LPC 原文守卫：check_event_conditions 判定逻辑 = 真实代码（防「模拟语义≠真实代码」假绿） ──
+sq_src = open("adm/daemons/sect_quest_d.c", encoding='utf-8').read()
+sq_lines = sq_src.split('\n')
+g_start = next(i for i, l in enumerate(sq_lines) if "string check_event_conditions(object player, mapping ev)" in l)
+g_end = next(i for i in range(g_start + 1, len(sq_lines)) if sq_lines[i] == '}')
+guard_code = strip_lpc('\n'.join(sq_lines[g_start:g_end + 1]))  # 去注释/字符串，守卫只检代码本体
+
+def realm_guard_ok(code):
+    """守卫：判定逻辑必须是「intp 且 >=0 为真边界」；出现旧真值写法（conds[...] && ...）即失败"""
+    checks = [
+        re.search(r'realm_min\s*>=\s*0', code) is not None,
+        re.search(r'realm_max\s*>=\s*0', code) is not None,
+        re.search(r'intp\(realm_min\)', code) is not None,
+        re.search(r'intp\(realm_max\)', code) is not None,
+        re.search(r'conds\[EV_COND_REALM_MIN\]\s*&&', code) is None,
+        re.search(r'conds\[EV_COND_REALM_MAX\]\s*&&', code) is None,
+    ]
+    return all(checks)
+
+assert realm_guard_ok(guard_code), "LPC 原文守卫失败：check_event_conditions 判定逻辑与约定语义不符"
+# 突变实证：把真实代码改回旧真值写法 → 守卫必须失败（证明守卫绑定交付物、非恒真）
+mut_code = guard_code.replace(
+    "if (intp(realm_max) && realm_max >= 0 && realm_idx > realm_max)",
+    "if (conds[EV_COND_REALM_MAX] && realm_idx > conds[EV_COND_REALM_MAX])")
+assert not realm_guard_ok(mut_code), "突变实证失败：旧真值写法未被守卫拒绝"
+print("LPC 原文守卫：check_event_conditions 判定逻辑=真实代码（含旧真值写法突变实证）✓")
+
+# ── 场景 6：27 事件全量境界可达性矩阵（按 (min,max) 语义逐事件 × 6 境界核对） ──
+# 期望：炼气期 (0,0) 仅炼气 / 炼气+ (0,-1) 炼气及以上 / 筑基期 (1,1) 仅筑基 / 筑基+ (1,-1) 筑基及以上 /
+#       结丹期 (2,2) 仅结丹 / 结丹+ (2,-1) 结丹及以上 —— 与九宗档案「宗门事件与任务链」节逐条对齐
+MATRIX_EXP = {
+    "yanyue_ev_join":  [1, 0, 0, 0, 0, 0], "yanyue_ev_xuejin": [0, 1, 0, 0, 0, 0], "yanyue_ev_war":  [0, 0, 1, 1, 1, 1],
+    "huangfeng_ev_yaoyuan": [1, 0, 0, 0, 0, 0], "huangfeng_ev_shouwei": [0, 1, 0, 0, 0, 0], "huangfeng_ev_waimai": [0, 0, 1, 0, 0, 0],
+    "lingshou_ev_xunshou": [1, 0, 0, 0, 0, 0], "lingshou_ev_xunluo": [1, 1, 1, 1, 1, 1], "lingshou_ev_anzhuang": [0, 0, 1, 0, 0, 0],
+    "qingxu_ev_xiuxing": [1, 0, 0, 0, 0, 0], "qingxu_ev_lundao": [0, 1, 1, 1, 1, 1], "qingxu_ev_war":  [0, 0, 1, 1, 1, 1],
+    "huadao_ev_daofa": [1, 0, 0, 0, 0, 0], "huadao_ev_lianqi": [1, 1, 1, 1, 1, 1], "huadao_ev_daojian": [0, 0, 1, 0, 0, 0],
+    "tianque_ev_zhubao": [1, 0, 0, 0, 0, 0], "tianque_ev_zhenfa": [1, 1, 1, 1, 1, 1], "tianque_ev_shoucheng": [0, 0, 1, 1, 1, 1],
+    "jujian_ev_jianfa": [1, 0, 0, 0, 0, 0], "jujian_ev_shijian": [0, 1, 1, 1, 1, 1], "jujian_ev_dianhou": [0, 0, 1, 1, 1, 1],
+    "guiling_ev_qugui": [1, 0, 0, 0, 0, 0], "guiling_ev_yanjia": [0, 1, 1, 1, 1, 1], "guiling_ev_mozheng": [0, 0, 1, 1, 1, 1],
+    "yuling_ev_xunshou": [1, 0, 0, 0, 0, 0], "yuling_ev_lingyu": [0, 0, 1, 0, 0, 0], "yuling_ev_shouchao": [0, 0, 1, 1, 1, 1],
+}
+assert len(MATRIX_EXP) == 27
+MATRIX_EXP_EXP = [0, 200000, 5000000, 100000000, 50000000, 300000000]  # 各境界示例 exp
+for eid, can in MATRIX_EXP.items():
+    ev = EVENT[eid]
+    rmin, rmax = ev["conditions"]["realm_min"], ev["conditions"]["realm_max"]
+    for ridx in range(0, 6):
+        expect = "触发" if can[ridx] else ("境界不足" if ridx < rmin else "超出境界")
+        pm = Player(realm_idx=ridx, exp=MATRIX_EXP_EXP[ridx])
+        pm.set("sect/id", ev["sect"])
+        pm.set("sect_quest/triggered", {})
+        got = trigger_event(pm, eid)
+        assert got == expect, (eid, ridx, got, expect, (rmin, rmax))
+print("场景6 27 事件全量境界可达性矩阵（6 境界 × 27 事件，162 断言，含仅限/不限上限）✓")
+
 # ═══════════ 汇总 ═══════════
 
 if errors:
@@ -626,4 +686,4 @@ if errors:
         print("FAIL:", e)
     sys.exit(1)
 
-print(f"OK: 静态校验绿（27 任务/27 事件/{len(item_paths)} 物品/{len(room_paths)} 房间/{len(skills_arr)} 功法/接口签名），同构模拟 5 场景全过")
+print(f"OK: 静态校验绿（27 任务/27 事件/{len(item_paths)} 物品/{len(room_paths)} 房间/{len(skills_arr)} 功法/接口签名），同构模拟 6 场景全过 + LPC 原文守卫（含突变实证）")
