@@ -35,3 +35,11 @@ verified: '2026-08-13'
 修炼提升路径分三类：sword/blade 类可 `practice`（需 enable + 武器）；force 类走 `xiulian`（但 F_KUNGFU 的 family_force 门派映射不含九宗，需先适配，遗留）；knowledge/profession 类只能 study/learn。
 
 中文名显示：`sect_d.c create()` 调 `CHINESE_D->add_translate(skill_id, 中文名)` 注册，skills 面板 `to_chinese()` 才有中文名。
+
+## force 槽功法必须继承 FORCE（#62 审查 P1 教训）
+
+## force 槽功法必须继承 FORCE（#62 审查 P1 教训）
+
+force 槽功法不能继承裸 SKILL：仓库既有 70 个 force 功法全部 `inherit FORCE`（/inherit/skill/force，链 SKILL→FORCE）。force.c 基类提供 force_character/hit_ob/recover_speed/backup_neili/restore_neili，attribute.c（max_neili/max_jingli/内力恢复）与 combat 加力路径直接调用——裸 SKILL 时宽松语义系数=0 使 max_neili=0、严格语义驱动报错。另需自带 `string exert_function_file(string func)` 返回 `__DIR__"<skill>/" + func`（exert.c 会在本功法 exert 子目录缺失时回退基本内功 force，基本 exert qi/jing 可直接用）。
+
+判别：valid_enable 返回 `usage == "force"` 的功法 → 必须 inherit FORCE + exert_function_file。验证脚本已内置此守卫（FORCE_SKILLS 清单 + 红→绿突变实证）。

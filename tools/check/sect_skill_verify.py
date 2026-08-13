@@ -141,20 +141,30 @@ ck('唯一 skill_id 数 == 26（与票面清单一致）', len(unique_ids) == 26
 missing_files = [sid for sid in unique_ids if not os.path.exists('kungfu/skill/%s.c' % sid)]
 ck('26 个 kungfu/skill 文件全部落地', not missing_files, '缺失: %s' % missing_files)
 
-# 3. 文件 ↔ sect_config 一一对应（无孤儿文件：目录里没有多余的本票功法）
-import glob
-existing = sorted(os.path.basename(p)[:-2] for p in glob.glob('kungfu/skill/*.c'))
-orphans = [sid for sid in existing if sid in unique_ids and sid not in skill_defs]
-ck('无孤儿功法文件', not orphans, '孤儿: %s' % orphans)
+# 3. 文件 ↔ sect_config 一一对应：sect_config 的 26 个 skill_id 全部有文件（方向一已查），
+#    反向（文件在、配置无）由「无 HEAD 同名 + 26 唯一 id」覆盖——kungfu/skill/ 下有 700+
+#    北侠既有文件，不能按「目录内多文件即孤儿」判定（会误报全部北侠文件）。恒真断言已移除。
 
-# 4. 括号配对 + 继承 SKILL + 接口签名 + 引用完整性 + 字符串截断
+# 4. 括号配对 + 继承（SKILL 或 FORCE）+ 接口签名 + 引用完整性 + 字符串截断
+#    force 类功法必须继承 FORCE（提供 force_character/hit_ob/recover_speed/backup_neili 等
+#    内功接口，attribute.c/combatd 核心路径调用；裸 SKILL 会导致 max_neili=0 或驱动报错）——
+#    与仓库既有 70 个 force 功法一致（逐一 grep 核对）
+FORCE_SKILLS = {'changchun-gong', 'zhenyang-jue', 'xuanbing-jue', 'guiyuan-gong',
+                'ningyuan-gong', 'shuangxiu-zhishu', 'xuanyue-xiyin-gong', 'xueling-dafa'}
 for sid in unique_ids:
     path = 'kungfu/skill/%s.c' % sid
     with open(path, encoding='utf-8') as f:
         src = f.read()
     ok, err = check_parens(path)
     ck('括号配对 %s' % sid, ok, err)
-    ck('继承 SKILL %s' % sid, 'inherit SKILL;' in src, '缺 inherit SKILL;')
+    if sid in FORCE_SKILLS:
+        ck('force 类继承 FORCE %s' % sid, 'inherit FORCE;' in src,
+           '缺 inherit FORCE;（force 槽功法须继承 FORCE 否则内功接口缺失）')
+        ck('force 类 exert 解析口 %s' % sid,
+           re.search(r'\bstring exert_function_file\(string func\)', src) is not None,
+           '缺 exert_function_file（exert 命令调用）')
+    else:
+        ck('继承 SKILL %s' % sid, 'inherit SKILL;' in src, '缺 inherit SKILL;')
     ck('接口 type %s' % sid, re.search(r'\bstring type\(\)', src) is not None, '缺 type()')
     ck('接口 valid_learn %s' % sid, re.search(r'\bint valid_learn\(object me\)', src) is not None, '缺 valid_learn')
     ck('接口 practice_skill %s' % sid, re.search(r'\bint practice_skill\(object me\)', src) is not None, '缺 practice_skill')
@@ -228,7 +238,7 @@ with open('kungfu/skill/xueling-dafa.c', encoding='utf-8') as f:
 xld_body = extract_func(xld_src, 'valid_learn')
 ck('血灵大法 valid_learn 可提取', xld_body is not None)
 if xld_body:
-    ck('血灵大法境界门槛（筑基）', 'SECT_TIER_ZHU' in xld_body, '缺筑基门槛')
+    ck('血灵大法境界门槛（结丹，对齐档案成长线）', 'SECT_TIER_JIE' in xld_body, '缺结丹门槛')
     ck('血灵大法灵根检查（天灵根）', 'ROOT_QUALITY_T0' in xld_body, '缺天灵根检查')
     ck('血灵大法灵根检查（暗灵根）', 'ROOT_VAR_DARK' in xld_body, '缺暗灵根检查')
     ck('血灵大法灵根数据源', 'SR_QUALITY_IDX' in xld_body and 'SR_VARIANT' in xld_body, '缺灵根字段')
@@ -243,10 +253,10 @@ if qyj_body:
     ck('青元剑诀后三层结丹门槛', 'SECT_TIER_JIE' in qyj_body, '缺结丹分段')
     ck('青元剑诀等级分段（<=30/<=60）', 'lv <= 30' in qyj_body and 'lv <= 60' in qyj_body, '缺等级分段')
 
-# 2.5 突变实证：把 learn_skill 的 set_skill 全部换成旧行为 → 守卫红
-mutant = learn_body.replace('set_skill(skill_id, 1)', '/* no set_skill */') if learn_body else ''
-ck('突变实证 set_skill 接线敏感', learn_body is not None and 'set_skill(skill_id, 1)' not in mutant,
-   '守卫与交付物无关（突变后仍绿）')
+# 2.5 突变实证说明：脚本内不做「替换构造」式的恒真断言（mutant 由 replace 构造则
+#    断言恒真，无判别力）。真正的判别力来自 2.1 的 learn_skill 函数体原文守卫（删接线
+#    → set_after=-1 红）与 2.3/2.4 的功法文件守卫；外部红→绿突变实证见交付说明
+#    （审查者与交付方各自独立做过 4 组：删接线/删灵根/删分段/删文件均转红）。
 
 # ═══════════ 三、同构模拟 ═══════════
 print('== 三、同构模拟（learn_skill 路径 Python 忠实翻译）==')
@@ -450,7 +460,12 @@ def valid_learn_sim(sid, player):
     if 'SECT_TIER_JIE' in body:
         if tier < 6:
             return False, '需结丹'
-    # 血灵大法灵根
+    # 灵根存在性（长春功「需灵根」，档案黄枫谷.md:27）
+    if 'SPIRIT_ROOT_DATA' in body and 'ROOT_QUALITY_T0' not in body:
+        root = player.query('spirit_root')
+        if not isinstance(root, dict):
+            return False, '无灵根'
+    # 血灵大法灵根（天灵根或暗灵根）
     if 'ROOT_QUALITY_T0' in body or 'ROOT_VAR_DARK' in body:
         root = player.query('spirit_root')
         if not isinstance(root, dict):
@@ -476,30 +491,32 @@ ck('场景7d 筑基层7-9被拒', not ok, why)
 ok, why = valid_learn_sim('qingyuan-jianjue', MockPlayer(realm='结丹初期', skills={'qingyuan-jianjue': 70}))
 ck('场景7e 结丹层7-9放行', ok, why)
 
-# 场景 8：血灵大法灵根门槛
-ok, why = valid_learn_sim('xueling-dafa', MockPlayer(realm='筑基初期'))
-ck('场景8a 无灵根被拒', not ok and why == '无灵根', why)
+# 场景 8：血灵大法——结丹门槛 + 灵根门槛（对齐档案鬼灵门.md 成长线「结丹 | 血灵大法」）
+ok, why = valid_learn_sim('xueling-dafa', MockPlayer(realm='筑基初期',
+    spirit_root={'quality_idx': 0, 'variant': None}))
+ck('场景8a 筑基天灵根仍被拒（结丹门槛）', not ok and why == '需结丹', why)
 ok, why = valid_learn_sim('xueling-dafa',
-    MockPlayer(realm='筑基初期', spirit_root={'quality_idx': 3, 'variant': None}))
-ck('场景8b 非天灵根/暗灵根被拒', not ok, why)
+    MockPlayer(realm='结丹初期', spirit_root={'quality_idx': 3, 'variant': None}))
+ck('场景8b 结丹非天灵根/暗灵根被拒', not ok, why)
 ok, why = valid_learn_sim('xueling-dafa',
-    MockPlayer(realm='筑基初期', spirit_root={'quality_idx': 0, 'variant': None}))
-ck('场景8c 天灵根放行', ok, why)
+    MockPlayer(realm='结丹初期', spirit_root={'quality_idx': 0, 'variant': None}))
+ck('场景8c 结丹天灵根放行', ok, why)
 ok, why = valid_learn_sim('xueling-dafa',
-    MockPlayer(realm='筑基初期', spirit_root={'quality_idx': 1, 'variant': '暗'}))
-ck('场景8d 暗灵根放行', ok, why)
-ok, why = valid_learn_sim('xueling-dafa',
-    MockPlayer(realm='炼气5层', spirit_root={'quality_idx': 0, 'variant': None}))
-ck('场景8e 炼气天灵根仍被拒（境界门槛）', not ok and why == '需筑基', why)
+    MockPlayer(realm='结丹初期', spirit_root={'quality_idx': 1, 'variant': '暗'}))
+ck('场景8d 结丹暗灵根放行', ok, why)
+ok, why = valid_learn_sim('xueling-dafa', MockPlayer(realm='结丹初期'))
+ck('场景8e 结丹无灵根被拒', not ok and why == '无灵根', why)
 
-# 场景 9：入宗玩家（炼气3层+）九宗全功法静态可学性——rank0 功法全部炼气可修
+# 场景 9：入宗玩家（炼气3层+）九宗全功法静态可学性——rank0 功法全部炼气可修（玩家必有灵根）
 for sid, info in skill_defs.items():
     path = 'kungfu/skill/%s.c' % sid
     with open(path, encoding='utf-8') as f:
         src = f.read()
     body = extract_func(src, 'valid_learn') or ''
     if 'SECT_TIER_ZHU' not in body and 'SECT_TIER_JIE' not in body and 'ROOT_QUALITY_T0' not in body:
-        ok, why = valid_learn_sim(sid, MockPlayer(realm='炼气3层'))
+        # 玩家必有灵根（attribute.c generate_spirit_root：无灵根不在玩家生成概率中）
+        ok, why = valid_learn_sim(sid, MockPlayer(realm='炼气3层',
+                                  spirit_root={'quality_idx': 3, 'variant': None}))
         ck('场景9 炼气可修 %s' % sid, ok, why)
 
 # ═══════════ 汇总 ═══════════

@@ -8,7 +8,7 @@
 #include <globals.h>
 #include <spirit_root.h>
 
-inherit SKILL;
+inherit FORCE;
 
 string type() { return "martial"; }
 
@@ -16,11 +16,11 @@ int valid_learn(object me)
 {
     mapping root = me->query(SPIRIT_ROOT_DATA);
 
-    if (SECT_D->query_cultivation_tier(me) < SECT_TIER_ZHU)
-        return notify_fail("「血灵大法」需筑基期以上修为方可修习。\n");
+    if (SECT_D->query_cultivation_tier(me) < SECT_TIER_JIE)
+        return notify_fail("「血灵大法」需结丹期以上修为方可修习。\n");
     if (!mapp(root))
         return notify_fail("你尚未检测灵根，无法修习血灵大法。\n");
-    // 需天灵根或暗灵根（原著：燕如嫣天灵根 + 王蝉暗灵根双修）
+    // 需天灵根或暗灵根（原著：燕如嫣天灵根 + 王蝉暗灵根双修；档案成长线结丹期）
     if (root[SR_QUALITY_IDX] != ROOT_QUALITY_T0 &&
         root[SR_VARIANT] != ROOT_VAR_DARK)
         return notify_fail("血灵大法需天灵根或暗灵根方可修习。\n");
@@ -64,4 +64,9 @@ mapping query_action(object me, object weapon)
 int practice_skill(object me)
 {
     return notify_fail("「血灵大法」只能用学(learn)或修炼(xiulian)的来增加熟练度。\n");
+}
+
+string exert_function_file(string func)
+{
+    return __DIR__"xueling-dafa/" + func;
 }

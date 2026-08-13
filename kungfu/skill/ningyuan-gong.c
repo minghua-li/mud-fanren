@@ -7,7 +7,7 @@
 #include <sect.h>
 #include <globals.h>
 
-inherit SKILL;
+inherit FORCE;
 
 string type() { return "martial"; }
 
@@ -55,4 +55,9 @@ mapping query_action(object me, object weapon)
 int practice_skill(object me)
 {
     return notify_fail("「凝元功」只能用学(learn)或修炼(xiulian)的来增加熟练度。\n");
+}
+
+string exert_function_file(string func)
+{
+    return __DIR__"ningyuan-gong/" + func;
 }

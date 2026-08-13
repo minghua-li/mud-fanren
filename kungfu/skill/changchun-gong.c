@@ -1,19 +1,23 @@
 // changchun-gong.c 长春功
 // 所属宗门：黄枫谷（九宗档案「黄枫谷」功法节）
-// 特性：木系基础功法，洗髓开智，不宜实战，1-13 层
+// 特性：木系基础功法，洗髓开智，不宜实战，1-13 层，需灵根
 // 出处：九宗档案「黄枫谷」功法节 / 1C §3.3
 
 #include <ansi.h>
 #include <sect.h>
 #include <globals.h>
+#include <spirit_root.h>
 
-inherit SKILL;
+inherit FORCE;
 
 string type() { return "martial"; }
 
 int valid_learn(object me)
 {
-    // 长春功：炼气期即可修习（九宗档案无更高境界限制）
+    mapping root = me->query(SPIRIT_ROOT_DATA);
+
+    if (!mapp(root))
+        return notify_fail("长春功需灵根方能修习，你尚未检测灵根。\n");
     return 1;
 }
 
@@ -30,14 +34,14 @@ mapping *action = ({
         "damage": 25,
         "damage_type": "瘀伤"
 ]),
-([      "action": "你双手结印，木气缠绕而出，$n但觉四肢被无形藤蔓缚住，行动迟滞",
+([      "action": "$N双手结印，木气缠绕而出，$n但觉四肢被无形藤蔓缚住，行动迟滞",
         "dodge": -5,
         "parry": 2,
         "force": 120,
         "damage": 40,
         "damage_type": "瘀伤"
 ]),
-([      "action": "你周身泛起淡青色木灵光晕，长春导引，生生不息，护住周身要害",
+([      "action": "$N周身泛起淡青色木灵光晕，长春导引，生生不息，护住周身要害",
         "dodge": 0,
         "parry": 9,
         "force": 150,
@@ -54,4 +58,9 @@ mapping query_action(object me, object weapon)
 int practice_skill(object me)
 {
     return notify_fail("「长春功」只能用学(learn)或修炼(xiulian)的来增加熟练度。\n");
+}
+
+string exert_function_file(string func)
+{
+    return __DIR__"changchun-gong/" + func;
 }
