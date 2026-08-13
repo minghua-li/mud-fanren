@@ -419,11 +419,13 @@ def sect_report(p, qid):
     return "目标未完成"
 
 def check_event_conditions(p, ev):
+    """忠实翻译 sect_quest_d.check_event_conditions（realm_max >=0 真上限；缺失或 <0 不限）"""
     conds = ev["conditions"]
     ridx = get_player_realm_index(p)
     if conds.get("realm_min") and ridx < conds["realm_min"]:
         return "境界不足"
-    if conds.get("realm_max") and ridx > conds["realm_max"]:
+    rmax = conds.get("realm_max")
+    if isinstance(rmax, int) and rmax >= 0 and ridx > rmax:
         return "超出境界"
     return None
 
@@ -542,7 +544,7 @@ eb = calc_exp_reward(pb, QUEST["yanyue_quest_1"])
 assert ea > eb, (ea, eb)
 print(f"场景3 活跃度梯度：真实 streak 驱动（任务/事件→+1）；连续3天 {calc_daily_bonus(3):.2f} / 断档回落 {calc_daily_bonus(1):.2f}；奖励 活跃{ea} > 断档{eb} ✓")
 
-# ── 场景 4：事件触发（境界门槛/重复拒绝/奖励/非本宗） ──
+# ── 场景 4：事件触发（境界门槛/重复拒绝/奖励/非本宗/高境界被拒） ──
 pe = Player(realm_idx=0, exp=5000)
 pe.set("sect/id", "yanyue_sect")
 pe.set("sect_quest/triggered", {})
@@ -558,7 +560,30 @@ pe3 = Player(realm_idx=2)
 pe3.set("sect/id", "guiling_sect")
 pe3.set("sect_quest/triggered", {})
 assert trigger_event(pe3, "yanyue_ev_war") == "非本宗"
-print("场景4 事件触发：境界门槛/重复拒绝/奖励/非本宗 ✓")
+# 高境界被拒（c3 回归）：炼气期事件（(0,0) 真上限 0）元婴玩家必须被拒
+pe4 = Player(realm_idx=3, exp=100000000)
+pe4.set("sect/id", "yanyue_sect")
+pe4.set("sect_quest/triggered", {})
+assert trigger_event(pe4, "yanyue_ev_join") == "超出境界", "元婴触发炼气期事件应被拒"
+pe5 = Player(realm_idx=3, exp=100000000)
+pe5.set("sect/id", "yuling_sect")
+pe5.set("sect_quest/triggered", {})
+assert trigger_event(pe5, "yuling_ev_xunshou") == "超出境界", "元婴触发炼气期事件应被拒"
+# 结丹期事件（(2,2) 真上限 2）：元婴被拒、结丹可触发
+pe6 = Player(realm_idx=3, exp=100000000)
+pe6.set("sect/id", "huangfeng_valley")
+pe6.set("sect_quest/triggered", {})
+assert trigger_event(pe6, "huangfeng_ev_waimai") == "超出境界", "元婴触发结丹期事件应被拒"
+pe7 = Player(realm_idx=2, exp=5000000)
+pe7.set("sect/id", "huangfeng_valley")
+pe7.set("sect_quest/triggered", {})
+assert trigger_event(pe7, "huangfeng_ev_waimai") == "触发"
+# 炼气+ 事件（(0,-1) 不限上限）：元婴可触发
+pe8 = Player(realm_idx=3, exp=100000000)
+pe8.set("sect/id", "lingshou_mountain")
+pe8.set("sect_quest/triggered", {})
+assert trigger_event(pe8, "lingshou_ev_xunluo") == "触发", "炼气+ 事件元婴应可触发"
+print("场景4 事件触发：境界门槛/重复拒绝/奖励/非本宗/高境界被拒（c3）✓")
 
 # ── 场景 5：九宗数据齐备 ──
 for sect, area in AREA.items():
@@ -573,12 +598,26 @@ for sect, area in AREA.items():
     pj.set("quest_chain/progress", {})
     pj.room = area + "/dadian"
     assert sect_accept(pj, qids[0]) == "ok", (sect, qids[0])
-# 档案对齐复查：警戒巡逻/炼器坊劳作/阵法修习不设上限；御灵宗魔道争霸为元婴
-assert EVENT["lingshou_ev_xunluo"]["conditions"]["realm_max"] == 0
-assert EVENT["huadao_ev_lianqi"]["conditions"]["realm_max"] == 0
-assert EVENT["tianque_ev_zhenfa"]["conditions"]["realm_max"] == 0
+# 档案对齐复查：全部 27 个事件触发境界与九宗档案「宗门事件与任务链」节逐条一致
+# 期望表：炼气期 (0,0) / 炼气+ (0,-1) / 筑基期 (1,1) / 筑基+ (1,-1) / 结丹期 (2,2) / 结丹+ (2,-1)
+EVENT_EXPECT = {
+    "yanyue_ev_join": (0, 0), "yanyue_ev_xuejin": (1, 1), "yanyue_ev_war": (2, -1),
+    "huangfeng_ev_yaoyuan": (0, 0), "huangfeng_ev_shouwei": (1, 1), "huangfeng_ev_waimai": (2, 2),
+    "lingshou_ev_xunshou": (0, 0), "lingshou_ev_xunluo": (0, -1), "lingshou_ev_anzhuang": (2, 2),
+    "qingxu_ev_xiuxing": (0, 0), "qingxu_ev_lundao": (1, -1), "qingxu_ev_war": (2, -1),
+    "huadao_ev_daofa": (0, 0), "huadao_ev_lianqi": (0, -1), "huadao_ev_daojian": (2, 2),
+    "tianque_ev_zhubao": (0, 0), "tianque_ev_zhenfa": (0, -1), "tianque_ev_shoucheng": (2, -1),
+    "jujian_ev_jianfa": (0, 0), "jujian_ev_shijian": (1, -1), "jujian_ev_dianhou": (2, -1),
+    "guiling_ev_qugui": (0, 0), "guiling_ev_yanjia": (1, -1), "guiling_ev_mozheng": (2, -1),
+    "yuling_ev_xunshou": (0, 0), "yuling_ev_lingyu": (2, 2), "yuling_ev_shouchao": (2, -1),
+}
+assert len(EVENT) == len(EVENT_EXPECT) == 27
+for eid, exp in EVENT_EXPECT.items():
+    got = (EVENT[eid]["conditions"]["realm_min"], EVENT[eid]["conditions"]["realm_max"])
+    assert got == exp, (eid, got, exp)
+# 御灵宗魔道争霸任务为元婴（档案）
 assert QUEST["yuling_quest_2"]["realm_range"] == [3, 3]
-print("场景5 九宗任务链/事件数据齐备 + 档案对齐（4 处条件修正）✓")
+print("场景5 九宗任务链/事件数据齐备 + 档案对齐（27 事件逐条 + 4 处任务条件）✓")
 
 # ═══════════ 汇总 ═══════════
 

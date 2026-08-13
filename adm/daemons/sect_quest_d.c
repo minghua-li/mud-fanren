@@ -321,7 +321,7 @@ nosave mapping event_defs = ([
     "yanyue_ev_war": ([
         "id": "yanyue_ev_war", "sect": "yanyue_sect",
         "name": "正魔大战", "desc": "掩月宗殿后/决策，立战功。",
-        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: 0 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: -1 ]),
         "rewards": ([ EV_REWARD_EXP: 5000, EV_REWARD_REP: 300, EV_REWARD_CONTRIB: 800 ]),
     ]),
 
@@ -341,7 +341,7 @@ nosave mapping event_defs = ([
     "huangfeng_ev_waimai": ([
         "id": "huangfeng_ev_waimai", "sect": "huangfeng_valley",
         "name": "丹药外销", "desc": "炼丹供给坊市，打通商路。",
-        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: 0 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: 2 ]),
         "rewards": ([ EV_REWARD_EXP: 5000, EV_REWARD_REP: 300, EV_REWARD_CONTRIB: 800 ]),
     ]),
 
@@ -355,13 +355,13 @@ nosave mapping event_defs = ([
     "lingshou_ev_xunluo": ([
         "id": "lingshou_ev_xunluo", "sect": "lingshou_mountain",
         "name": "警戒巡逻", "desc": "维护警戒虫网，防御外敌。",
-        "conditions": ([ EV_COND_REALM_MIN: 0, EV_COND_REALM_MAX: 0 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 0, EV_COND_REALM_MAX: -1 ]),
         "rewards": ([ EV_REWARD_EXP: 800, EV_REWARD_REP: 100, EV_REWARD_CONTRIB: 300 ]),
     ]),
     "lingshou_ev_anzhuang": ([
         "id": "lingshou_ev_anzhuang", "sect": "lingshou_mountain",
         "name": "暗桩抉择", "desc": "是否回归御灵宗——阵营分支，声望巨变。",
-        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: 0 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: 2 ]),
         "rewards": ([ EV_REWARD_EXP: 5000, EV_REWARD_REP: 300, EV_REWARD_CONTRIB: 800 ]),
     ]),
 
@@ -375,13 +375,13 @@ nosave mapping event_defs = ([
     "qingxu_ev_lundao": ([
         "id": "qingxu_ev_lundao", "sect": "qingxu_sect",
         "name": "论道大会", "desc": "与各派修士论道，悟性与声望齐增。",
-        "conditions": ([ EV_COND_REALM_MIN: 1, EV_COND_REALM_MAX: 0 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 1, EV_COND_REALM_MAX: -1 ]),
         "rewards": ([ EV_REWARD_EXP: 1000, EV_REWARD_REP: 150, EV_REWARD_CONTRIB: 300 ]),
     ]),
     "qingxu_ev_war": ([
         "id": "qingxu_ev_war", "sect": "qingxu_sect",
         "name": "正魔大战", "desc": "智囊侦查、退守北凉。",
-        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: 0 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: -1 ]),
         "rewards": ([ EV_REWARD_EXP: 5000, EV_REWARD_REP: 300, EV_REWARD_CONTRIB: 800 ]),
     ]),
 
@@ -395,13 +395,13 @@ nosave mapping event_defs = ([
     "huadao_ev_lianqi": ([
         "id": "huadao_ev_lianqi", "sect": "huadao_dock",
         "name": "炼器坊劳作", "desc": "参与炼器，积累手艺。",
-        "conditions": ([ EV_COND_REALM_MIN: 0, EV_COND_REALM_MAX: 0 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 0, EV_COND_REALM_MAX: -1 ]),
         "rewards": ([ EV_REWARD_EXP: 800, EV_REWARD_REP: 100, EV_REWARD_CONTRIB: 300 ]),
     ]),
     "huadao_ev_daojian": ([
         "id": "huadao_ev_daojian", "sect": "huadao_dock",
         "name": "刀剑之争", "desc": "与巨剑门试剑，战功声望。",
-        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: 0 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: 2 ]),
         "rewards": ([ EV_REWARD_EXP: 5000, EV_REWARD_REP: 300, EV_REWARD_CONTRIB: 800 ]),
     ]),
 
@@ -415,13 +415,13 @@ nosave mapping event_defs = ([
     "tianque_ev_zhenfa": ([
         "id": "tianque_ev_zhenfa", "sect": "tianque_fort",
         "name": "阵法修习", "desc": "布阵、护山大阵维护。",
-        "conditions": ([ EV_COND_REALM_MIN: 0, EV_COND_REALM_MAX: 0 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 0, EV_COND_REALM_MAX: -1 ]),
         "rewards": ([ EV_REWARD_EXP: 800, EV_REWARD_REP: 100, EV_REWARD_CONTRIB: 300 ]),
     ]),
     "tianque_ev_shoucheng": ([
         "id": "tianque_ev_shoucheng", "sect": "tianque_fort",
         "name": "要塞坚守", "desc": "正魔大战守城，战功声望。",
-        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: 0 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: -1 ]),
         "rewards": ([ EV_REWARD_EXP: 5000, EV_REWARD_REP: 300, EV_REWARD_CONTRIB: 800 ]),
     ]),
 
@@ -435,13 +435,13 @@ nosave mapping event_defs = ([
     "jujian_ev_shijian": ([
         "id": "jujian_ev_shijian", "sect": "jujian_gate",
         "name": "试剑大会", "desc": "门内比剑，战功声望。",
-        "conditions": ([ EV_COND_REALM_MIN: 1, EV_COND_REALM_MAX: 0 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 1, EV_COND_REALM_MAX: -1 ]),
         "rewards": ([ EV_REWARD_EXP: 1000, EV_REWARD_REP: 150, EV_REWARD_CONTRIB: 300 ]),
     ]),
     "jujian_ev_dianhou": ([
         "id": "jujian_ev_dianhou", "sect": "jujian_gate",
         "name": "殿后血战", "desc": "正魔大战巨剑门殿后。",
-        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: 0 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: -1 ]),
         "rewards": ([ EV_REWARD_EXP: 5000, EV_REWARD_REP: 300, EV_REWARD_CONTRIB: 800 ]),
     ]),
 
@@ -455,13 +455,13 @@ nosave mapping event_defs = ([
     "guiling_ev_yanjia": ([
         "id": "guiling_ev_yanjia", "sect": "guiling_sect",
         "name": "燕家联姻", "desc": "与燕家结姻亲、共修血灵大法。",
-        "conditions": ([ EV_COND_REALM_MIN: 1, EV_COND_REALM_MAX: 0 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 1, EV_COND_REALM_MAX: -1 ]),
         "rewards": ([ EV_REWARD_EXP: 1000, EV_REWARD_REP: 150, EV_REWARD_CONTRIB: 300 ]),
     ]),
     "guiling_ev_mozheng": ([
         "id": "guiling_ev_mozheng", "sect": "guiling_sect",
         "name": "魔道争霸", "desc": "六宗内部角逐，战功声望。",
-        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: 0 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: -1 ]),
         "rewards": ([ EV_REWARD_EXP: 5000, EV_REWARD_REP: 300, EV_REWARD_CONTRIB: 800 ]),
     ]),
 
@@ -475,13 +475,13 @@ nosave mapping event_defs = ([
     "yuling_ev_lingyu": ([
         "id": "yuling_ev_lingyu", "sect": "yuling_sect",
         "name": "灵兽山抉择", "desc": "是否召回灵兽山暗桩——阵营分支，声望巨变。",
-        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: 0 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: 2 ]),
         "rewards": ([ EV_REWARD_EXP: 5000, EV_REWARD_REP: 300, EV_REWARD_CONTRIB: 800 ]),
     ]),
     "yuling_ev_shouchao": ([
         "id": "yuling_ev_shouchao", "sect": "yuling_sect",
         "name": "兽潮推进", "desc": "兽潮推进越国，战功领土。",
-        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: 0 ]),
+        "conditions": ([ EV_COND_REALM_MIN: 2, EV_COND_REALM_MAX: -1 ]),
         "rewards": ([ EV_REWARD_EXP: 5000, EV_REWARD_REP: 300, EV_REWARD_CONTRIB: 800 ]),
     ]),
 ]);
