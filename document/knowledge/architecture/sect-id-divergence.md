@@ -1,26 +1,31 @@
 ---
-id: sect-id-divergence
-claim: 门派 ID 存在设计文档（tianque_fort/huadao_dock/jujian_gate/guiling_sect）与代码 reputation_d.c（tianque_sect/qianyuan_sect 等）两套不一致命名
-tags: [daemon, dbase]
-modules: [adm-daemons, include]
+claim: 门派 ID 以 .knowledge/factions/sects/ 九宗档案命名为权威（tianque_fort/guiling_sect 等），reputation_d.c
+  的 faction_info 已于 2026-08-12 对齐
 cluster: architecture
+id: sect-id-divergence
 kind: architecture
+modules:
+- adm-daemons
+- include
 status: current
-verified: "2026-08-12"
+tags:
+- daemon
+- dbase
+verified: '2026-08-12'
 ---
 
 ## Why
 
-2026-08-12 在 `.knowledge/factions/sects/` 新建九个开局宗门档案时，对照代码发现 `adm/daemons/reputation_d.c` 的 `faction_info` 门派 ID 与设计文档（`.knowledge/factions/1D-门派种族声望.md`、新档案）不一致：
+2026-08-12 新建九个开局宗门档案（`.knowledge/factions/sects/`）时，对照代码发现 `adm/daemons/reputation_d.c` 的 `faction_info` 门派 ID 与设计文档（`.knowledge/factions/1D-门派种族声望.md`、九宗档案）不一致：
 
-- 天阙堡：设计文档/新档案用 `tianque_fort`，代码用 `tianque_sect`
-- 鬼灵门：新档案用 `guiling_sect`，代码用 `ghost_spirit_sect`
-- 代码还出现了 `qianyuan_sect`（千元派）、`biling_sect`（碧灵派）、`huayang_sect`（化阳派）、`six_pulse_sword`（六脉剑宗）等——这些名字不在原著越国七派（掩月宗/黄枫谷/灵兽山/清虚门/化刀坞/天阙堡/巨剑门）中
+- 天阙堡：设计用 `tianque_fort`，代码当时用 `tianque_sect`
+- 鬼灵门：设计用 `guiling_sect`，代码当时用 `ghost_spirit_sect`
+- 代码曾出现 `qianyuan_sect`（千元派）、`biling_sect`（碧灵派）、`huayang_sect`（化阳派）、`six_pulse_sword`（六脉剑宗）等非原著门派名；魔道侧则混入 `blood_reincarnation`（血影宗）、`heavenly_corpse`（天尸宗）、`yin_sect`（阴煞宗）、`soul_refining`（炼魂宗）等编造名，与 1D 文档的魔道六宗（合欢宗/天煞宗/鬼灵门/御灵宗/天魔宗/阴罗宗）对不上。
 
-设计文档（1D）的 `faction_relations` 结构示例中用的是 `tianque_fort`/`huadao_dock`/`jujian_gate`/`qingxu_sect`，与我的新档案一致；但实现代码走了另一套命名。这是「设计文档与代码现实脱节」的典型案例，后续接门派系统/声望系统时极易因 ID 对不上而出 bug。
+同日已将代码 `faction_info` 与 `mutex_relations` 全面对齐设计文档：改名 2 处（`tianque_fort`/`guiling_sect`），删除 8 个非原著门派，补齐 `qingxu_sect`/`huadao_dock`/`jujian_gate`（越国七派）与 `hehuan_sect`/`tiansha_sect`/`yuling_sect`/`tianmo_sect`/`yinluo_sect`（魔道六宗）。当时所有旧 ID 仅在 `reputation_d.c` 一处硬编码，其余系统（`faction.c` 命令、`faction_economy_d.c` 等）均通过 `REPUTATION_D->get_faction_info()` 动态取用，无玩家存档需迁移。
 
 ## How to apply
 
-- 设计/内容侧（`.knowledge/`）：以 1D 文档与 sects/ 档案的命名为准（`huangfeng_valley`/`yanyue_sect`/`lingshou_mountain`/`qingxu_sect`/`huadao_dock`/`tianque_fort`/`jujian_gate`/`guiling_sect`/`yuling_sect`）。
-- 代码侧（`reputation_d.c` 等）：将来实现门派功能时需决定以哪套为权威，将代码 `faction_info` 与设计对齐（尤其天阙堡 `tianque_sect` vs `tianque_fort`、鬼灵门 `ghost_spirit_sect` vs `guiling_sect`，以及代码中四个非原著门派名）。
-- 改代码前先 `grep` 全部引用，避免遗漏。
+- 门派 ID 的权威命名源是 `.knowledge/factions/sects/` 九宗档案与 1D 文档；新增门派时先查档案，代码与设计冲突以设计为准。
+- 修改 `reputation_d.c` 的门派 ID 前，先 `grep` 全部引用；新增门派需同步考虑 `mutex_relations`（如灵兽山叛出与越国六派敌对）与 `faction_prosperity` 初始化。
+- 九宗开局档案与 `faction_info` 的 desc 字段可互相印证；desc 以档案定位为准（如掩月宗=法修/双修魁首）。
