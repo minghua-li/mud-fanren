@@ -1,12 +1,19 @@
 ---
-id: gb-to-utf8-noop
-claim: "simul_efun/chinese.c 的 gb_to_utf8()/utf8_to_gb() 为空操作直接 return input，6666 端口玩家收到 GBK 编码乱码"
-tags: [pitfall, setup, lpc-syntax]
-modules: [adm-single]
+claim: simul_efun/chinese.c 的 gb_to_utf8()/utf8_to_gb() 为空操作直接 return input，6666 端口玩家收到
+  GBK 编码乱码
 cluster: architecture
+id: gb-to-utf8-noop
 kind: pitfall
+modules:
+- adm-single
+related:
+- llm-gateway-poc
 status: current
-verified: "2026-06-29"
+tags:
+- pitfall
+- setup
+- lpc-syntax
+verified: '2026-06-29'
 verify_freq: yearly
 ---
 
