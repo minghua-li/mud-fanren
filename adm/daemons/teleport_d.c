@@ -96,22 +96,22 @@ void init_teleport_nodes()
         TP_FIELD_DESC      : "镜州江湖的传送阵，连接越国各主要区域。",
     ]));
 
-    // 越国各派
+    // 越国各派（七派驻地，见 d/yueguo/）
     register_node(([
         TP_FIELD_ID        : TP_NODE_YUE_SECTS,
         TP_FIELD_NAME      : "越国七派传送阵",
         TP_FIELD_LEVEL     : TP_LV1_REGION,
-        TP_FIELD_ROOM      : "/d/lingxiao/room1",     // 示例路径
+        TP_FIELD_ROOM      : "/d/yueguo/transmit",   // 越国七派传送阵枢纽
         TP_FIELD_STATUS    : TP_STATUS_ACTIVE,
         TP_FIELD_COST_BASE : TP_BASE_INTERCITY,
         TP_FIELD_DIST_COEFF : TP_DIST_NEARBY,
-        TP_FIELD_REALM_MIN : TP_REALM_QI,
+        TP_FIELD_REALM_MIN : TP_REALM_MORTAL,       // 新手出村即可抵达七派驻地
         TP_FIELD_UNLOCK_QUEST : 0,
         TP_FIELD_UNLOCK_ITEM  : 0,
         TP_FIELD_UNLOCK_REPUT : 0,
-        TP_FIELD_DEST      : ({ TP_NODE_MIRROR_LAKE, TP_NODE_TAI_NAN, TP_NODE_HUANGFENG, TP_NODE_JIA_YUAN }),
+        TP_FIELD_DEST      : ({ TP_NODE_MIRROR_LAKE, TP_NODE_TAI_NAN, TP_NODE_HUANGFENG, TP_NODE_JIA_YUAN, TP_NODE_TIANLUO_SECTS }),
         TP_FIELD_GROUP     : "越国",
-        TP_FIELD_DESC      : "越国七派共建的传送网络，各派弟子可便捷往来。",
+        TP_FIELD_DESC      : "越国七派共建的传送网络，各派弟子可便捷往来，亦可通魔道天罗国。",
     ]));
 
     // 太南谷
@@ -137,11 +137,11 @@ void init_teleport_nodes()
         TP_FIELD_ID        : TP_NODE_HUANGFENG,
         TP_FIELD_NAME      : "黄枫谷传送阵",
         TP_FIELD_LEVEL     : TP_LV1_REGION,
-        TP_FIELD_ROOM      : "/d/shaolin/shanmen",    // 示例路径
+        TP_FIELD_ROOM      : "/d/yueguo/huangfeng/shanmen",  // 黄枫谷山门（d/yueguo/huangfeng/）
         TP_FIELD_STATUS    : TP_STATUS_ACTIVE,
         TP_FIELD_COST_BASE : TP_BASE_INTERCITY,
         TP_FIELD_DIST_COEFF : TP_DIST_NEARBY,
-        TP_FIELD_REALM_MIN : TP_REALM_QI,
+        TP_FIELD_REALM_MIN : TP_REALM_MORTAL,       // 新手出村即可抵达
         TP_FIELD_UNLOCK_QUEST : 0,
         TP_FIELD_UNLOCK_ITEM  : 0,
         TP_FIELD_UNLOCK_REPUT : 0,
@@ -166,6 +166,24 @@ void init_teleport_nodes()
         TP_FIELD_DEST      : ({ TP_NODE_MIRROR_LAKE, TP_NODE_YUE_SECTS }),
         TP_FIELD_GROUP     : "越国",
         TP_FIELD_DESC      : "嘉元城的传送阵，连接镜州江湖与越国各派。",
+    ]));
+
+    // 天罗国魔道两宗（鬼灵门/御灵宗驻地，见 d/tianluo/）
+    register_node(([
+        TP_FIELD_ID        : TP_NODE_TIANLUO_SECTS,
+        TP_FIELD_NAME      : "天罗国魔道传送阵",
+        TP_FIELD_LEVEL     : TP_LV1_REGION,
+        TP_FIELD_ROOM      : "/d/tianluo/transmit",   // 天罗国魔道传送阵枢纽
+        TP_FIELD_STATUS    : TP_STATUS_ACTIVE,
+        TP_FIELD_COST_BASE : TP_BASE_INTERCITY,
+        TP_FIELD_DIST_COEFF : TP_DIST_NEARBY,
+        TP_FIELD_REALM_MIN : TP_REALM_MORTAL,       // 新手出村即可抵达
+        TP_FIELD_UNLOCK_QUEST : 0,
+        TP_FIELD_UNLOCK_ITEM  : 0,
+        TP_FIELD_UNLOCK_REPUT : 0,
+        TP_FIELD_DEST      : ({ TP_NODE_MIRROR_LAKE, TP_NODE_YUE_SECTS }),
+        TP_FIELD_GROUP     : "天罗国",
+        TP_FIELD_DESC      : "天罗国魔道传送阵，由鬼灵门与御灵宗共同维护，连接越国与魔道六宗驻地。",
     ]));
 
     // -------- 乱星海传送网络 --------

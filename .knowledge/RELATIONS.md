@@ -138,3 +138,6 @@ realm-breakthrough-failure-penalty -> 02-灵根养成与突破 : 道痕裂伤系
 realm-storage-convention  ->  sect-system : realm 现已有真实写入方与格式约定，sect-system 中「realm 可能未设置需 exp 兜底」仍是老数据兜底路径，二者并存
 realm-storage-convention  ->  realm-breakthrough-failure-penalty : 突破失败冷却/修为回退按该设计约定的框架落地（冷却 15/45 游戏天→现实 1/3 天）
 realm-storage-convention  ->  1C-修仙境界功法 : 境界层数/灵根速度系数数值基于 1C 的境界曲线与灵根乘数设计
+teleport-network  ->  1A-人界地理 : 越国七派/天罗国区域落地到 d/yueguo 与 d/tianluo
+teleport-network  ->  sects/README : 九宗驻地房间与 NPC 按宗门档案取材
+teleport-network  ->  1D-门派种族声望 : NPC sect 属性与门派 ID 对齐
