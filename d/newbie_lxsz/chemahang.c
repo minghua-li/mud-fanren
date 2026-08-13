@@ -15,7 +15,7 @@ void create()
     set("outdoors","liuxiu-shanzhuang");
 
     set("item_desc", ([
-        "paizi":"竭诚为新玩家提供方便。\n你可以雇车"+HBBLU"(gu或hire)"NOR+"去扬州。\n",
+        "paizi":"竭诚为新玩家提供方便。\n你可以雇车"+HBBLU"(gu或hire)"NOR+"去青牛镇。\n",
         ]));
 
     set("exits", ([
@@ -44,7 +44,7 @@ int do_gu()
 		tell_object(who,"你不能带人离开这里。\n");
 		return 1;
 	}
-    if (1==check_questindex(who,"到南面的车马行坐马车去扬州"))
+    if (1==check_questindex(who,"到南面的车马行坐马车去青牛镇"))
     {
         if (!objectp(mache=who->query_temp("newbie/mache_room")))
         {
@@ -68,7 +68,7 @@ int do_gu()
 
 int valid_leave(object who,string dir)
 {
-   /* if (("north"==dir) && (1==check_questindex(who,"到南面的车马行坐马车去扬州")))
+   /* if (("north"==dir) && (1==check_questindex(who,"到南面的车马行坐马车去青牛镇")))
     {
         return notify_fail("你去意已决，就不必再回去了吧。\n");
     }*/

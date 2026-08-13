@@ -15,6 +15,7 @@ LONG );
         set("exits", ([
                 "southeast" : "/d/yueguo/transmit",
                 "north" : "/d/yueguo/huangfeng/dadian",
+                "east" : "/d/yueguo/huangfeng/fangshi",
                 "west" : "/d/yueguo/huangfeng/fac/hushan",
         ]));
         set("objects", ([
