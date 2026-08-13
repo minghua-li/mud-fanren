@@ -162,6 +162,32 @@ void create()
     seteuid(getuid());
     set("name", "门派系统");
     set("id", "sect_d");
+
+    // 注册九宗功法中文名（衔接 #62：kungfu/skill 文件实体化后，
+    // skills 面板/习得提示经 CHINESE_D->chinese(skill_id) 显示中文名）
+    register_skill_names();
+}
+
+// 将九宗功法 skill_id → 中文名 注册进 CHINESE_D 字典
+// 数据源：sect_config 的 skills（skill_id: ([ "name": 中文名 ])），与九宗档案「功法」节一致
+void register_skill_names()
+{
+    string *sect_ids = keys(sect_config);
+    int i, j;
+    string *skill_ids;
+    mapping skill_info;
+
+    if (!objectp(CHINESE_D)) return;
+    for (i = 0; i < sizeof(sect_ids); i++)
+    {
+        skill_ids = query_sect_skills(sect_ids[i]);
+        for (j = 0; j < sizeof(skill_ids); j++)
+        {
+            skill_info = query_sect_skill_info(sect_ids[i], skill_ids[j]);
+            if (mapp(skill_info) && stringp(skill_info["name"]) && skill_info["name"] != "")
+                CHINESE_D->add_translate(skill_ids[j], skill_info["name"]);
+        }
+    }
 }
 
 // ======== 查询接口 ========
@@ -617,6 +643,15 @@ int learn_skill(object player, string skill_id)
     learned = player->query(SECT_PATH_LEARNED);
     if (mapp(learned) && learned[skill_id])
     {
+        // 已习得：若技能表尚无（如 #59 任务奖励免贡献写 learned、未入技能表），
+        // 此处补灌入门（不重复扣贡献）；已在技能表则拒绝重复学习
+        if (player->query_skill(skill_id, 1) <= 0)
+        {
+            player->set_skill(skill_id, 1);
+            tell_object(player, HIG "你已学过「" + skill_info["name"] +
+                        "」，运功印证后初窥门径。\n" NOR);
+            return 1;
+        }
         tell_object(player, "你已学过「" + skill_info["name"] + "」。\n");
         return 0;
     }
@@ -644,6 +679,10 @@ int learn_skill(object player, string skill_id)
     if (!mapp(learned)) learned = ([]);
     learned[skill_id] = time();
     player->set(SECT_PATH_LEARNED, learned);
+
+    // 衔接 #62：习得即入技能表（kungfu/skill 文件实体化后 set_skill 可解析）
+    if (player->query_skill(skill_id, 1) <= 0)
+        player->set_skill(skill_id, 1);
 
     log_file("sect", sprintf("%s %s learn %s %s\n",
               ctime(time()), player->query("id"), sect_id, skill_id));

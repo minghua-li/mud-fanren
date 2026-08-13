@@ -1,12 +1,18 @@
 ---
-id: kungfu-system-overview
-claim: "武功系统在 /kungfu/ 下分 skill/（技能）、class/（门派）、special/（绝招）、condition/（内功心法）、music/（音乐）、profession/（职业）六个模块"
-tags: [skill, dbase, mapping]
-modules: [kungfu]
+claim: 武功系统在 /kungfu/ 下分 skill/（技能）、class/（门派）、special/（绝招）、condition/（内功心法）、music/（音乐）、profession/（职业）六个模块
 cluster: skill
+id: kungfu-system-overview
 kind: architecture
+modules:
+- kungfu
+related:
+- sect-skill-learning-chain
 status: current
-verified: "2026-06-29"
+tags:
+- skill
+- dbase
+- mapping
+verified: '2026-06-29'
 ---
 
 ## Why

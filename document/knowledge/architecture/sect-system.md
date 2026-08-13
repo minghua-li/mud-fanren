@@ -8,6 +8,8 @@ modules:
 - adm-daemons
 - cmds
 - include
+related:
+- sect-skill-learning-chain
 status: current
 tags:
 - daemon
