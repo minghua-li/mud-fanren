@@ -19,7 +19,7 @@ nosave mapping goods = ([
         "tiejing" : ([ "name" : "铁精", "file" : __DIR__"obj/tiejing", "type" : "ore_basic", "base" : 2 ]),
         "lingcao" : ([ "name" : "灵草", "file" : __DIR__"obj/lingcao", "type" : "herb_basic", "base" : 1 ]),
         "shoupi" : ([ "name" : "兽皮", "file" : __DIR__"obj/shoupi", "type" : "hide_basic", "base" : 1 ]),
-        "huanglongcao" : ([ "name" : "黄龙草", "file" : __DIR__"obj/huanglongcao", "type" : "herb_basic", "base" : 5 ]),
+        "huanglongcao" : ([ "name" : "黄龙草", "file" : __DIR__"obj/huanglongcao", "type" : "herb_huanglong", "base" : 5 ]),
 ]);
 
 void create()
@@ -47,6 +47,7 @@ LONG );
                 ECONOMY_D->register_goods("ore_basic", 2, 50);
                 ECONOMY_D->register_goods("herb_basic", 1, 100);
                 ECONOMY_D->register_goods("hide_basic", 1, 80);
+                ECONOMY_D->register_goods("herb_huanglong", 5, 30);
         }
 
         setup();

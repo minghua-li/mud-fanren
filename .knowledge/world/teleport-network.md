@@ -31,7 +31,7 @@ updated: 2026-08-13
 
 - **越国境内互通**：mirror_lake / yue_sects / huangfeng / tai_nan / jia_yuan / qing_niu / tianluo_sects 七节点互联（#58 三节点 + #67 落地三节点）。
 - 落地节点的 `TP_FIELD_REALM_MIN` 均为 `TP_REALM_MORTAL`（新手出村即可达）；`tai_nan`/`jia_yuan` 保持 `TP_REALM_QI`（#33 原门槛，炼气期使用）。
-- **出生链路（#67，真实流程）**：新玩家首次登录被 logind.c/logind2.c 送入新手村 `/d/newbie_lxsz/weiminggu.c`（未明谷教程）；出村经 `d/newbie_lxsz/mache.c`（柳秀山庄马车，`do_qu` 目的地=青牛镇）落到 `/d/yueguo/qingniu/zhenkou` 并设 `startroom=/d/yueguo/qingniu/zhenkou`（死亡重生同在青牛镇）。`d/newbie/`（北侠旧新手村）为死代码，无活链接入，其 `exit.c` 的 leave 亦已顺带指向青牛镇。新玩家从青牛镇步行可达七玄门、太南谷坊市，经传送可达九宗山门。
+- **出生链路（#67，真实流程）**：新玩家首次登录被 logind.c/logind2.c 送入新手村 `/d/newbie_lxsz/weiminggu.c`（未明谷教程）；出村经 `d/newbie_lxsz/mache.c`（柳秀山庄马车，`do_qu` 目的地=青牛镇）落到 `/d/yueguo/qingniu/zhenkou` 并设 `startroom=/d/yueguo/qingniu/zhenkou`（登录落点；死亡流程走 d/death/gate.c 鬼门关，不受 startroom 影响）。`d/newbie/`（北侠旧新手村）为死代码，无活链接入，其 `exit.c` 的 leave 亦已顺带指向青牛镇。新玩家从青牛镇步行可达七玄门、太南谷坊市，经传送可达九宗山门。
 
 ## 三、未落地占位节点（#33 遗留，建区时需同步）
 
