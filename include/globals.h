@@ -252,6 +252,9 @@
 //宗门驻地系统
 #define SECT_HQ_D             "/adm/daemons/sect_hq_d"
 
+//门派系统（九宗入宗/晋升/功法）
+#define SECT_D                "/adm/daemons/sect_d"
+
 //生活技能系统
 #define PROFESSION_D(x)	("/kungfu/profession/" + x)
 
