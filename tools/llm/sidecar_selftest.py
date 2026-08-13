@@ -5,7 +5,7 @@ from __future__ import annotations
 运行：python tools/llm/sidecar_selftest.py
 退出码 0 = 全部通过；非 0 = 有失败项。
 
-覆盖（对照 #70 验收清单 6 条）：
+覆盖（对照 #70 验收清单 7 条）：
   c1 sidecar 实现：NL→LPC 指令映射（复用 #69 llm_client/safety/mock），
      自测覆盖解析（mock 当铺链路）/安全拦截（LLM 替身输出危险指令）/超时（慢 LLM）
   c2 llmd.c：TCP 127.0.0.1 新行分隔 JSON、每请求一连接、watchdog 15s 超时零注入
@@ -14,6 +14,8 @@ from __future__ import annotations
   c4 cmds/usr/ai.c 集成点：请求→sidecar→响应→注入链路（端到端实测 + 超时不注入半截）
   c5 端到端自测：sidecar 真实 TCP 服务 + fake LPC 客户端全链路
   c6 密钥安全：LLM 密钥仅玩家本地配置（#69 资产继承），sidecar 零硬编码密钥
+  c7 驱动内无阻塞（异步）、无 eval cost 超限：llmd.c 异步非阻塞形态守卫
+     （无 while 轮询 / 无 input_to / 无 sleep( / 无 socket_read / cleanup_fd 含 socket_close）
 
 不依赖真实游戏服务（无 fluffos 环境）与真实 LLM API（mock/注入替身）。
 LPC 侧为静态校验 + Python 忠实翻译模拟，作用域如实标注（真实 driver 待装）。
@@ -323,6 +325,15 @@ def test_lpc_static() -> None:
     check("llmd.c 默认关闭（llm_enabled 置 0）",
           'set("llm_enabled", 0)' in llmd and "is_llm_enabled" in llmd, "")
     check("llmd.c 玩家 opt-in（env/llm）", "env/llm" in llmd, "")
+
+    # ── c7：异步非阻塞形态守卫（补审查轮加入——验收清单补 c7 后，机器断言补上
+    #    「无 while 轮询 / 无阻塞 IO / 无 driver 内阻塞调用 / 响应后关闭」兜底，
+    #    防将来 llmd.c 被改回轮询/阻塞形态而硬闸门照绿）──
+    check("llmd.c 无 while 轮询（socket 全异步回调）", "while" not in llmd, "")
+    check("llmd.c 无 input_to（无阻塞输入等待）", "input_to" not in llmd, "")
+    check("llmd.c 无 sleep( 调用（无阻塞暂停）", "sleep(" not in llmd, "")
+    check("llmd.c 无 socket_read（无同步读）", "socket_read" not in llmd, "")
+    check("llmd.c 响应后关闭连接（cleanup_fd 含 socket_close）", "socket_close" in llmd, "")
 
     # ── LPC 原文函数体级守卫（回应审查：模拟与真代码挂钩，防回归）──
     # 注意：用原始函数体（不剥字符串）——守卫要检查的正是字符串内容（提示文案）。
