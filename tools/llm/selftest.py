@@ -13,10 +13,15 @@ from __future__ import annotations
 不依赖真实游戏服务（5555/6666 未就绪也可跑）；不依赖真实 LLM API（mock/注入替身）。
 """
 
+import json
+import os
+import shutil
 import socket
 import sys
+import tempfile
 import threading
 import time
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 # 允许直接 `python tools/llm/selftest.py` 运行（也支持 python -m tools.llm.selftest）
@@ -26,7 +31,7 @@ if _SYSROOT not in sys.path:
 
 from tools.llm.safety import check_command, split_commands, SafetyError
 from tools.llm.mock_llm import parse_mock
-from tools.llm.llm_client import LLMConfig, LLMError
+from tools.llm.llm_client import LLMConfig, LLMError, chat_completion, _extract_json
 from tools.llm.gateway import LlmGateway, strip_telnet
 
 # ── fake MUD 服务器 ─────────────────────────────────────────
@@ -311,14 +316,154 @@ def test_c3_fail_safe() -> None:
 
     # 3d：未配置 API key + 非 mock → 拒绝调用（提示配置），零注入
     server3 = FakeMudServer()
+    called = {"n": 0}
+
+    def counting_chat(cfg, system, user):
+        called["n"] += 1
+        raise LLMError("不应被调用")
+
+    gw_mod.chat_completion = counting_chat
     try:
         gw = make_gateway(server3, mock=False, llm_cfg=LLMConfig(api_key=""))
         gw.handle_ai("去当铺")
         time.sleep(0.3)
         check("无 key 时零注入", server3.received == [], repr(server3.received))
+        check("无 key 时不发起 LLM 调用", called["n"] == 0, f"调用了 {called['n']} 次")
         gw.close()
     finally:
+        gw_mod.chat_completion = orig_chat
         server3.close()
+
+    # 3e：allow_confirm 开启时 confirm 高危放行，但两条底线不变
+    allowed, blocked = split_commands(
+        {"commands": ["go east"], "confirm": ["drop gold", "kill npc"]},
+        allow_confirm=True,
+    )
+    check("allow_confirm 放行 confirm 高危", "drop gold" in allowed and "kill npc" in allowed, repr(allowed))
+    check("allow_confirm 下无拦截", blocked == [], repr(blocked))
+    allowed2, blocked2 = split_commands(
+        {"commands": ["go east", "kill npc"], "confirm": ["shutdown"]},
+        allow_confirm=True,
+    )
+    check("commands 中的危险动词仍拦截", allowed2 == ["go east"], repr(allowed2))
+    check("confirm 中的管理命令仍拒绝", any("shutdown" in b for b in blocked2), repr(blocked2))
+    # 默认（不开开关）confirm 全拦（回归 3a 语义）
+    _a3, b3 = split_commands({"commands": [], "confirm": ["drop gold"]})
+    check("默认 confirm 全拦", any("drop gold" in b for b in b3), repr(b3))
+
+
+def test_extract_json() -> None:
+    section("单元：LLM 回复 JSON 提取")
+    check("纯 JSON 直接解析", _extract_json('{"commands": ["go east"]}') == {"commands": ["go east"]},
+          repr(_extract_json('{"commands": ["go east"]}')))
+    markdown = '```json\n{"commands": ["look"]}\n```'
+    check("markdown 代码块容错", _extract_json(markdown) == {"commands": ["look"]}, repr(_extract_json(markdown)))
+    mixed = '好的，我将帮你完成。\n{"commands": ["list"], "reason": "去当铺"}\n以上是计划。'
+    check("前后杂文提取", _extract_json(mixed).get("commands") == ["list"], repr(_extract_json(mixed)))
+    for bad in ("不是JSON", "只有中文没有花括号", '{"broken": ', "[]"):
+        try:
+            _extract_json(bad)
+            check(f"损坏 JSON 抛错: {bad!r}", False, "未抛 LLMError")
+        except LLMError:
+            check(f"损坏 JSON 抛错: {bad!r}", True)
+
+
+class _StubHandler(BaseHTTPRequestHandler):
+    """OpenAI 兼容 API 的本地 stub：按序消费 self.server.responses。"""
+    server_version = "Stub/1.0"
+
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(length)
+        self.server.requests.append({"path": self.path, "headers": dict(self.headers), "body": body})
+        resp = self.server.responses[len(self.server.requests) - 1]
+        payload = json.dumps(resp["body"]).encode("utf-8")
+        self.send_response(resp["code"])
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
+    def log_message(self, *args):  # 静默访问日志
+        pass
+
+
+def _run_stub(responses: list[dict]) -> tuple[HTTPServer, threading.Thread]:
+    srv = HTTPServer(("127.0.0.1", 0), _StubHandler)
+    srv.responses = responses
+    srv.requests = []
+    th = threading.Thread(target=srv.serve_forever, daemon=True)
+    th.start()
+    return srv, th
+
+
+def test_llm_client_http() -> None:
+    section("集成：OpenAI 兼容 API 客户端（stub HTTP）")
+    # 400 → 去 response_format 重试 → 200
+    srv, th = _run_stub([
+        {"code": 400, "body": {"error": {"message": "response_format unsupported"}}},
+        {"code": 200, "body": {"choices": [{"message": {"content": '{"commands": ["look"]}'}}]}},
+    ])
+    try:
+        cfg = LLMConfig(api_base=f"http://127.0.0.1:{srv.server_port}", api_key="sk-test", model="test-model")
+        out = chat_completion(cfg, "system", "user")
+        check("400 重试后成功", out == {"commands": ["look"]}, repr(out))
+        req0, req1 = srv.requests[0], srv.requests[1]
+        check("请求路径 /chat/completions", req0["path"] == "/chat/completions", req0["path"])
+        check("带 Bearer 密钥头", req0["headers"].get("Authorization") == "Bearer sk-test",
+              req0["headers"].get("Authorization"))
+        check("带模型名", b'"model": "test-model"' in req0["body"], repr(req0["body"][:120]))
+        check("首次带 response_format", b"response_format" in req0["body"], repr(req0["body"][:200]))
+        check("重试去掉 response_format", b"response_format" not in req1["body"], repr(req1["body"][:200]))
+    finally:
+        srv.shutdown()
+        th.join(timeout=2)
+
+    # 密钥错误 → HTTP 401 → LLMError 传播
+    srv2, th2 = _run_stub([
+        {"code": 401, "body": {"error": {"message": "Invalid API key"}}},
+    ])
+    try:
+        cfg2 = LLMConfig(api_base=f"http://127.0.0.1:{srv2.server_port}", api_key="bad", model="m")
+        try:
+            chat_completion(cfg2, "s", "u")
+            check("401 抛 LLMError", False, "未抛 LLMError")
+        except LLMError as e:
+            check("401 抛 LLMError", True, str(e)[:60])
+    finally:
+        srv2.shutdown()
+        th2.join(timeout=2)
+
+
+def test_llm_config_local_file() -> None:
+    section("单元：本地配置文件读取（玩家侧配置，密钥仅本地）")
+    # 隔离 HOME：临时目录里造 ~/.config/fanren-mud/llm.json
+    home = Path(tempfile.mkdtemp(prefix="llmhome-"))
+    cfg_dir = home / ".config" / "fanren-mud"
+    cfg_dir.mkdir(parents=True)
+    (cfg_dir / "llm.json").write_text(
+        json.dumps({"api_base": "http://localhost:11434/v1", "api_key": "local-secret-key", "model": "llama3"}),
+        encoding="utf-8",
+    )
+    saved = {k: os.environ.get(k) for k in ("HOME", "LLM_API_BASE", "LLM_API_KEY", "LLM_MODEL")}
+    os.environ["HOME"] = str(home)
+    for k in ("LLM_API_BASE", "LLM_API_KEY", "LLM_MODEL"):
+        os.environ.pop(k, None)
+    try:
+        cfg = LLMConfig()
+        check("api_base 来自本地文件", cfg.api_base == "http://localhost:11434/v1", cfg.api_base)
+        check("api_key 来自本地文件", cfg.api_key == "local-secret-key", cfg.api_key)
+        check("model 来自本地文件", cfg.model == "llama3", cfg.model)
+        check("configured=True", cfg.configured, "")
+        desc = cfg.describe()
+        check("describe 不回显密钥本体", "local-secret-key" not in desc, desc)
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+        shutil.rmtree(home, ignore_errors=True)
 
 
 def main() -> int:
@@ -327,6 +472,9 @@ def main() -> int:
     test_safety_unit()
     test_split_commands()
     test_mock_parser()
+    test_extract_json()
+    test_llm_config_local_file()
+    test_llm_client_http()
     test_c1_gateway_run()
     test_c2_pawn_sequence()
     test_c3_fail_safe()

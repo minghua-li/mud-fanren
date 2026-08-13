@@ -205,7 +205,7 @@ class LlmGateway:
             return
 
         try:
-            allowed, blocked = split_commands(payload)
+            allowed, blocked = split_commands(payload, allow_confirm=self.allow_confirm)
         except SafetyError as e:
             print(f"[网关] 解析结果不合法，已安全中止（不执行任何指令）: {e}")
             return
@@ -285,7 +285,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--mock", action="store_true",
                         help="mock 模式：不调 LLM，用内置规则解析（演示/自测，真实效果请配 API）")
     parser.add_argument("--allow-confirm", action="store_true",
-                        help="高危 confirm 指令也回写（默认全部拦截；PoC 不推荐开启）")
+                        help="放行模型标为高危(confirm)的指令（默认全部拦截；"
+                             "commands 中的危险动词与管理命令仍一律拦截；PoC 不推荐开启）")
     parser.add_argument("--llm-base", help="OpenAI 兼容 API 地址（默认读环境变量 LLM_API_BASE）")
     parser.add_argument("--llm-key", help="API 密钥（默认读环境变量 LLM_API_KEY；建议用环境变量）")
     parser.add_argument("--model", help="模型名（默认读环境变量 LLM_MODEL）")

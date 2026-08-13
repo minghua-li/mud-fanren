@@ -61,11 +61,11 @@ class SafetyError(Exception):
     """指令未通过安全校验（含原因，供降级提示）。"""
 
 
-def check_command(cmd: str) -> str:
-    """单条指令校验，返回动词；不合法抛 SafetyError。
+def _format_check(cmd: str) -> str:
+    """仅格式校验（空/超长/字符集/非法字符），返回动词。
 
-    - 空/超长/含特殊字符（; | & $ ` 引号 括号等）→ 拒绝
-    - 动词不在白名单 → 按分层处理：DENIED 直接拒绝整批；DANGEROUS 进 confirm
+    不涉及动词分层——供 allow_confirm 放行 confirm 高危指令时使用，
+    防注入底线（字符集）即使放行高危也绝不放松。
     """
     cmd = cmd.strip()
     if not cmd:
@@ -78,6 +78,16 @@ def check_command(cmd: str) -> str:
     verb = parts[0]
     if not all(len(p) > 0 and all(c.isalnum() or c in "_-" for c in p) for p in parts):
         raise SafetyError(f"指令含非法字符: {cmd[:40]}")
+    return verb
+
+
+def check_command(cmd: str) -> str:
+    """单条指令校验，返回动词；不合法抛 SafetyError。
+
+    - 空/超长/含特殊字符（; | & $ ` 引号 括号等）→ 拒绝
+    - 动词不在白名单 → 按分层处理：DENIED 直接拒绝整批；DANGEROUS 进 confirm
+    """
+    verb = _format_check(cmd)
     if verb in DENIED_VERBS:
         raise SafetyError(f"危险指令被拒绝: {verb}")
     if verb in SAFE_VERBS:
@@ -87,8 +97,13 @@ def check_command(cmd: str) -> str:
     raise SafetyError(f"非白名单动词被拒绝: {verb}")
 
 
-def split_commands(payload: dict) -> tuple[list[str], list[str]]:
+def split_commands(payload: dict, allow_confirm: bool = False) -> tuple[list[str], list[str]]:
     """从 LLM 返回的 JSON 中提取并分类指令。
+
+    参数 allow_confirm：玩家显式 opt-in（--allow-confirm）后，模型自报的
+    confirm 高危数组才放行；默认 False 时 confirm 一律拦截。
+    无论开关如何，两条底线不变：commands 数组中的危险动词/管理命令仍被拦截
+    （模型违规输出不因开关放行）；confirm 中的 DENIED 管理命令仍被拒绝。
 
     返回 (可执行列表, 被拦截列表)。任何一条触线都不会被注入连接——
     拦截信息（动词 + 原因）进拦截列表，由调用方展示给玩家。
@@ -110,10 +125,22 @@ def split_commands(payload: dict) -> tuple[list[str], list[str]]:
             allowed.append(cmd)
         except SafetyError as e:
             blocked.append(f"{cmd} —— {e}")
-    # confirm 列表（模型自报的危险意图）：PoC 默认不执行，全部进拦截提示
+    # confirm 列表（模型自报的危险意图）：默认不执行；allow_confirm 开启时
+    # 玩家已显式 opt-in，放行（仍做格式校验 + DENIED 管理命令绝不放行）
     raw_confirm = payload.get("confirm") or []
     if isinstance(raw_confirm, list):
         for cmd in raw_confirm:
-            if isinstance(cmd, str) and cmd.strip():
+            if not isinstance(cmd, str) or not cmd.strip():
+                continue
+            if allow_confirm:
+                try:
+                    verb = _format_check(cmd)
+                    if verb in DENIED_VERBS:
+                        blocked.append(f"{cmd} —— 管理命令拒绝(confirm): {verb}")
+                    else:
+                        allowed.append(cmd)
+                except SafetyError as e:
+                    blocked.append(f"{cmd} —— {e}")
+            else:
                 blocked.append(f"{cmd} —— 高危意图，已拦截(confirm)")
     return allowed, blocked

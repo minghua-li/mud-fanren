@@ -37,7 +37,7 @@ def parse_mock(user_text: str) -> dict:
     if re.search(r"当铺|典当|当了|pawn|dang", text):
         plan = ["go east", "go north", "list", "pawn jin tiao"]
         # 若文本里出现明确物品词，替换 pawn 宾语（仍限白名单字符）
-        m = re.search(r"(金条|黄金|金子|宝剑|宝剑|剑|装备|物品)\s*(?:当|卖了)?", text)
+        m = re.search(r"(金条|黄金|金子|宝剑|剑|装备|物品)\s*(?:当|卖了)?", text)
         item = "jin tiao"  # 默认：金条(id 猜测，真实游戏以背包 id 为准)
         if m:
             word = m.group(1)

@@ -80,7 +80,9 @@ python -m tools.llm.gateway --port 5555 --mock
 - **动词白名单**：只有白名单内安全动词（go/look/list/pawn/buy/get/say 等）
   会被回写；其余动词（含 wiz/admin/管理调试命令）一律拒绝。
 - **高危意图拦截**：kill/hit/fight/steal/give/drop/quit 等出现在 LLM 输出中
-  即被拦截，绝不注入连接（`--allow-confirm` 可强制放行，PoC 不推荐）。
+  即被拦截，绝不注入连接。`--allow-confirm` 可放行模型标为高危(confirm)的指令
+  （玩家显式 opt-in，PoC 不推荐）；但 commands 中的危险动词与管理命令
+  （shutdown/exec/update 等）无论开关如何都一律拦截。
 - **指令条数上限**：单次最多 8 条，防多命令连续执行失控。
 - **格式校验**：每条指令只允许 `[a-z][a-z0-9_-]` 字符，杜绝 `;`、`|`、`$()` 等注入。
 - **LLM 异常降级**：调用失败 / 返回非 JSON / 未配置密钥 → 安全中止，零指令注入。

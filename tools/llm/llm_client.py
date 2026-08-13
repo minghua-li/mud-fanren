@@ -25,19 +25,23 @@ import urllib.request
 import urllib.error
 from pathlib import Path
 
-CONFIG_PATH = Path.home() / ".config" / "fanren-mud" / "llm.json"
-
 DEFAULT_API_BASE = "https://api.openai.com/v1"
 DEFAULT_MODEL = "gpt-4o-mini"
 REQUEST_TIMEOUT = 60  # 秒；LLM 首字延迟普遍 1-30s，留足余量
 
 
+def config_path() -> Path:
+    """玩家本地配置文件路径（每次动态计算，尊重当前 HOME）。"""
+    return Path.home() / ".config" / "fanren-mud" / "llm.json"
+
+
 def _load_local_config() -> dict:
     """读取玩家本地配置文件（不存在或损坏时返回空 dict，不报错）。"""
-    if not CONFIG_PATH.exists():
+    path = config_path()
+    if not path.exists():
         return {}
     try:
-        data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding="utf-8"))
         if isinstance(data, dict):
             return data
         return {}
@@ -78,7 +82,7 @@ class LLMConfig:
     def describe(self) -> str:
         """展示配置来源（绝不含密钥本体）。"""
         key_src = "环境变量 LLM_API_KEY" if os.environ.get("LLM_API_KEY") else (
-            f"本地配置文件 {CONFIG_PATH}" if _load_local_config().get("api_key") else "未配置"
+            f"本地配置文件 {config_path()}" if _load_local_config().get("api_key") else "未配置"
         )
         return (f"API 地址: {self.api_base}\n"
                 f"模型: {self.model}\n"
