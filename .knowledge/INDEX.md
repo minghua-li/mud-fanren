@@ -89,3 +89,4 @@
 ## 关联关系索引
 
 见 [[RELATIONS]] 文件（根目录），用边表记录知识点间的关联。
+- `realm-storage-convention` — 读/写玩家 realm 属性时须用「炼气N层」ASCII 数字层数格式（sect_d.extract_layer 只认 0-9，中文数字会解析失败）；统一走 ROOT_REFINE_D 接口 — cultivation/realm-storage-convention.md
