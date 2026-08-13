@@ -15,7 +15,8 @@ from __future__ import annotations
   c5 端到端自测：sidecar 真实 TCP 服务 + fake LPC 客户端全链路
   c6 密钥安全：LLM 密钥仅玩家本地配置（#69 资产继承），sidecar 零硬编码密钥
   c7 驱动内无阻塞（异步）、无 eval cost 超限：llmd.c 异步非阻塞形态守卫
-     （无 while 轮询 / 无 input_to / 无 sleep( / 无 socket_read / cleanup_fd 含 socket_close）
+     （无 while 轮询 / 无 input_to / 无 sleep( / 无 socket_read /
+     cleanup_fd 函数体含 socket_close(fd) 响应后关闭）
 
 不依赖真实游戏服务（无 fluffos 环境）与真实 LLM API（mock/注入替身）。
 LPC 侧为静态校验 + Python 忠实翻译模拟，作用域如实标注（真实 driver 待装）。
@@ -333,7 +334,12 @@ def test_lpc_static() -> None:
     check("llmd.c 无 input_to（无阻塞输入等待）", "input_to" not in llmd, "")
     check("llmd.c 无 sleep( 调用（无阻塞暂停）", "sleep(" not in llmd, "")
     check("llmd.c 无 socket_read（无同步读）", "socket_read" not in llmd, "")
-    check("llmd.c 响应后关闭连接（cleanup_fd 含 socket_close）", "socket_close" in llmd, "")
+    # cleanup_fd 函数体级守卫（仿 watchdog_timeout/inject_commands 先例）：
+    # 第 2 轮审查实证——整文件子串会被 :422 注释里的 "socket_close" 字样命中而恒绿，
+    # 删除真正关闭连接的调用也不红；绑定函数体断言「响应后关闭」才有判别力。
+    cl_body = lpc_func_body(llmd, "protected void cleanup_fd(int fd)")
+    check("llmd.c 响应后关闭连接（cleanup_fd 函数体含 socket_close(fd);）",
+          "socket_close(fd);" in cl_body, f"cleanup_fd 函数体无 socket_close: {cl_body[:200]}")
 
     # ── LPC 原文函数体级守卫（回应审查：模拟与真代码挂钩，防回归）──
     # 注意：用原始函数体（不剥字符串）——守卫要检查的正是字符串内容（提示文案）。
