@@ -82,8 +82,12 @@ int main(object me, string arg)
 	result = ROOT_REFINE_D->do_major_breakthrough(me, method);
 	me->delete_temp("breakthrough/aux_bonus");
 
+	// 突破丹药加成消耗（#73：服用筑基丹等写入 pill_bonus，突破成功后消耗；
+	// 失败保留药力，可在冷却后再次尝试）
 	if (result == 1)
 	{
+		if (me->query_temp("breakthrough/pill_bonus") > 0)
+			me->delete_temp("breakthrough/pill_bonus");
 		write("输入 xiuwei 查看新境界，root 查看灵根变化。\n");
 		return 1;
 	}
