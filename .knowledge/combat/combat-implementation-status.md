@@ -35,12 +35,18 @@ updated: 2026-08-13
 
 | 缺口 | 现状证据 | 对应 1F 章节 |
 |---|---|---|
-| 五系法术本体不存在 | `kungfu/skill/` 下无火弹术/冰箭术/金刃术/土墙术/缠绕术/流沙术/地刺术等任何五行法术文件（全仓搜索零命中） | 1F §1.1 五行基础法术（等级分类/各属性法术详情） |
-| 功法与五行属性无关联 | #62 的 26 个功法文件均未设置 `set("attr", ...)`；五行相克系统（element.h）与技能体系互不相通 | 1F §1.1「attr」属性设计 |
-| 剑诀进阶神通未实现 | `qingyuan-jianjue.c` 只有普通 combat action（「剑影分光」仅为攻击文本描述），无 `set("perform", ...)` 神通机制 | 1F §2.2 青元剑诀技能体系（剑芒/护体剑气/剑影分光/巨剑术/大庚剑阵/无形剑气） |
-| 伤害公式未接境界/灵根 | `adm/daemons/combatd.c`、`include/combat/damage.h`、`feature/damage.c`、`feature/attack.c` 中 realm / spirit_root / 境界 tier 零命中——#61 的 realm 属性（human.c 初始境界、root_refine_d.c set_player_realm）未被战斗结算消费 | 1F §4.1 境界与战斗力关系（境界压制/伤害随境界成长） |
+| 五系法术本体不存在 | `kungfu/skill/`（743 文件）下无火弹术/冰箭术/金刃术/土墙术/缠绕术/流沙术/地刺术等任何五行法术 `.c` 文件；全仓 `.c/.h` 命中仅 `include/combat/skill_combo.h`（#29 组合技表 desc 文本，见下「combo 断链」） | 1F §1.1 五行基础法术（等级分类/各属性法术详情） |
+| 功法与五行属性无关联 | #62 的 26 个功法文件均未设置 `set("attr", ...)`（`kungfu/skill/` 全目录 508 文件 `set("attr")` 零命中）；五行相克系统（element.h）与技能体系互不相通 | 1F §1.1「attr」属性设计 |
+| 剑诀进阶神通未实现 | `qingyuan-jianjue.c` 只有普通 combat action（「剑影分光」仅为攻击文本描述），`set("perform")` 零命中——1F §2.2 六门神通（剑芒/护体剑气/剑影分光/巨剑术/大庚剑阵/无形剑气）全未实现 | 1F §2.2 青元剑诀技能体系 |
+| 伤害公式未接境界/灵根品质 | `adm/daemons/combatd.c`、`include/combat/damage.h`、`feature/damage.c`、`feature/attack.c` 中 realm / query_cultivation_tier 零命中——02-战斗机制与平衡.md:285 伤害公式的「境界系数」「灵根品质加成」项均未实现；注意区分：五行相克已用灵根**主属性**（element.h `query_character_element` 从 spirit_root 读主元素被 calc_damage 消费），缺口是 **realm 境界系数 + 灵根品质加成** | 1F §4.1 境界与战斗力关系、02-战斗机制与平衡.md §伤害公式 |
 
-## 三、边界与注意
+## 三、战斗系统断链点（c4「真实可达」的既有死点）
+
+1. **combo 断链（#29 组合技永不可触发）**：`include/combat/skill_combo.h` combo_table 的 pre/post_skill 引用 7 个技能 id——freezing/goldblade/entangle/fireball/windwalk/swordflash/__cycle__——在 `kungfu/skill/` 下**全部 MISS**；而 `adm/daemons/combatd.c:23` include skill_combo.h、`:679` 调 clear_combo_temp（实际消费该表）→ 组合技永远无法触发。其中 fireball（火弹）/freezing（冰冻）/goldblade（金刃）/entangle（缠绕）正是 1F 五系法术 id——#29 已按 1F 设计预留法术 id 引用，法术本体从未落地。**新法术 id 必须与 combo_table 对齐**（#76 承接）
+2. **realm_level 死检查**：`skill_combo.h:229` 连招境界检查读 `me->query("realm_level")`，但 `set("realm_level")` 全仓零写入方——战斗里唯一的境界检查是死检查（读无人写的字段），坐实 #61 realm 体系未被战斗消费（#78 承接）
+3. **体修路径整体未落地**：#63 工作范围第 4 项（肉身搏击/淬体/体剑双修）无清单条款覆盖、无实现——zhongjian-jianfa（重剑剑法）仅是 #62 的普通 sword 槽功法，无淬体/肉身搏击机制（#79 承接）
+
+## 四、边界与注意
 
 - 门派场景护山大阵（#60 交付，`d/yueguo/*/shanmen.c` 出口到 `fac/hushan` 等）是**场景级阵法**，与 #29 的**战斗级阵法系统**（formation.c）是两条线，勿混淆；#63 范围指战斗中的阵法维持/攻防，承接 #29 的 formation.c
 - 五行相克接入点已定（element.h → calc_damage），新法术/功法只需声明五行属性即可被克制体系覆盖，无需重复实现克制计算
