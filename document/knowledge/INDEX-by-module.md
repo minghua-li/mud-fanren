@@ -10,6 +10,8 @@
 - [`macro-path-reference-system`](knowledge/architecture/macro-path-reference-system.md) — /include/globals.h 定义了所有关键路径宏（ROOM/NPC/COMBAT_D/SKILL_D 等），被驱动自动 include，修改后需重启游戏
 - [`new-id-rate-limit`](knowledge/pitfall/new-id-rate-limit.md) — logind.c/logind2.c 的 check_new_id_per_ip() 按 IP 统计每日新账号数（create_new_id_from_ip mapping），超过 5 个则拒绝注册
 - [`player-login-flow`](knowledge/architecture/player-login-flow.md) — 登录流程分 login ob（验证）和 player ob（游戏体）两层，通过 exec() 转移交互连接；数据存于 /data/login/ 和 /data/user/ 按首字母分片
+- [`sect-id-divergence`](knowledge/architecture/sect-id-divergence.md) — 门派 ID 存在设计文档（tianque_fort/huadao_dock/jujian_gate/guiling_sect）与代码 reputation_d.c（tianque_sect/qianyuan_sect 等）两套不一致命名
+- [`spirit-root-system`](knowledge/architecture/spirit-root-system.md) — ROOT_REFINE_D（/adm/daemons/root_refine_d.c）是灵根洗练/品质提升/境界突破/debuff管理的中央守护进程，通过玩家 dbase 属性 spirit_root/* 持久化状态
 - [`varargs-function-pattern`](knowledge/lpc/varargs-function-pattern.md) — LPC 函数用 varargs 关键字声明可选参数，调用时未传的参数为 0，常用于 query()、do_attack() 等核心函数
 
 ## adm-single
@@ -52,6 +54,8 @@
 - [`combatd-attack-flow`](knowledge/combat/combatd-attack-flow.md) — COMBAT_D 的 do_attack() 通过 ap（攻击力与技能计算）、dp（防御与闪避）、pp（招架）三方判定命中，支持四种攻击类型
 - [`macro-path-reference-system`](knowledge/architecture/macro-path-reference-system.md) — /include/globals.h 定义了所有关键路径宏（ROOM/NPC/COMBAT_D/SKILL_D 等），被驱动自动 include，修改后需重启游戏
 - [`mapping-literal-syntax`](knowledge/lpc/mapping-literal-syntax.md) — LPC mapping 字面量用 ([]) 而非 {}，键值之间用冒号而非 =>，如 ([ 'key': value, 'key2': value2 ])
+- [`sect-id-divergence`](knowledge/architecture/sect-id-divergence.md) — 门派 ID 存在设计文档（tianque_fort/huadao_dock/jujian_gate/guiling_sect）与代码 reputation_d.c（tianque_sect/qianyuan_sect 等）两套不一致命名
+- [`spirit-root-system`](knowledge/architecture/spirit-root-system.md) — ROOT_REFINE_D（/adm/daemons/root_refine_d.c）是灵根洗练/品质提升/境界突破/debuff管理的中央守护进程，通过玩家 dbase 属性 spirit_root/* 持久化状态
 
 ## inherit
 - [`call-out-timer-pattern`](knowledge/lpc/call-out-timer-pattern.md) — LPC 的 call_out(func, delay, args) 在 delay 秒后单次调用，延迟单位为秒但有精度限制

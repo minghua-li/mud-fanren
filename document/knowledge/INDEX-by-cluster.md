@@ -14,7 +14,9 @@
 - [`message-system-pattern`](knowledge/architecture/message-system-pattern.md) — LPC 消息系统分三级：write() 发给当前玩家、tell_object() 发给指定对象、message_vision() 发给房间所有人（$N 自动替换为玩家名）
 - [`player-login-flow`](knowledge/architecture/player-login-flow.md) — 登录流程分 login ob（验证）和 player ob（游戏体）两层，通过 exec() 转移交互连接；数据存于 /data/login/ 和 /data/user/ 按首字母分片
 - [`quest-system`](knowledge/architecture/quest-system.md) — 任务系统在 /quest/ 下按门派/区域分目录组织，标准模式是守护进程（aquest/bquest）加数字后缀，区域级任务直接放在命名目录下
+- [`sect-id-divergence`](knowledge/architecture/sect-id-divergence.md) — 门派 ID 存在设计文档（tianque_fort/huadao_dock/jujian_gate/guiling_sect）与代码 reputation_d.c（tianque_sect/qianyuan_sect 等）两套不一致命名
 - [`simul-efun-global-functions`](knowledge/architecture/simul-efun-global-functions.md) — simul_efun.c 中定义的函数对所有对象全局可见（无需 inherit），包括 message_vision/find_player/wizhood/utf8_to_gb 等核心函数
+- [`spirit-root-system`](knowledge/architecture/spirit-root-system.md) — ROOT_REFINE_D（/adm/daemons/root_refine_d.c）是灵根洗练/品质提升/境界突破/debuff管理的中央守护进程，通过玩家 dbase 属性 spirit_root/* 持久化状态
 
 ## combat
 - [`combat-negative-damage-flip`](knowledge/pitfall/combat-negative-damage-flip.md) — COMBAT_D 中 damage < 0 时取反（damage = 0 - damage），如果吸收超过伤害量则受害者反而受到正伤害
