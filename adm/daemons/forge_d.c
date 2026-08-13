@@ -30,7 +30,7 @@ inherit F_DBASE;
 //   "require_tier"  : 炼制与使用所需境界 tier（SECT_TIER_*，1E §1.1 适用境界）,
 //   "materials"     : ([ 材料id: 数量 ])（材料对象 material_id 对齐）,
 //   "min_skill"     : 炼器术等级要求（02 图鉴 §4.3：法器≥10、法宝≥50）,
-//   "base_rate"     : 基准成功率 %（02 图鉴 §4.3 档位）,
+//   "base_rate"     : 基准成功率 %（02 图鉴 §4.3 档位：法器 75%、法宝 35%）,
 //   "value"         : 法宝价值（文，1 灵石 = 100 文，交易与经济接线用）,
 // ])
 nosave mapping forge_formula = ([
@@ -61,7 +61,7 @@ nosave mapping forge_formula = ([
     "require_tier": SECT_TIER_QI_LATE,
     "materials": ([ "tiejing": 3, "jinjing": 1 ]),
     "min_skill": 20,
-    "base_rate": 70,
+    "base_rate": 75,
     "value": 3200,
   ]),
   "xuantiezhongjian": ([
@@ -76,7 +76,7 @@ nosave mapping forge_formula = ([
     "require_tier": SECT_TIER_ZHU,
     "materials": ([ "jinjing": 2, "xuantie": 1 ]),
     "min_skill": 50,
-    "base_rate": 60,
+    "base_rate": 35,
     "value": 9000,
   ]),
   "gengjingfeijian": ([
@@ -91,7 +91,7 @@ nosave mapping forge_formula = ([
     "require_tier": SECT_TIER_JIE,
     "materials": ([ "xuantie": 2, "gengjing": 1 ]),
     "min_skill": 60,
-    "base_rate": 50,
+    "base_rate": 35,
     "value": 20000,
   ]),
 ]);
@@ -309,7 +309,9 @@ int forge(object player, string arg)
     ob->set("unit", "件");
     ob->set("value", f["value"]);
     ob->setup();
-    if (!ob->move(player))
+    // F_MOVE->move 失败返回 notify_fail 字符串或 0（背包满/过重），成功返回 1——
+    // 不能以 !move() 判断（字符串为 truthy，会漏判导致法宝悬空丢失且材料已扣）
+    if (ob->move(player) != 1)
     {
         ob->move(environment(player));
         tell_object(player, "你身上已放不下法宝，它落到了地上。\n");
