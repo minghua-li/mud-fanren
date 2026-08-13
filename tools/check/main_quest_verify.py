@@ -193,10 +193,12 @@ def brace_balance(src):
 # ──────────────────────────────────────────────
 
 class MockPlayer:
-    def __init__(self, realm_idx=0, sect=None):
+    def __init__(self, realm_idx=0, realm_layer=1, sect=None):
+        # realm_layer：炼气期层数（1-9）；对齐 realm 存储约定「炼气N层」（ASCII 数字，#61）
         self.db = {
-            "realm": "炼气1层",
+            "realm": "炼气%d层" % realm_layer,
             "realm_index": realm_idx,
+            "realm_layer": realm_layer,
             "combat_exp": 0,
             "title": "",
             "quest_chain": {},
@@ -238,6 +240,12 @@ class MockPlayer:
         names = ["炼气", "筑基", "结丹", "元婴", "化神", "炼虚", "合体", "大乘"]
         self.db["realm"] = names[idx] + "期"
         self.db["realm_index"] = idx
+        self.db["realm_layer"] = 0  # 大境界无层数信息（parse_realm 返回 layer=0）
+
+    def set_realm_layer(self, layer):
+        """提升炼气期层数（仅炼气期有层数语义，对齐 sect_d.parse_realm）。"""
+        self.db["realm"] = "炼气%d层" % layer
+        self.db["realm_layer"] = layer
 
     def set_location(self, path):
         self.location = path
@@ -251,8 +259,18 @@ class MockPlayer:
         return self.db.get("sect_id")
 
     def join_sect(self, sect_id):
-        """模拟 SECT_D->join_sect（无校验简化：炼气三层即视为满足主线 mq_1_6 语境）。"""
+        """模拟 SECT_D->join_sect，含真实 check_join 门禁语义（sect_d.c:403-441）：
+        - 已入他派 → 拒（不强制改派）
+        - 炼气 1-2 层（realm_index==0 且层数 1-2）→ 「修为不足：入宗需炼气三层以上」拒
+        - 炼气 3 层+、筑基以上、realm 缺失 → 放行（realm 缺失兜底与真实代码一致）
+        """
         if self.db.get("sect_id"):
+            self.log.append("你已是其他门派弟子，入宗被拒")
+            return False
+        ri = self.db.get("realm_index", 0)
+        layer = self.db.get("realm_layer", 1)
+        if ri == 0 and 1 <= layer < 3:
+            self.log.append("修为不足：入宗需炼气三层以上")
             return False
         self.db["sect_id"] = sect_id
         return True
@@ -521,9 +539,14 @@ def run_all(src, label="真实交付"):
     run_chain(p1b, CHAIN_0)
     check("场景1b 跨章解锁 mq_1_1 可接", assign_quest("mq_1_1", p1b))
 
-    # 场景2：第一章炼气段（1.1-1.6）串行推进
+    # 场景2：第一章炼气段（1.1-1.6）串行推进。
+    # 入宗玩家修为对齐真实 join_sect 门禁（sect_d.c:423-430 入宗需炼气三层以上）：
+    # 炼气1-2层自动入宗会被拒，故提升到炼气5层使 mq_1_6 自动入宗真实可达。
+    p.set_realm_layer(5)
     done1 = run_chain(p, CHAIN_1[:6])
     check("场景2 第一章前 6 节点（炼气段）走完", done1 == CHAIN_1[:6], str(done1))
+    check("场景2 炼气5层 mq_1_6 自动入黄枫谷", p.query_sect() == "huangfeng_valley",
+          f"sect={p.query_sect()}")
 
     # 场景3：境界门槛——炼气玩家被 mq_1_7（筑基门槛）拦截
     blocked = assign_quest("mq_1_7", p)
@@ -557,8 +580,9 @@ def run_all(src, label="真实交付"):
                     item_missing.append((qid, ip))
     check("场景4 奖励物品路径存在", not item_missing, str(item_missing))
 
-    # 场景5：完整链路 0_1→1_13（17 节点），中间突破境界
-    p2 = MockPlayer(realm_idx=0)
+    # 场景5：完整链路 0_1→1_13（17 节点），中间突破境界。
+    # 炼气5层起步：mq_1_6 自动入宗对齐真实门禁（炼气三层以上），realm_index=0 不影响境界门槛判定
+    p2 = MockPlayer(realm_idx=0, realm_layer=5)
     p2.set_location("/d/yueguo/qingniu/zhenkou")
     full = []
     full += run_chain(p2, CHAIN_0)
@@ -576,8 +600,9 @@ def run_all(src, label="真实交付"):
           set(c2.keys()) == set(all_ids), str(sorted(c2.keys())))
 
     # 场景6：剧情入宗（c4 修复，审查第 2 轮）——完成 mq_1_6 后自动入黄枫谷，
-    # 贡献/功法奖励对走主线且未手动入宗的玩家真实可达
-    p3 = MockPlayer(realm_idx=0)
+    # 贡献/功法奖励对走主线且未手动入宗的玩家真实可达。
+    # 修为对齐真实门禁：炼气5层（>三层）自动入宗成功；炼气1-2层被拒（审查第 3 轮 P1 保真度修复）。
+    p3 = MockPlayer(realm_idx=0, realm_layer=5)
     p3.set_location("/d/yueguo/qingniu/zhenkou")
     run_chain(p3, CHAIN_0)
     run_chain(p3, CHAIN_1[:6])          # 完成 mq_1_6（拜入黄枫谷）
@@ -593,6 +618,24 @@ def run_all(src, label="真实交付"):
     # 功法渠道：入宗后 grant_skill 走本门分支（sect_config 命中 qingyuan-jianjue）
     check("场景6 入宗后功法渠道可达（sect_config 命中）",
           "qingyuan-jianjue" in src and "huangfeng_valley" in src)
+    # ── P1 保真度（审查第 3 轮 小厮·1）：真实 join_sect 对炼气 1-2 层拒绝（sect_d.c:423-430），
+    #    断言「自动入宗成功」必须只对炼气三层以上成立；炼气 1-2 层被拒 + 修为提升后手动补入。
+    p_low = MockPlayer(realm_idx=0, realm_layer=1)
+    p_low.set_location("/d/yueguo/qingniu/zhenkou")
+    run_chain(p_low, CHAIN_0)
+    run_chain(p_low, CHAIN_1[:6])
+    check("场景6 炼气1层完成 mq_1_6 自动入宗被拒（修为不足）",
+          p_low.query_sect() is None, f"sect={p_low.query_sect()}")
+    check("场景6 炼气1层手动 sect join 亦被拒（对齐 check_join）",
+          p_low.join_sect("huangfeng_valley") is False)
+    # 修为提升到炼气5层后手动 sect join 补入成功 → 主线贡献渠道真实可达（真实玩家路径）
+    p_low.set_realm_layer(5)
+    join_ok = p_low.join_sect("huangfeng_valley")
+    check("场景6 炼气5层手动 sect join 补入成功",
+          join_ok and p_low.query_sect() == "huangfeng_valley",
+          f"sect={p_low.query_sect()}")
+    contrib_ok2 = p_low.add_contribution(200) == 200
+    check("场景6 补入后贡献渠道可达", contrib_ok2)
 
     print(f"\n== [{label}] [3] LPC 原文守卫 ==")
 
