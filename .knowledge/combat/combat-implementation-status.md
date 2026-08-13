@@ -42,8 +42,8 @@ updated: 2026-08-13
 
 ## 三、战斗系统断链点（c4「真实可达」的既有死点）
 
-1. **combo 断链（#29 组合技永不可触发）**：`include/combat/skill_combo.h` combo_table 的 pre/post_skill 引用 7 个技能 id——freezing/goldblade/entangle/fireball/windwalk/swordflash/__cycle__——在 `kungfu/skill/` 下**全部 MISS**；而 `adm/daemons/combatd.c:23` include skill_combo.h、`:679` 调 clear_combo_temp（实际消费该表）→ 组合技永远无法触发。其中 fireball（火弹）/freezing（冰冻）/goldblade（金刃）/entangle（缠绕）正是 1F 五系法术 id——#29 已按 1F 设计预留法术 id 引用，法术本体从未落地。**新法术 id 必须与 combo_table 对齐**（#76 承接）
-2. **realm_level 死检查**：`skill_combo.h:229` 连招境界检查读 `me->query("realm_level")`，但 `set("realm_level")` 全仓零写入方——战斗里唯一的境界检查是死检查（读无人写的字段），坐实 #61 realm 体系未被战斗消费（#78 承接）
+1. **combo 断链（#29 组合技永不可触发，双重断链）**：`include/combat/skill_combo.h` combo_table 的 pre/post_skill 引用 7 个技能 id——freezing/goldblade/entangle/fireball/windwalk/swordflash/__cycle__——在 `kungfu/skill/` 下**全部 MISS**；且真正读 combo_table 的 `check_combo`（skill_combo.h:172）/`apply_combo_bonus`（:243）**全仓零调用方**——`adm/daemons/combatd.c` 仅调 `clear_combo_temp`（:679，只清临时变量不读表）与 `tick_cooldowns`（:750-751，只递减冷却）→ 组合技永远无法触发（id 缺失 + 触发函数未接线双因）。其中 fireball（火弹）/freezing（冰冻）/goldblade（金刃）/entangle（缠绕）正是 1F 五系法术 id——#29 已按 1F 设计预留法术 id 引用，法术本体从未落地。**新法术 id 须与 combo_table 对齐、且 check_combo 须有真实调用方（接线进战斗流程）**（#76 承接；注意：仅对齐 id 不够，触发入口未接线则组合技仍不可触发）
+2. **realm_level 死检查**：`set("realm_level")` 全仓零写入方（#61 的 set_player_realm 只写 realm/realm_index/realm_sub）；读方共 3 处——`skill_combo.h:229`（连招境界检查）、`cmds/std/buzhen.c:103`、`feature/formation.c:599`（阵法 realm 合计）——战斗/阵法里的境界检查全读无人写的字段，坐实 #61 realm 体系未被战斗消费（#78 承接）
 3. **体修路径整体未落地**：#63 工作范围第 4 项（肉身搏击/淬体/体剑双修）无清单条款覆盖、无实现——zhongjian-jianfa（重剑剑法）仅是 #62 的普通 sword 槽功法，无淬体/肉身搏击机制（#79 承接）
 
 ## 四、边界与注意

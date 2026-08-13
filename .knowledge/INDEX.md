@@ -100,4 +100,4 @@
 - `teleport-network` — 传送网络节点哪些已落地、哪些还是占位路径；九宗驻地目录与 sect_id 对齐约定 — world/teleport-network.md
 - `facility-c5-arbitration` — 遇到 NPC 九宗设施与 02-区域游戏玩法.md §4 的口径争议时，坊市抽税条款归属玩家自建宗门、灵田灵石走 mansion.h 土地档，均已业务仲裁接受 — design/facility-c5-arbitration.md
 - `llm-sidecar` — LPC LLM_D 与 Python sidecar 的 TCP 协议契约、两级超时、LPC 侧白名单防御、开关双闸 — tech/llm-sidecar.md
-- `combat-implementation-status` — 凡人战斗系统（1F 规格）代码落地现状基准：main 已有五行相克/阵法/功法 skill 可复用，五系法术本体/剑诀 perform 神通/伤害接境界灵根三缺口——#63 验收判定产物，供 #76/#77/#78 实施对齐 — combat/combat-implementation-status.md
+- `combat-implementation-status` — 凡人战斗系统（1F 规格）代码落地现状基准：main 已有五行相克/阵法/功法 skill 可复用，四缺口（五系法术本体/剑诀 perform 神通/伤害接境界灵根/体修路径）+ 三断链点（combo 双重断链/realm_level 死检查/体修）——#63 验收判定产物，供 #76/#77/#78/#79 实施对齐 — combat/combat-implementation-status.md
