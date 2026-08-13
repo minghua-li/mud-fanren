@@ -71,6 +71,21 @@ void setup_human(object ob)
                         ob->set(SPIRIT_ROOT_DATA, sr);
         }
 
+        // 对玩家角色初始化修仙境界：新玩家初始境界=炼气一层（realm 接线）
+        // 存储约定（与 root_refine_d / sect_d / achievement_d 等读取端对齐）：
+        //   realm       = "炼气1层"（中文境界字符串；层数用 ASCII 数字，sect_d.extract_layer 依赖）
+        //   realm_sub   = "初期"（子阶段）
+        //   realm_index = 1（大境界索引：0凡人 1炼气 2筑基 …）
+        //   xiuwei      = 0（修为值，打坐/灵石灌注获得）
+        if (userp(ob) && undefinedp(ob->query("realm")))
+        {
+                ob->set("realm", "炼气1层");
+                ob->set("realm_sub", "初期");
+                ob->set("realm_index", 1);
+                if (undefinedp(ob->query("xiuwei")))
+                        ob->set("xiuwei", 0);
+        }
+
         if(stringp(force = ob->query_skill_mapped("force")))
 		    {
 			      sep_force = (int)ob->query_skill(force, 1);
