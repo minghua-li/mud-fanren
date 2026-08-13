@@ -152,3 +152,5 @@ sect-quest-system -> 02-任务链与奖励曲线 : 奖励四渠道与活跃度�
 sect-quest-system -> sects/README : 9 宗任务链与事件按九宗档案「宗门事件与任务链」节逐宗取材
 sect-quest-system -> teleport-network : 驻地场景挂接（sect_areas）依赖 #58 九宗驻地目录落地
 sect-quest-system -> 1D-门派种族声望 : 事件/任务声望奖励走 REPUTATION_D（含正魔互斥）
+combat-implementation-status  ->  1F-法术剑诀阵法战斗 : 本基准记录 1F 规格在代码中的落地现状与缺口
+combat-implementation-status  ->  COMBAT_SYSTEM : 落地现状是战斗体系总览的实现对照基准
