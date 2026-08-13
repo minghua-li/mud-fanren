@@ -40,6 +40,9 @@
 │   ├── COMBAT_SYSTEM.md        # 法术·剑诀·阵法总览（总览文档）
 │   └── 1F-法术剑诀阵法战斗.md   # LPC 详细实现（详细展开）
 ├── quests/                     # 📜 任务系统
+│   └── 1G-任务副本奇遇.md       # 主线/副本/奇遇完整设计（完整版）
+├── tech/                       # 🔧 技术实现契约
+│   └── llm-sidecar.md          # LLM 解析 sidecar 协议（#70 Phase 1）
 │   ├── 1G-任务副本奇遇.md       # 主线/副本/奇遇完整设计（完整版）
 │   └── sect-quest-system.md    # 宗门任务链与宗门事件（LPC 实现版，#59 落地）
 ├── 02-扩充内容/                # ✨ 合理扩充（旧版，.knowledge 内备份）
@@ -76,6 +79,7 @@
 | `combat/` | [[COMBAT_SYSTEM]] | 战斗体系总览 | 五行法术、剑诀、体术、阵法、符箓 | 总览文档 |
 | `combat/` | → [[1F-法术剑诀阵法战斗]] | 战斗系统（详细） | 法术体系、剑诀进阶、体修路径、阵法系统、战斗机制 | LPC 实现版 |
 | `quests/` | [[1G-任务副本奇遇]] | 任务系统（完整版） | 主线任务链（5章）、副本秘境、奇遇事件、声望驱动 | 完整版 |
+| `tech/` | [[llm-sidecar]] | LLM 解析 sidecar 协议（#70） | 驱动内 daemon + sidecar 契约、两级超时、LPC 白名单防御、开关双闸 | LPC 实现版 |
 | `quests/` | [[sect-quest-system]] | 宗门任务链与事件（LPC 实现版） | 9 宗任务链 + 9 宗事件落地、奖励四渠道、活跃度梯度、场景挂接（#59） | LPC 实现版 |
 | `02-扩充内容/`（项目根） | [[02-经济与资源]] | **经济与资源（增强版）** | 产出总控模型、动态定价、全局收支平衡表、通胀控制机制、跨系统消耗验证 | ✨ 扩充内容 |
 | `02-扩充内容/`（项目根） | [[02-灵根养成与突破]] | **灵根养成与突破（新版）** | 灵根检测/养成/突破/洗练机制、数值模型、关联系统设计 | ✨ 扩充内容 |
@@ -95,3 +99,4 @@
 - `realm-storage-convention` — 读/写玩家 realm 属性时须用「炼气N层」ASCII 数字层数格式（sect_d.extract_layer 只认 0-9，中文数字会解析失败）；统一走 ROOT_REFINE_D 接口 — cultivation/realm-storage-convention.md
 - `teleport-network` — 传送网络节点哪些已落地、哪些还是占位路径；九宗驻地目录与 sect_id 对齐约定 — world/teleport-network.md
 - `facility-c5-arbitration` — 遇到 NPC 九宗设施与 02-区域游戏玩法.md §4 的口径争议时，坊市抽税条款归属玩家自建宗门、灵田灵石走 mansion.h 土地档，均已业务仲裁接受 — design/facility-c5-arbitration.md
+- `llm-sidecar` — LPC LLM_D 与 Python sidecar 的 TCP 协议契约、两级超时、LPC 侧白名单防御、开关双闸 — tech/llm-sidecar.md
