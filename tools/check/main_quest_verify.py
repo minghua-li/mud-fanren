@@ -676,6 +676,16 @@ def run_all(src, label="真实交付"):
                  "SECT_D->join_sect(player, \"huangfeng_valley\")" in src)
     check("守卫 mq_1_6 完成时自动入黄枫谷", guard_ok4)
 
+    # 3.5 目标房间语义守卫（审查第 1 轮复核发现并修正）：
+    #     mq_1_7「百药园看守」必须指向真实百药园 fac/baiyaoyuan（非岳麓殿）；
+    #     mq_1_8「岳麓殿之行」必须指向岳麓殿 yuexudian（非传功阁）。
+    #     两处曾错位：mq_1_7 指向 yuexudian、mq_1_8 指向 chuangong，
+    #     与 1G §二 1.7/1.8 剧情地点不符（黄枫谷百药园真实存在于 fac/ 子目录）。
+    guard_ok5 = ('"target": "/d/yueguo/huangfeng/fac/baiyaoyuan"' in src)
+    check("守卫 mq_1_7 目标=百药园(fac/baiyaoyuan)", guard_ok5)
+    guard_ok6 = ('"target": "/d/yueguo/huangfeng/yuexudian"' in src)
+    check("守卫 mq_1_8 目标=岳麓殿(yuexudian)", guard_ok6)
+
     # 3.4-3.6 真实突变验证（#65 审查第 1 轮 F2 修订）：
     # 对改坏后的 LPC 原文文本重跑静态+场景断言，验证对应断言转红——证明脚本非恒真。
     # 注意：改写在内存文本上进行，不写文件、不污染工作树。
