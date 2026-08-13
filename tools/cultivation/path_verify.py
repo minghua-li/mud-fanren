@@ -441,10 +441,11 @@ def query_major_breakthrough_probability(ob, realm, aux_bonus=0):
     if quality == SPIRIT_ROOT_PSEUDO and realm == REALM_CORE_FORMATION:
         if prob > PSEUDO_MAX_BREAK_RATE:
             prob = PSEUDO_MAX_BREAK_RATE
-    if prob < 5:
-        prob = 5
-    if prob > 95:
-        prob = 95
+    # 钳制对齐 LPC：root_refine_d.c:990-991 `if (prob < 1) prob = 1; if (prob > 99) prob = 99;`
+    if prob < 1:
+        prob = 1
+    if prob > 99:
+        prob = 99
     return prob
 
 
@@ -470,6 +471,10 @@ def major_breakthrough_failure(ob, now):
         add_xiuwei(ob, -penalty)
     ob.spirit_root["last_break"] = now
     ob.spirit_root["fail_streak"] = ob.spirit_root.get("fail_streak", 0) + 1
+    # 对齐 LPC root_refine_d.c:2173-2179：连续失败 ≥2 触发灵根震荡 debuff（简化：只标记生效）
+    streak = ob.spirit_root["fail_streak"]
+    if streak >= 2 and not ob.spirit_root.get("debuff"):
+        ob.spirit_root["debuff"] = 1
     return 1
 
 
@@ -597,26 +602,32 @@ def scenario_c1_new_player():
 # 场景 2：c3 打坐修炼 → 炼气升层 → 13 层大圆满
 # ======================================================================
 def scenario_c3_dazuo():
-    print("[场景2] c3 打坐修炼（伪灵根 speed=0.3，base=10 → 每心跳 +3 修为）")
+    print("[场景2] c3 打坐修炼（伪灵根 speed=0.3，base=10，purity=30 → 每心跳 +2 修为）")
     p = Player(is_user=True)
     setup_human_realm(p)
     # 伪灵根 purity=30 → purity_factor=0.79（root_refine_d.c:1545-1552）→ int(10*0.3*0.79)=2
     gain = query_heartbeat_cultivation_gain(p)
     check("单心跳修为 = 2", gain == 2, gain)
 
-    # 打坐到炼气13层大圆满（升层累计消耗 7800，还需攒满 10000 突破门槛）
+    # 打坐到炼气13层大圆满（升层累计消耗 100+200+…+1200=7800，还需攒满 10000 突破门槛）
     ticks = 0
+    prev_layer = 1
+    total_spent = 0
     while query_major_break_need(p) == 0 or query_xiuwei(p) < XIUWEI_QI_TO_ZHU:
         if ticks > 200000:
             check("打坐心跳未失控", False, "ticks=%d" % ticks)
             return
         do_heartbeat_cultivation(p)
         ticks += 1
+        layer = query_player_realm_layer(p)
+        if layer > prev_layer:  # 升层：累计该层消耗（check_qi_layer_up spend）
+            total_spent += query_layer_xiuwei_need(prev_layer)
+            prev_layer = layer
     check("达到炼气13层大圆满", query_player_realm_layer(p) == 13, query_player_realm_layer(p))
     check("realm == 炼气13层", p.query("realm") == "炼气13层", p.query("realm"))
     check("修为达到突破门槛", query_xiuwei(p) >= XIUWEI_QI_TO_ZHU, query_xiuwei(p))
-    # 升层累计消耗核算：1→2 需100 … 12→13 需1200，共 7800
-    check("升层总消耗 7800 已扣", ticks >= 1, ticks)
+    # 升层消耗真实核算：1→2 需100 … 12→13 需1200，累计 7800
+    check("升层累计消耗 7800", total_spent == 7800, total_spent)
     print("      （%d 心跳，当前修为 %d，realm=%s）" % (ticks, query_xiuwei(p), p.query("realm")))
 
 
