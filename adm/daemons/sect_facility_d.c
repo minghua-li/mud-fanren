@@ -174,7 +174,7 @@ nosave mapping facility_config = ([
     "level": 1, "max_level": 3,
     "effect": ([ "type": SECT_BUFF_FORGE, "base": 10, "per_level": 2 ]),
     "duration": 7200, "use_stone": SECT_USE_STONE_DEFAULT, "use_contrib": SECT_USE_CONTRIB_DEFAULT,
-    "upgrade": SECT_UPGRADE_SPECIAL, "daily_limit": 0,
+    "upgrade": SECT_UPGRADE_FORGE, "daily_limit": 0,
   ]),
 
   // ================= 天阙堡 =================

@@ -49,6 +49,7 @@ UPG_MARKET = parse_define_mapping(hdr, "SECT_UPGRADE_MARKET")
 UPG_LIBRARY = parse_define_mapping(hdr, "SECT_UPGRADE_LIBRARY")
 UPG_DEFENSE = parse_define_mapping(hdr, "SECT_UPGRADE_DEFENSE")
 UPG_SPECIAL = parse_define_mapping(hdr, "SECT_UPGRADE_SPECIAL")
+UPG_FORGE = parse_define_mapping(hdr, "SECT_UPGRADE_FORGE")
 UPG_PLANT = parse_define_mapping(hdr, "SECT_UPGRADE_PLANT")
 PLANT_PLOTS_BASE = parse_define_int(hdr, "SECT_PLANT_PLOTS_BASE")
 PLANT_PLOTS_PER = parse_define_int(hdr, "SECT_PLANT_PLOTS_PER_LEVEL")
@@ -90,7 +91,8 @@ def parse_entry(entry_text, key):
     um = re.search(r'"upgrade"\s*:\s*(SECT_UPGRADE_\w+)', entry_text)
     e["upgrade"] = {"SECT_UPGRADE_COMMON": UPG_COMMON, "SECT_UPGRADE_DEFENSE": UPG_DEFENSE,
                     "SECT_UPGRADE_SPECIAL": UPG_SPECIAL, "SECT_UPGRADE_PLANT": UPG_PLANT,
-                    "SECT_UPGRADE_MARKET": UPG_MARKET, "SECT_UPGRADE_LIBRARY": UPG_LIBRARY}[um.group(1)] if um else {}
+                    "SECT_UPGRADE_MARKET": UPG_MARKET, "SECT_UPGRADE_LIBRARY": UPG_LIBRARY,
+                    "SECT_UPGRADE_FORGE": UPG_FORGE}[um.group(1)] if um else {}
     drm = re.search(r'"daily_reward"\s*:\s*\(\[\s*"exp"\s*:\s*([A-Za-z_]+|\d+)\s*,\s*"contrib"\s*:\s*([A-Za-z_]+|\d+)\s*,\s*"verb"\s*:\s*"([^"]+)"', entry_text)
     if drm:
         def num_or_macro(s):
@@ -553,6 +555,11 @@ for s in nine:
 check("通用五类设施齐备",
       {1,2,3,4,5} <= {c["type"] for c in facility_config.values()})
 check("18 个设施条目", len(facility_config) == 18)
+# c5：化刀坞炼器工坊升级档对齐 §4.4.1「炼器坊 20000/10000」（Lv1→2）
+check("化刀坞炼器工坊升级档 Lv1→2=20000/10000（§4.4.1 炼器坊行）",
+      facility_config["huadao_lianqi"]["upgrade"][2] == [20000, 10000])
+check("化刀坞炼器工坊升级档 Lv2→3=30000/15000（下一通用建筑档，同坊市递进）",
+      facility_config["huadao_lianqi"]["upgrade"][3] == [30000, 15000])
 
 # ---------- 场景 10：命令层中文名→id 解析（c6 修复，第 3 轮小厮·2 not_met 项） ----------
 # 玩家照帮助输入中文名（facility plant <灵草|黄龙草|紫丹参>、read/copy <功法名>、buy <货物>）
@@ -711,6 +718,51 @@ mut_seed = daemon.replace("if (sid == arg || (mapp(sc) && sc[\"name\"] == arg))"
 mut_seed_body = extract_func(mut_seed, "resolve_seed_id")
 check("LPC 原文突变：resolve_seed_id 去掉中文名匹配后守卫转红（c6 命令面）",
       mut_seed_body is not None and not resolve_seed_name_ok(mut_seed_body))
+
+# ======== c6 接线原文守卫（第 1 轮审查核心缺口：resolve 函数定义守卫 ≠ 调用点接线） ========
+# 审查实证：把 daemon 中 4 处 resolve_* 调用删掉（= c6 修复被撤销，玩家照帮助输中文名必失败），
+# path_verify 仍全绿——场景 10 的 cmd_facility 是 Python 自洽镜像，不经 LPC 原文。
+# 补「四个函数体必须真实调用 resolve_*」的接线守卫（照 plant_pay_ok 模式），让 c6 命令面
+# 的机器验证绑定 LPC 原文接线，删接线即红。
+
+def plant_wire_ok(body):
+    """plant 函数体：必须调用 resolve_seed_id 解析中文名"""
+    if body is None: return False
+    return "resolve_seed_id(seed_id)" in body
+
+def read_wire_ok(body):
+    """read_skill 函数体：必须调用 resolve_skill_id 解析中文名"""
+    if body is None: return False
+    return "resolve_skill_id(sect_id, skill_id)" in body
+
+def trans_wire_ok(body):
+    """transcribe_skill 函数体：必须调用 resolve_skill_id 解析中文名"""
+    if body is None: return False
+    return "resolve_skill_id(sect_id, skill_id)" in body
+
+def buy_wire_ok(body):
+    """market_buy 函数体：必须调用 resolve_seed_id 解析中文名"""
+    if body is None: return False
+    return "resolve_seed_id(good_id)" in body
+
+plant_body = extract_func(daemon, "plant")
+read_body = extract_func(daemon, "read_skill")
+trans_body = extract_func(daemon, "transcribe_skill")
+buy_body = extract_func(daemon, "market_buy")
+check("LPC 原文 plant：调用 resolve_seed_id 接线（c6 中文名解析）", plant_wire_ok(plant_body))
+check("LPC 原文 read_skill：调用 resolve_skill_id 接线", read_wire_ok(read_body))
+check("LPC 原文 transcribe_skill：调用 resolve_skill_id 接线", trans_wire_ok(trans_body))
+check("LPC 原文 market_buy：调用 resolve_seed_id 接线", buy_wire_ok(buy_body))
+
+# 突变实证（复刻审查）：删除 4 处接线（= c6 修复被撤销）→ 四条接线守卫必须全转红
+mut_wire = daemon.replace("    seed_id = resolve_seed_id(seed_id);\n", "")
+mut_wire = mut_wire.replace("    skill_id = resolve_skill_id(sect_id, skill_id);\n", "")
+mut_wire = mut_wire.replace("    good_id = resolve_seed_id(good_id);\n", "")
+check("LPC 原文突变：删除 4 处 resolve 接线后守卫全转红（c6 接线绑定，复刻审查实证）",
+      (plant_body is not None and not plant_wire_ok(extract_func(mut_wire, "plant"))
+       and not read_wire_ok(extract_func(mut_wire, "read_skill"))
+       and not trans_wire_ok(extract_func(mut_wire, "transcribe_skill"))
+       and not buy_wire_ok(extract_func(mut_wire, "market_buy"))))
 
 # ======== 命令层 dispatch 静态守卫（命令层测试绑定真实 facility.c） ========
 # 命令层必须把子命令参数（中文名或拼音 id）原样传给 daemon，中文名解析在 daemon 侧完成。
