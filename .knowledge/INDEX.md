@@ -41,6 +41,8 @@
 │   └── 1F-法术剑诀阵法战斗.md   # LPC 详细实现（详细展开）
 ├── quests/                     # 📜 任务系统
 │   └── 1G-任务副本奇遇.md       # 主线/副本/奇遇完整设计（完整版）
+├── architecture/               # 🏗️ 架构·验收方法
+│   └── lpc-region-data-acceptance.md  # LPC 区域数据静态验收方法（无 driver 环境，#58 实测）
 ├── 02-扩充内容/                # ✨ 合理扩充（旧版，.knowledge 内备份）
 │   ├── 02-经济与资源.md         # （旧版基底，见新版项目根 02-扩充内容/）
 │   ├── 02-日常玩法.md           # 修行生活、副职系统、PVE/PVP 日常（合理扩充）
@@ -60,6 +62,7 @@
 
 | 目录 | 文件 | 维度 | 概述 | 类型 |
 |------|------|------|------|------|
+| `architecture/` | [[lpc-region-data-acceptance]] | **LPC 区域数据静态验收方法** | 无 fluffos driver 环境下纯房间/NPC 数据的 author_check 写法与 check 脚本踩坑（#58 实测） | 验收方法 |
 | `overview/` | [[1A-游戏要素总览]] | **总览** | 全部设计文档的汇总总览，按八大维度组织 | 📖 入手先读 |
 | `world/` | [[WORLD_DESIGN]] | 世界观总览 | 三界结构（人界→灵界→仙界）、地理区域、历史脉络 | 总览文档 |
 | `world/` | → [[1A-人界地理]] | 人界地理（详细） | 越国七派、乱星海、大晋、慕兰草原、凡人江湖等区域 | 详细展开 |
@@ -90,3 +93,4 @@
 
 见 [[RELATIONS]] 文件（根目录），用边表记录知识点间的关联。
 - `teleport-network` — 传送网络节点哪些已落地、哪些还是占位路径；九宗驻地目录与 sect_id 对齐约定 — world/teleport-network.md
+- `lpc-region-data-acceptance` — 无 driver 环境下 LPC 区域数据 author_check 写法与脚本踩坑 — architecture/lpc-region-data-acceptance.md
