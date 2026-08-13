@@ -25,6 +25,7 @@
 - `objectives`：`OBJ_REACH` 目标=真实房间路径（#67/#58 场景挂接），提交时按 `base_name(environment(player))` 前缀匹配判定。
 - 奖励走 `grant_quest_rewards` 六渠道（同 #59）：exp/coin/reputation/contribution/items/skills。
 - **剧情入宗（c4，审查第 2 轮修复）**：`complete_node` 完成 `mq_1_6`（拜入黄枫谷）时，若玩家未入任何门派，自动调 `SECT_D->join_sect(player, "huangfeng_valley")`——默认分支（黄枫谷）剧情落地，入宗后贡献/功法奖励（mq_1_7/1_8/1_10/1_11）真实可达。`join_sect` 自带条件校验（炼气三层/已入他派/叛门记录），不满足时拒绝并提示（如炼气 1-2 层完成 mq_1_6 的玩家收到「修为不足」提示，需修炼后手动 `sect join`）；玩家已入他派时不强行改派（尊重分支选择，贡献发到实际门派）。
+- **入宗门禁保真度（审查第 3 轮 P1）**：sect_d.check_join（sect_d.c:403-441）对炼气 1-2 层（realm_index==0 且层数 1-2）返回「修为不足：入宗需炼气三层以上」，炼气三层+/筑基+/realm 缺失均放行（realm 缺失兜底）——验证脚本模拟层 join_sect 必须翻译此门禁语义，且「自动入宗成功」断言只对炼气三层以上玩家成立。主线分支机制（1.6 可选他派）由子票 #75 承接。
 
 ## 三、境界门槛与跨章解锁（c3）
 
@@ -37,7 +38,7 @@
 - 主线难度系数 2.5（quest_chain_d.c calc_exp_reward QUEST_TYPE_MAIN 分支）——实际发放 = 模板 exp × 2.5 × realm_scale(1.0) × chain_bonus(≤2.0)。模板值按「实际/2.5」反推设计，对齐 02-任务链与奖励曲线 §2.3（越国篇任务平均 1000~8000 经验）。
 - coin 直接发模板值（calc_coin_reward 有 coin 就返回，不乘系数），1 灵石 = 100 文。
 - 章节完成额外发里程碑：title（初入修仙/越国风云）+ item（baicao-dan/lingzhi）+ 章节基础×3 经验。
-- skills 渠道（mq_1_8 青元剑诀）：玩家已入黄枫谷时走 grant_skill 本门分支（写 sect/learned 免贡献），**不要求 kungfu/skill/qingyuan-jianjue.c 存在**（#62 功法实体化合入前也安全）。
+- skills 渠道（mq_1_8 青元剑诀）：玩家已入黄枫谷时走 grant_skill 本门分支（写 sect/learned 免贡献），**不要求 kungfu/skill/qingyuan-jianjue.c 存在**（#62 功法实体化合入前也安全）。**#62 合入后（已打通）**：`kungfu/skill/qingyuan-jianjue.c` 已在 trunk 实体化，已入他派玩家（sect_id 非黄枫谷，青元剑诀仅配在黄枫谷 sect_d.c:52）落 grant_skill 通用分支（quest_chain_d.c:753-762，`file_size(SKILL_D(skill_id)+".c") > 0` → `set_skill` 直发）——功法渠道对非黄枫谷玩家真实可达，无 driver 环境为静态链路核实。
 
 ## 五、踩坑与约定
 
@@ -49,4 +50,4 @@
 
 ## 六、验证
 
-`python3 tools/check/main_quest_verify.py`：44 断言，四部分（静态：17 任务定义/房间路径/realm_range/前置无环/括号配对/键一致性守卫；行为模拟：第零章全走→跨章解锁→第一章炼气段→境界门槛拦截→突破后续接→全 17 节点→剧情入宗后贡献/功法可达；LPC 原文守卫；真实突变 4 组：改坏房间路径/删任务定义/放宽境界门槛/删 mq_1_6 入宗接线各转红）。可复跑，供采纳 check 复用（架构师登记时直接 `python3 tools/check/main_quest_verify.py`）。
+`python3 tools/check/main_quest_verify.py`：49 断言，四部分（静态：17 任务定义/房间路径/realm_range/前置无环/括号配对/键一致性守卫；行为模拟：第零章全走→跨章解锁→第一章炼气段→境界门槛拦截→突破后续接→全 17 节点→剧情入宗后贡献/功法可达→**入宗门禁保真度（炼气1层被拒/手动补入成功，审查第 3 轮 P1 新增）**；LPC 原文守卫；真实突变 4 组：改坏房间路径/删任务定义/放宽境界门槛/删 mq_1_6 入宗接线各转红）。可复跑，供采纳 check 复用（架构师登记时直接 `python3 tools/check/main_quest_verify.py`）。
