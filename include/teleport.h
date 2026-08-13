@@ -121,6 +121,7 @@
 #define TP_NODE_TAI_NAN           "tai_nan"         // 太南谷
 #define TP_NODE_HUANGFENG         "huangfeng"       // 黄枫谷
 #define TP_NODE_JIA_YUAN          "jia_yuan"        // 岚州嘉元城
+#define TP_NODE_QING_NIU          "qing_niu"        // 青牛镇（镜州出生地）
 #define TP_NODE_TIANLUO_SECTS     "tianluo_sects"   // 天罗国魔道两宗（鬼灵门/御灵宗）
 
 // 人界 → 乱星海
