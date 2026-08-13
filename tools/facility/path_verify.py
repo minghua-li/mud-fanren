@@ -46,6 +46,7 @@ for name, num in [("SECT_FACILITY_PLANT",1),("SECT_FACILITY_ALCHEMY",2),("SECT_F
     TYPE[name] = num
 UPG_COMMON = parse_define_mapping(hdr, "SECT_UPGRADE_COMMON")
 UPG_MARKET = parse_define_mapping(hdr, "SECT_UPGRADE_MARKET")
+UPG_LIBRARY = parse_define_mapping(hdr, "SECT_UPGRADE_LIBRARY")
 UPG_DEFENSE = parse_define_mapping(hdr, "SECT_UPGRADE_DEFENSE")
 UPG_SPECIAL = parse_define_mapping(hdr, "SECT_UPGRADE_SPECIAL")
 UPG_PLANT = parse_define_mapping(hdr, "SECT_UPGRADE_PLANT")
@@ -89,7 +90,7 @@ def parse_entry(entry_text, key):
     um = re.search(r'"upgrade"\s*:\s*(SECT_UPGRADE_\w+)', entry_text)
     e["upgrade"] = {"SECT_UPGRADE_COMMON": UPG_COMMON, "SECT_UPGRADE_DEFENSE": UPG_DEFENSE,
                     "SECT_UPGRADE_SPECIAL": UPG_SPECIAL, "SECT_UPGRADE_PLANT": UPG_PLANT,
-                    "SECT_UPGRADE_MARKET": UPG_MARKET}[um.group(1)] if um else {}
+                    "SECT_UPGRADE_MARKET": UPG_MARKET, "SECT_UPGRADE_LIBRARY": UPG_LIBRARY}[um.group(1)] if um else {}
     drm = re.search(r'"daily_reward"\s*:\s*\(\[\s*"exp"\s*:\s*([A-Za-z_]+|\d+)\s*,\s*"contrib"\s*:\s*([A-Za-z_]+|\d+)\s*,\s*"verb"\s*:\s*"([^"]+)"', entry_text)
     if drm:
         def num_or_macro(s):
@@ -512,6 +513,25 @@ check("LPC 原文 pay_cost：先查贡献（query_contribution）后扣灵石（
       pay_order_ok(pay_body))
 check("LPC 原文 query_current_facility：base_name(env) 匹配配置 room",
       base_name_match_ok(cur_body))
+
+def contrib_via_api_ok(body):
+    """贡献消耗/奖励必须走 SECT_D->add_contribution 接口（c3 核心性质，非直接写 sect/contribution）"""
+    if body is None: return False
+    return "SECT_D->add_contribution(player" in body
+
+check("LPC 原文 pay_cost：贡献扣减走 SECT_D->add_contribution", contrib_via_api_ok(pay_body))
+check("LPC 原文 transcribe_skill：抄录贡献走 SECT_D->add_contribution",
+      contrib_via_api_ok(extract_func(daemon, "transcribe_skill")))
+check("LPC 原文 practice：奖励贡献走 SECT_D->add_contribution",
+      contrib_via_api_ok(extract_func(daemon, "practice")))
+
+# 突变实证②（作用于 LPC 原文）：把 pay_cost 的 add_contribution 换成直接写 sect/contribution
+# → 守卫必须转红（证明 c3 接口绑定原文，回应审查突变④）
+mut2 = daemon.replace('SECT_D->add_contribution(player, -contrib, reason)',
+                      'player->add("sect/contribution", -contrib)')
+mut2_pay = extract_func(mut2, "pay_cost")
+check("LPC 原文突变：贡献改直接写 sect/contribution 后守卫转红（c3 接口绑定）",
+      mut2_pay is not None and not contrib_via_api_ok(mut2_pay))
 
 # 突变实证（作用于 LPC 原文，非 Python 翻译）：颠倒 pay_cost 扣费顺序 → 守卫必须转红
 old_seq = ('    if (contrib > 0 && SECT_D->query_contribution(player) < contrib)\n'

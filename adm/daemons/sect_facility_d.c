@@ -83,7 +83,7 @@ nosave mapping facility_config = ([
     "level": 1, "max_level": 3,
     "effect": ([ "type": "copy_reduce", "base": 0, "per_level": 10 ]),
     "use_stone": 0, "use_contrib": 0,
-    "upgrade": SECT_UPGRADE_COMMON, "daily_limit": 0,
+    "upgrade": SECT_UPGRADE_LIBRARY, "daily_limit": 0,
   ]),
   "huangfeng_fangshi": ([
     "sect": "huangfeng_valley", "type": SECT_FACILITY_SPECIAL,
