@@ -59,6 +59,7 @@
 | include | `/include/` 头文件 |
 | obj | `/obj/` 杂项对象 |
 | tools-kb | `tools/kb/` 知识库工具自身 |
+| tools-llm | `tools/llm/` 自然语言网关工具 |
 
 ## Clusters
 

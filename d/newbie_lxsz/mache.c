@@ -13,7 +13,7 @@ void arrive_yz(object);
 void create()
 {
     set("short", "马车");
-    set("long", "这是一架普通的马车，去往(qu)扬州。你也可以下(xia)车。车窗的旁边有一行细细的字(zi)。\n");
+    set("long", "这是一架普通的马车，去往(qu)青牛镇。你也可以下(xia)车。车窗的旁边有一行细细的字(zi)。\n");
 
     set("indoors","liuxiu-shanzhuang");
 
@@ -54,8 +54,8 @@ int do_xia()
     }
     else
     {
-        who->move("/d/city/guangchang");
-        set_nextquest(who,"到南面的车马行坐马车去扬州","欢迎你来到北大侠客行的世界。这里是扬州。你可以四处走走，也可以跟玩家说说话。江湖迎来了一位新的英雄！", 0, 100);
+        who->move("/d/yueguo/qingniu/zhenkou");
+        set_nextquest(who,"到南面的车马行坐马车去青牛镇","欢迎你来到越国镜州的青牛镇。这里是七玄门控制下的小镇，往北是彩霞山，镇上春香酒楼可以歇脚。江湖迎来了一位新的英雄！", 0, 100);
         sword=present("taiyi jian",who);
         if (objectp(sword)) destruct(sword);
         who->set("newbie_village/done",1);
@@ -106,7 +106,7 @@ int do_xia()
 		write("车夫对你点点头，说道：庄主吩咐在下送你一件礼物。言罢把一个东西塞到你手里。原来是一张路引。(l lu yin)\n");
 		ly = new("/clone/misc/guider");
 		ly->move(who);
-		who->set("startroom","/d/city/kedian");
+		who->set("startroom","/d/yueguo/qingniu/zhenkou");
 		who->save();
 		who->start_busy(0);
 
@@ -130,21 +130,21 @@ int do_qu(string arg)
 
     if (!arg)
     {
-        tell_object(who,"马车的目的地有 扬州\n请输入qu <地名>到达目的地，输入的地名可以是中文也可以是中文的汉语拼音。\n");
+        tell_object(who,"马车的目的地有 青牛镇\n请输入qu <地名>到达目的地，输入的地名可以是中文也可以是中文的汉语拼音。\n");
         return 1;
     }
 	if(who->query_temp("newbie_village/confirmleave") == 2)
 	{
-		write("你已经上车了，马上就到扬州。\n");
+		write("你已经上车了，马上就到青牛镇。\n");
 		return 1;
 	}
-    if (arg=="yangzhou" || arg=="扬州")
+    if (arg=="qingniu" || arg=="青牛镇")
     {
         if (!who->query("newbie_village/arrive"))
         {
     		if(!who->query_temp("newbie_village/confirmleave"))
     		{
-    			write("你真的决定离开了吗？今日一别，再不能回。如果你下定了决心，请再输入一次:qu 扬州\n");
+    			write("你真的决定离开了吗？今日一别，再不能回。如果你下定了决心，请再输入一次:qu 青牛镇\n");
     			who->set_temp("newbie_village/confirmleave",1);
     			return 1;
     		}
@@ -223,13 +223,13 @@ int do_qu(string arg)
             CHANNEL_D->do_channel(load_object(__DOMAIN_DIR__"npc/youkunyi"), "sys_misc", sprintf("%s离开柳秀山庄时获得潜能：%d。", who->name(), pt));
     		who->set_temp("newbie_village/confirmleave",2);
         }
-        tell_object(who,"马车缓缓开动，向着扬州驶去。\n");
+        tell_object(who,"马车缓缓开动，向着青牛镇驶去。\n");
         who->start_busy(10);
         call_out("arrive_yz",10,who);
     }
     else
     {
-        tell_object(who,"这里的车只去扬州。\n");
+        tell_object(who,"这里的车只去青牛镇。\n");
     }
     return 1;
 }

@@ -16,7 +16,7 @@ void create()
 怎样绿树成荫的繁茂。此时的枯黄，大概正是英雄迟暮的景了。
 若是你细心看去，一些杏树下有一些零散的脚印。
 杏林中有一条因马车常年驶过而留下的车辙痕迹，向西延伸通向
-扬州。而这些车辙印记则来自于杏子林南边的车马行。
+青牛镇。而这些车辙印记则来自于杏子林南边的车马行。
 LONG);
 
     set("outdoors","liuxiu-shanzhuang");
@@ -47,7 +47,7 @@ int do_chat(string arg)
     
     if ((arg=="bye you" || arg=="bye you kunyi") && 1==check_questindex(who,"去杏子林和游鲲翼道别"))
     {
-        set_nextquest(who,"去杏子林和游鲲翼道别","去车马行坐车到扬州开始你的江湖路吧！", 50, 250);
+        set_nextquest(who,"去杏子林和游鲲翼道别","去车马行坐车到青牛镇开始你的江湖路吧！", 50, 250);
         tell_object(who,"游鲲翼双手奉上一本《江湖宝典》，你收了下来。\n");
 
         book=new(__DIR__"obj/jianghubaodian");
