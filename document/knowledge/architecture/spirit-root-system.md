@@ -1,12 +1,19 @@
 ---
-id: spirit-root-system
-claim: ROOT_REFINE_D（/adm/daemons/root_refine_d.c）是灵根洗练/品质提升/境界突破/debuff管理的中央守护进程，通过玩家 dbase 属性 spirit_root/* 持久化状态
-tags: [daemon, dbase]
-modules: [adm-daemons, include]
+claim: ROOT_REFINE_D（/adm/daemons/root_refine_d.c）是灵根洗练/品质提升/境界突破/debuff管理的中央守护进程，通过玩家
+  dbase 属性 spirit_root/* 持久化状态
 cluster: architecture
+id: spirit-root-system
 kind: architecture
+modules:
+- adm-daemons
+- include
+related:
+- combat-realm-spirit-root-damage
 status: current
-verified: "2026-07-05"
+tags:
+- daemon
+- dbase
+verified: '2026-07-05'
 ---
 
 ## Why

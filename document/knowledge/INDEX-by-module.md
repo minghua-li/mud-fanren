@@ -5,9 +5,11 @@
 - [`channel-system`](knowledge/architecture/channel-system.md) — CHANNEL_D 通过 channels mapping 集中管理所有聊天频道，每条频道配置消息格式、权限、颜色和匿名选项
 - [`character-attribute-system`](knowledge/architecture/character-attribute-system.md) — F_ATTRIBUTE 的 query_str/int/con/dex() 组合了先天基础值、临时装备加成和技能等级加成（最低 10），并支持 Chem/HitRate/PoisonRate 等战斗修饰符
 - [`combat-negative-damage-flip`](knowledge/pitfall/combat-negative-damage-flip.md) — COMBAT_D 中 damage < 0 时取反（damage = 0 - damage），如果吸收超过伤害量则受害者反而受到正伤害
+- [`combat-realm-spirit-root-damage`](knowledge/combat/combat-realm-spirit-root-damage.md) — calc_damage 在五行克制之后按 realm_power_modifier_permille 施加境界压制、对法术攻击按 spirit_root_damage_info 施加灵根倍率
 - [`combatd-attack-flow`](knowledge/combat/combatd-attack-flow.md) — COMBAT_D 的 do_attack() 通过 ap（攻击力与技能计算）、dp（防御与闪避）、pp（招架）三方判定命中，支持四种攻击类型
 - [`data-persistence`](knowledge/architecture/data-persistence.md) — 数据通过 save_object()/restore_object() 序列化为 .o 文件，F_SAVE 要求对象实现 query_save_file() 返回路径，按首字母分片存储于 /data/
 - [`forge-crafting-system`](knowledge/architecture/forge-crafting-system.md) — 法宝炼制链路由 FORGE_D（adm/daemons/forge_d.c）配方驱动承载，成品由通用基类 d/yueguo/obj/treasure.c（继承 EQUIP）运行时生成，境界限制走 SECT_D->query_cultivation_tier，设施加成接 SECT_FACILITY_D->query_forge_bonus，材料供给接 #67 坊市 goods 表与 ECONOMY_D 定价
+- [`function-pointer-closure-syntax`](knowledge/lpc/function-pointer-closure-syntax.md) — LPC 函数指针用 (: call_other, path, 'func', args :) 语法，post_action、call_out 等回调大量依赖它，用 evaluate() 调用
 - [`macro-path-reference-system`](knowledge/architecture/macro-path-reference-system.md) — /include/globals.h 定义了所有关键路径宏（ROOM/NPC/COMBAT_D/SKILL_D 等），被驱动自动 include，修改后需重启游戏
 - [`new-id-rate-limit`](knowledge/pitfall/new-id-rate-limit.md) — logind.c/logind2.c 的 check_new_id_per_ip() 按 IP 统计每日新账号数（create_new_id_from_ip mapping），超过 5 个则拒绝注册
 - [`player-login-flow`](knowledge/architecture/player-login-flow.md) — 登录流程分 login ob（验证）和 player ob（游戏体）两层，通过 exec() 转移交互连接；数据存于 /data/login/ 和 /data/user/ 按首字母分片
@@ -51,7 +53,10 @@
 - [`dbase-path-access-pattern`](knowledge/dbase/dbase-path-access-pattern.md) — F_DBASE 的 query/set 支持路径式访问（query('apply/attack')），通过 '/' 分割 mapping 层级
 - [`feature-cleanup-lifecycle`](knowledge/lpc/feature-cleanup-lifecycle.md) — F_CLEAN_UP 在 clean_up() 中检查 interactive() 玩家、environment() 父对象和 no_clean_up 标志，决定是否销毁自身释放内存
 - [`feature-move-encumbrance`](knowledge/lpc/feature-move-encumbrance.md) — F_MOVE 的 move(dest) 处理负重递归传播（add_encumbrance 沿 container 链向上累加），并检查 TotalLimit(10000)/PlayerHoldLimit(400)/killer 防躲
+- [`fluffos-v2019-syntax-limits`](knowledge/lpc/fluffos-v2019-syntax-limits.md) — FluffOS v2019 驱动（20230604）不支持中途声明局部变量、默认参数、0b 字面量、模板字符串、可选链、??、& 引用糖、函数指针简化赋值
+- [`foreach-loop-iteration`](knowledge/lpc/foreach-loop-iteration.md) — LPC foreach 循环可遍历数组/mapping/字符串，mapping 用 foreach(k, v in m) 同时取键值，ref var 可写回原数组
 - [`inherit-composition-pattern`](knowledge/lpc/inherit-composition-pattern.md) — LPC 对象通过多重继承 feature/ 获得能力（inherit F_DBASE + F_MOVE + F_COMBAT），而非深层次类继承
+- [`lpc-truthiness-and-logical-return`](knowledge/lpc/lpc-truthiness-and-logical-return.md) — LPC 中空字符串和空数组是真值，&& 返回最后非零值、|| 返回第一个非零值，与 C 的 0/1 语义不同
 - [`mapping-literal-syntax`](knowledge/lpc/mapping-literal-syntax.md) — LPC mapping 字面量用 ([]) 而非 {}，键值之间用冒号而非 =>，如 ([ 'key': value, 'key2': value2 ])
 - [`message-system-pattern`](knowledge/architecture/message-system-pattern.md) — LPC 消息系统分三级：write() 发给当前玩家、tell_object() 发给指定对象、message_vision() 发给房间所有人（$N 自动替换为玩家名）
 - [`skill-nested-system`](knowledge/skill/skill-nested-system.md) — F_SKILL 支持用 :: 分隔符的子技能（最多 3 层），如 music::gu_qin::gaoshan_liushui，set_skill/query_skill 递归处理嵌套 mapping
@@ -60,6 +65,7 @@
 - [`varargs-function-pattern`](knowledge/lpc/varargs-function-pattern.md) — LPC 函数用 varargs 关键字声明可选参数，调用时未传的参数为 0，常用于 query()、do_attack() 等核心函数
 
 ## include
+- [`combat-realm-spirit-root-damage`](knowledge/combat/combat-realm-spirit-root-damage.md) — calc_damage 在五行克制之后按 realm_power_modifier_permille 施加境界压制、对法术攻击按 spirit_root_damage_info 施加灵根倍率
 - [`combatd-attack-flow`](knowledge/combat/combatd-attack-flow.md) — COMBAT_D 的 do_attack() 通过 ap（攻击力与技能计算）、dp（防御与闪避）、pp（招架）三方判定命中，支持四种攻击类型
 - [`forge-crafting-system`](knowledge/architecture/forge-crafting-system.md) — 法宝炼制链路由 FORGE_D（adm/daemons/forge_d.c）配方驱动承载，成品由通用基类 d/yueguo/obj/treasure.c（继承 EQUIP）运行时生成，境界限制走 SECT_D->query_cultivation_tier，设施加成接 SECT_FACILITY_D->query_forge_bonus，材料供给接 #67 坊市 goods 表与 ECONOMY_D 定价
 - [`macro-path-reference-system`](knowledge/architecture/macro-path-reference-system.md) — /include/globals.h 定义了所有关键路径宏（ROOM/NPC/COMBAT_D/SKILL_D 等），被驱动自动 include，修改后需重启游戏
@@ -71,16 +77,27 @@
 
 ## inherit
 - [`call-out-timer-pattern`](knowledge/lpc/call-out-timer-pattern.md) — LPC 的 call_out(func, delay, args) 在 delay 秒后单次调用，延迟单位为秒但有精度限制
+- [`fluffos-v2019-syntax-limits`](knowledge/lpc/fluffos-v2019-syntax-limits.md) — FluffOS v2019 驱动（20230604）不支持中途声明局部变量、默认参数、0b 字面量、模板字符串、可选链、??、& 引用糖、函数指针简化赋值
 - [`inherit-composition-pattern`](knowledge/lpc/inherit-composition-pattern.md) — LPC 对象通过多重继承 feature/ 获得能力（inherit F_DBASE + F_MOVE + F_COMBAT），而非深层次类继承
 - [`init-add-action-registration`](knowledge/architecture/init-add-action-registration.md) — 玩家进入房间时触发 init()，房间在此处通过 add_action() 注册命令动词，回调需返回 0（继续匹配）或 1（消费输入）
+- [`lpc-declare-vars-at-block-start`](knowledge/lpc/lpc-declare-vars-at-block-start.md) — LPC 铁律：所有局部变量必须在函数/代码块开头（任何语句之前）声明，同一作用域不可重复声明，与 C 不同
+- [`lpc-truthiness-and-logical-return`](knowledge/lpc/lpc-truthiness-and-logical-return.md) — LPC 中空字符串和空数组是真值，&& 返回最后非零值、|| 返回第一个非零值，与 C 的 0/1 语义不同
 - [`npc-create-pattern`](knowledge/npc/npc-create-pattern.md) — NPC 的 create() 中设置属性后用 setup() 初始化，carry_object(path)->wear() 穿戴装备
 - [`room-create-setup-pattern`](knowledge/room/room-create-setup-pattern.md) — ROOM 的 create() 中必须在 setup() 之前依次调用 set('short', ...)、set('long', ...)、set('exits', ...)、set('objects', ...)
+- [`string-array-range-indexing`](knowledge/lpc/string-array-range-indexing.md) — LPC 字符串/数组支持范围索引 str[n1..n2]、右索引 str[<n] 和切片 str[n..]，越界自动截断
+- [`switch-string-range-case`](knowledge/lpc/switch-string-range-case.md) — LPC switch 的 case 支持字符串常量匹配和数值范围匹配（case x..y），同一 switch 内可混用不同类型 case
 - [`type-check-functions`](knowledge/lpc/type-check-functions.md) — LPC 运行时类型检查用 objectp()/stringp()/mapp()/functionp() 等函数，而非 typeof(x) == 'object'
 
 ## kungfu
+- [`fluffos-v2019-syntax-limits`](knowledge/lpc/fluffos-v2019-syntax-limits.md) — FluffOS v2019 驱动（20230604）不支持中途声明局部变量、默认参数、0b 字面量、模板字符串、可选链、??、& 引用糖、函数指针简化赋值
+- [`foreach-loop-iteration`](knowledge/lpc/foreach-loop-iteration.md) — LPC foreach 循环可遍历数组/mapping/字符串，mapping 用 foreach(k, v in m) 同时取键值，ref var 可写回原数组
+- [`function-pointer-closure-syntax`](knowledge/lpc/function-pointer-closure-syntax.md) — LPC 函数指针用 (: call_other, path, 'func', args :) 语法，post_action、call_out 等回调大量依赖它，用 evaluate() 调用
 - [`kungfu-system-overview`](knowledge/skill/kungfu-system-overview.md) — 武功系统在 /kungfu/ 下分 skill/（技能）、class/（门派）、special/（绝招）、condition/（内功心法）、music/（音乐）、profession/（职业）六个模块
+- [`lpc-declare-vars-at-block-start`](knowledge/lpc/lpc-declare-vars-at-block-start.md) — LPC 铁律：所有局部变量必须在函数/代码块开头（任何语句之前）声明，同一作用域不可重复声明，与 C 不同
 - [`sect-skill-learning-chain`](knowledge/skill/sect-skill-learning-chain.md) — 九宗功法学习链路=SECT_D->learn_skill 写 sect/learned 习得记录+set_skill 入技能表（kungfu/skill/<id>.c 须先实体化）；任务奖励经
 - [`skill-nested-system`](knowledge/skill/skill-nested-system.md) — F_SKILL 支持用 :: 分隔符的子技能（最多 3 层），如 music::gu_qin::gaoshan_liushui，set_skill/query_skill 递归处理嵌套 mapping
+- [`string-array-range-indexing`](knowledge/lpc/string-array-range-indexing.md) — LPC 字符串/数组支持范围索引 str[n1..n2]、右索引 str[<n] 和切片 str[n..]，越界自动截断
+- [`switch-string-range-case`](knowledge/lpc/switch-string-range-case.md) — LPC switch 的 case 支持字符串常量匹配和数值范围匹配（case x..y），同一 switch 内可混用不同类型 case
 
 ## quest
 - [`quest-system`](knowledge/architecture/quest-system.md) — 任务系统在 /quest/ 下按门派/区域分目录组织，标准模式是守护进程（aquest/bquest）加数字后缀，区域级任务直接放在命名目录下

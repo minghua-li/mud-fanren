@@ -24,6 +24,7 @@
 
 ## combat
 - [`combat-negative-damage-flip`](knowledge/pitfall/combat-negative-damage-flip.md) — COMBAT_D 中 damage < 0 时取反（damage = 0 - damage），如果吸收超过伤害量则受害者反而受到正伤害
+- [`combat-realm-spirit-root-damage`](knowledge/combat/combat-realm-spirit-root-damage.md) — calc_damage 在五行克制之后按 realm_power_modifier_permille 施加境界压制、对法术攻击按 spirit_root_damage_info 施加灵根倍率
 - [`combatd-attack-flow`](knowledge/combat/combatd-attack-flow.md) — COMBAT_D 的 do_attack() 通过 ap（攻击力与技能计算）、dp（防御与闪避）、pp（招架）三方判定命中，支持四种攻击类型
 
 ## dbase
@@ -35,8 +36,15 @@
 - [`call-out-timer-pattern`](knowledge/lpc/call-out-timer-pattern.md) — LPC 的 call_out(func, delay, args) 在 delay 秒后单次调用，延迟单位为秒但有精度限制
 - [`feature-cleanup-lifecycle`](knowledge/lpc/feature-cleanup-lifecycle.md) — F_CLEAN_UP 在 clean_up() 中检查 interactive() 玩家、environment() 父对象和 no_clean_up 标志，决定是否销毁自身释放内存
 - [`feature-move-encumbrance`](knowledge/lpc/feature-move-encumbrance.md) — F_MOVE 的 move(dest) 处理负重递归传播（add_encumbrance 沿 container 链向上累加），并检查 TotalLimit(10000)/PlayerHoldLimit(400)/killer 防躲
+- [`fluffos-v2019-syntax-limits`](knowledge/lpc/fluffos-v2019-syntax-limits.md) — FluffOS v2019 驱动（20230604）不支持中途声明局部变量、默认参数、0b 字面量、模板字符串、可选链、??、& 引用糖、函数指针简化赋值
+- [`foreach-loop-iteration`](knowledge/lpc/foreach-loop-iteration.md) — LPC foreach 循环可遍历数组/mapping/字符串，mapping 用 foreach(k, v in m) 同时取键值，ref var 可写回原数组
+- [`function-pointer-closure-syntax`](knowledge/lpc/function-pointer-closure-syntax.md) — LPC 函数指针用 (: call_other, path, 'func', args :) 语法，post_action、call_out 等回调大量依赖它，用 evaluate() 调用
 - [`inherit-composition-pattern`](knowledge/lpc/inherit-composition-pattern.md) — LPC 对象通过多重继承 feature/ 获得能力（inherit F_DBASE + F_MOVE + F_COMBAT），而非深层次类继承
+- [`lpc-declare-vars-at-block-start`](knowledge/lpc/lpc-declare-vars-at-block-start.md) — LPC 铁律：所有局部变量必须在函数/代码块开头（任何语句之前）声明，同一作用域不可重复声明，与 C 不同
+- [`lpc-truthiness-and-logical-return`](knowledge/lpc/lpc-truthiness-and-logical-return.md) — LPC 中空字符串和空数组是真值，&& 返回最后非零值、|| 返回第一个非零值，与 C 的 0/1 语义不同
 - [`mapping-literal-syntax`](knowledge/lpc/mapping-literal-syntax.md) — LPC mapping 字面量用 ([]) 而非 {}，键值之间用冒号而非 =>，如 ([ 'key': value, 'key2': value2 ])
+- [`string-array-range-indexing`](knowledge/lpc/string-array-range-indexing.md) — LPC 字符串/数组支持范围索引 str[n1..n2]、右索引 str[<n] 和切片 str[n..]，越界自动截断
+- [`switch-string-range-case`](knowledge/lpc/switch-string-range-case.md) — LPC switch 的 case 支持字符串常量匹配和数值范围匹配（case x..y），同一 switch 内可混用不同类型 case
 - [`type-check-functions`](knowledge/lpc/type-check-functions.md) — LPC 运行时类型检查用 objectp()/stringp()/mapp()/functionp() 等函数，而非 typeof(x) == 'object'
 - [`varargs-function-pattern`](knowledge/lpc/varargs-function-pattern.md) — LPC 函数用 varargs 关键字声明可选参数，调用时未传的参数为 0，常用于 query()、do_attack() 等核心函数
 
