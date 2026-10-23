@@ -3,6 +3,7 @@
 // Created for #29 子任务：技能组合与阵法系统
 
 #include <ansi.h>
+#include <sect.h>
 
 inherit F_CLEAN_UP;
 
@@ -99,14 +100,14 @@ int main(object me, string arg)
         team = ({ me });
     }
 
-    // 检查境界要求（根据不同阵型有不同要求）
-    int realm = me->query("realm_level");
-    if ( !realm ) realm = 1; // 默认炼气初期
+    // 检查境界要求（#61 统一境界口径：SECT_D->query_cultivation_tier，
+    // tier = 大境界索引*3 + 小阶段，炼气初=0/炼气后=2/筑基=3）
+    int tier = SECT_D->query_cultivation_tier(me);
 
-    if ( formation_type == 4 && realm < 4 )   // FORMATION_DAGENG
+    if ( formation_type == 4 && tier < SECT_TIER_ZHU )      // FORMATION_DAGENG：大庚剑阵需筑基
         return notify_fail("大庚剑阵需要筑基期以上修为才能布置！\n");
 
-    if ( formation_type == 2 && realm < 3 )   // FORMATION_DIANDAO
+    if ( formation_type == 2 && tier < SECT_TIER_QI_LATE )  // FORMATION_DIANDAO：颠倒五行阵需炼气后期
         return notify_fail("颠倒五行阵需要炼气后期以上修为！\n");
 
     // 执行布阵

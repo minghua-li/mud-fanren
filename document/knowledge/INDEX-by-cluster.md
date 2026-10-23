@@ -53,8 +53,10 @@
 - [`npc-create-pattern`](knowledge/npc/npc-create-pattern.md) — NPC 的 create() 中设置属性后用 setup() 初始化，carry_object(path)->wear() 穿戴装备
 
 ## pitfall
+- [`formation-dormant-without-progress-call`](knowledge/pitfall/formation-dormant-without-progress-call.md) — feature/formation.c 的 formation_active 只由 progress_formation() 置位，缺调用者时阵法永远停在布置中、全部效果休眠
 - [`inventory-ascii-alignment`](knowledge/pitfall/inventory-ascii-alignment.md) — cmds/usr/inventory.c 的装备界面 ASCII 人形图各部位 body art 宽度必须一致（9 字符），否则右侧装备标签逐行错位
 - [`new-id-rate-limit`](knowledge/pitfall/new-id-rate-limit.md) — logind.c/logind2.c 的 check_new_id_per_ip() 按 IP 统计每日新账号数（create_new_id_from_ip mapping），超过 5 个则拒绝注册
+- [`realm-level-field-missing`](knowledge/pitfall/realm-level-field-missing.md) — 玩家境界只有 realm_index（1=炼气…8=大乘）与 realm/realm_sub 三个字段，query("realm_level") 恒为 0
 
 ## room
 - [`room-create-setup-pattern`](knowledge/room/room-create-setup-pattern.md) — ROOM 的 create() 中必须在 setup() 之前依次调用 set('short', ...)、set('long', ...)、set('exits', ...)、set('objects', ...)

@@ -9,6 +9,7 @@ modules:
 related:
 - combat-realm-spirit-root-damage
 - elemental-spell-casting
+- formation-dormant-without-progress-call
 status: current
 tags:
 - combat

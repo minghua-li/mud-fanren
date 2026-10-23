@@ -423,7 +423,17 @@ void deactivate_formation_effects()
 // 每 tick 阵法效果处理（由 COMBAT_D 战斗心跳调用）
 void formation_tick(object me)
 {
-    if ( !formation_active || !formation_type || formation_type == FORMATION_NONE )
+    // 布阵进度推进（#63 验收修复）：start_formation 只置 formation_active=0，
+    // 而 progress_formation() 此前没有任何调用者——阵法永停在「布置中」，
+    // 聚灵/五行减免/阵灵/阵眼全都不生效。战斗每次出手（COMBAT_D 调本函数）先推进一回合。
+    if ( !formation_active )
+    {
+        if ( formation_type && formation_type != FORMATION_NONE )
+            progress_formation();
+        return;
+    }
+
+    if ( !formation_type || formation_type == FORMATION_NONE )
         return;
 
     mapping data = formation_data[formation_type];
@@ -596,7 +606,7 @@ void summon_formation_spirit()
         {
             if ( !objectp(ob) )
                 continue;
-            total_realm += ob->query("realm_level");
+            total_realm += SECT_D->query_cultivation_tier(ob);   // #61 统一境界口径（realm_level 不是玩家字段）
             member_count++;
         }
     }

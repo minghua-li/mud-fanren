@@ -50,10 +50,12 @@
 - [`combat-negative-damage-flip`](knowledge/pitfall/combat-negative-damage-flip.md) — COMBAT_D 中 damage < 0 时取反（damage = 0 - damage），如果吸收超过伤害量则受害者反而受到正伤害
 - [`dbase-add-zero-treats-as-not-set`](knowledge/pitfall/dbase-add-zero-treats-as-not-set.md) — F_DBASE 的 add() 中用 !old 检查键是否存在，属性值为 0 时误判为未设置而调用 set() 覆盖
 - [`fluffos-v2019-syntax-limits`](knowledge/lpc/fluffos-v2019-syntax-limits.md) — FluffOS v2019 驱动（20230604）不支持中途声明局部变量、默认参数、0b 字面量、模板字符串、可选链、??、& 引用糖、函数指针简化赋值
+- [`formation-dormant-without-progress-call`](knowledge/pitfall/formation-dormant-without-progress-call.md) — feature/formation.c 的 formation_active 只由 progress_formation() 置位，缺调用者时阵法永远停在布置中、全部效果休眠
 - [`gb-to-utf8-noop`](knowledge/pitfall/gb-to-utf8-noop.md) — simul_efun/chinese.c 的 gb_to_utf8()/utf8_to_gb() 为空操作直接 return input，6666 端口玩家收到 GBK 编码乱码
 - [`inventory-ascii-alignment`](knowledge/pitfall/inventory-ascii-alignment.md) — cmds/usr/inventory.c 的装备界面 ASCII 人形图各部位 body art 宽度必须一致（9 字符），否则右侧装备标签逐行错位
 - [`lpc-declare-vars-at-block-start`](knowledge/lpc/lpc-declare-vars-at-block-start.md) — LPC 铁律：所有局部变量必须在函数/代码块开头（任何语句之前）声明，同一作用域不可重复声明，与 C 不同
 - [`lpc-truthiness-and-logical-return`](knowledge/lpc/lpc-truthiness-and-logical-return.md) — LPC 中空字符串和空数组是真值，&& 返回最后非零值、|| 返回第一个非零值，与 C 的 0/1 语义不同
 - [`master-valid-read-write-bypass`](knowledge/pitfall/master-valid-read-write-bypass.md) — master.c 的 valid_write()/valid_read() 首行 return 1 绕过所有文件安全校验，SECURITY_D 相关代码为死代码
 - [`new-id-rate-limit`](knowledge/pitfall/new-id-rate-limit.md) — logind.c/logind2.c 的 check_new_id_per_ip() 按 IP 统计每日新账号数（create_new_id_from_ip mapping），超过 5 个则拒绝注册
+- [`realm-level-field-missing`](knowledge/pitfall/realm-level-field-missing.md) — 玩家境界只有 realm_index（1=炼气…8=大乘）与 realm/realm_sub 三个字段，query("realm_level") 恒为 0
 - [`treemap-zero-key-overwrite`](knowledge/pitfall/treemap-zero-key-overwrite.md) — F_TREEMAP 的 _set 中 if(!map[parts[0]]) 将值为 0 的键视为不存在并被覆盖，与 F_DBASE 其他处的 undefinedp 检查不一致
