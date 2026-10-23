@@ -31,6 +31,14 @@ mixed calc_damage(object me,object victim,object weapon,mapping my,mapping your,
       damage = me->query_temp("apply/damage")+me->query_temp("apply/dmg_map/"+attack_skill);
     else
       damage = me->query_temp("apply/damage")+me->query_temp("apply/dmg_map/unarmed");
+
+    // ===== 体修·肉身搏击 / 体剑双修（#79）=====
+    // 空手吃全额体修拳劲（body_refine/fist），巨剑门重剑（zhongjian-jianfa）吃半额（body_refine/sword），
+    // 其余兵器不受影响——保持既有武学平衡
+    if ( !objectp(weapon) )
+      damage += (int)me->query("body_refine/fist");
+    else if ( martial_skill == "zhongjian-jianfa" )
+      damage += (int)me->query("body_refine/sword");
     
 //防止外部加载的伤害为负数导致后续计算出现问题，统一将扣为负数的伤害认为没有damage。by seagate@pkuxkx
     if ( damage<0 )
@@ -136,7 +144,7 @@ mixed calc_damage(object me,object victim,object weapon,mapping my,mapping your,
     //apply/abs_week_injure 普通伤害绝对抗性，最多不超过25%
     deepj=me->query_temp("apply/deep_injure");
     weekj=victim->query_temp("apply/week_injure");
-    defatk=victim->query_temp("apply/defense_attack");
+    defatk=victim->query_temp("apply/defense_attack")+(int)victim->query("body_refine/defense");
     absweekj=victim->query_temp("apply/abs_week_injure");
     if ( deepj>0 || weekj>0 || defatk>0 )
     {

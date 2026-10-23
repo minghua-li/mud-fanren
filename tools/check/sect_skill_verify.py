@@ -139,11 +139,22 @@ if os.path.exists('adm/daemons/spell_d.c'):
     if mm:
         SPELL_IDS = set(re.findall(r'"([a-z_]+-shu)"', mm.group(1)))
 
-skill_defs_kungfu = {k: v for k, v in skill_defs.items() if k not in SPELL_IDS}
+# #79 体修功法同样不计入 #62 功法树清点（清点在 tools/check/body_refine_verify.py）
+BODY_IDS = set()
+if os.path.exists('include/body.h'):
+    with open('include/body.h', encoding='utf-8') as f:
+        body_src = f.read()
+    BODY_IDS = set(re.findall(r'#define\s+BODY_SKILL_[A-Z]+\s+"([a-z-]+)"', body_src))
+
+NON_TICKET62_IDS = SPELL_IDS | BODY_IDS
+
+skill_defs_kungfu = {k: v for k, v in skill_defs.items() if k not in NON_TICKET62_IDS}
 unique_kungfu = sorted(set(skill_defs_kungfu.keys()))
-print('唯一 skill_id: %d（其中 #76 法术 %d 个不计入功法树口径）' % (len(unique_ids), len(SPELL_IDS)))
+print('唯一 skill_id: %d（其中 #76 法术 %d 个、#79 体修功法 %d 个不计入功法树口径）' % (len(unique_ids), len(SPELL_IDS), len(BODY_IDS)))
 for sid in unique_ids:
-    print('   %-22s %s%s' % (sid, skill_defs[sid], '   [法术 #76]' if sid in SPELL_IDS else ''))
+    print('   %-22s %s%s' % (sid, skill_defs[sid],
+                              '   [法术 #76]' if sid in SPELL_IDS else
+                              ('   [体修 #79]' if sid in BODY_IDS else '')))
 
 ck('sect_config 技能条目数 >= 26（九宗功法树）', len(skill_defs_kungfu) >= 26,
    '实际 %d' % len(skill_defs_kungfu))
@@ -170,7 +181,10 @@ for sid in unique_ids:
         src = f.read()
     ok, err = check_parens(path)
     ck('括号配对 %s' % sid, ok, err)
-    if sid in FORCE_SKILLS:
+    # 槽位由 valid_enable 声明推导（force 槽必须继承 FORCE 才拿到内功接口；其余继承 SKILL）
+    mslot = re.search(r'valid_enable\(string usage\)\s*\{\s*return\s+usage\s*==\s*"([a-z-]+)"', src)
+    slot = mslot.group(1) if mslot else ''
+    if slot == 'force' or sid in FORCE_SKILLS:
         ck('force 类继承 FORCE %s' % sid, 'inherit FORCE;' in src,
            '缺 inherit FORCE;（force 槽功法须继承 FORCE 否则内功接口缺失）')
         ck('force 类 exert 解析口 %s' % sid,
@@ -423,8 +437,8 @@ for v in SECT_CONFIG.values():
     cfg_uniq.update(v['skills'].keys())
 ck('解析出 9 宗', len(SECT_CONFIG) == 9, '实际 %d' % len(SECT_CONFIG))
 cfg_total_kungfu = sum(1 for v in SECT_CONFIG.values()
-                       for sid in v['skills'] if sid not in SPELL_IDS)
-cfg_uniq_kungfu = set(sid for sid in cfg_uniq if sid not in SPELL_IDS)
+                       for sid in v['skills'] if sid not in NON_TICKET62_IDS)
+cfg_uniq_kungfu = set(sid for sid in cfg_uniq if sid not in NON_TICKET62_IDS)
 ck('解析出 28 个配置条目（9 宗合计，共享技能各宗计一次）', cfg_total_kungfu == 28,
    '实际 %d（含 #76 法术共 %d）' % (cfg_total_kungfu, cfg_total))
 ck('唯一 skill_id 26（yushou-shu/yichong-shu 灵兽山与御灵宗共享）', len(cfg_uniq_kungfu) == 26,

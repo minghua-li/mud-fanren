@@ -9,6 +9,7 @@
 #include <skill.h>
 #include <combat.h>
 #include <element.h>
+#include <body.h>
 
 #define MAX_OPPONENT	4
 
@@ -62,6 +63,10 @@ void fight_ob(object ob)
 	
 	if( member_array(ob, enemy)==-1 ) 
 		enemy += ({ ob });
+
+	//毒体（#79 万毒混元身）：空手出手自带五毒
+	if ( (int)query("body_refine/stage") >= BODY_STAGE_POISON )
+		F_POISON->empoison(this_object(), BODY_POISON_ID, BODY_POISON_DURATION, "unarmed");
   
   if ( ob->is_character() &&
   	   living(ob) )

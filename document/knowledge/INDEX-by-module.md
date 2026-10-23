@@ -2,6 +2,7 @@
 # KB Index by Module
 
 ## adm-daemons
+- [`body-refinement-cultivation`](knowledge/skill/body-refinement-cultivation.md) — 淬体点数存 body_refine/points 并由 BODY_D 按阶段换算成 body_refine/qi|defense|fist，战斗热路径直接读 dbase 不调 daemon
 - [`channel-system`](knowledge/architecture/channel-system.md) — CHANNEL_D 通过 channels mapping 集中管理所有聊天频道，每条频道配置消息格式、权限、颜色和匿名选项
 - [`character-attribute-system`](knowledge/architecture/character-attribute-system.md) — F_ATTRIBUTE 的 query_str/int/con/dex() 组合了先天基础值、临时装备加成和技能等级加成（最低 10），并支持 Chem/HitRate/PoisonRate 等战斗修饰符
 - [`combat-negative-damage-flip`](knowledge/pitfall/combat-negative-damage-flip.md) — COMBAT_D 中 damage < 0 时取反（damage = 0 - damage），如果吸收超过伤害量则受害者反而受到正伤害
@@ -33,6 +34,7 @@
 - [`player-login-flow`](knowledge/architecture/player-login-flow.md) — 登录流程分 login ob（验证）和 player ob（游戏体）两层，通过 exec() 转移交互连接；数据存于 /data/login/ 和 /data/user/ 按首字母分片
 
 ## cmds
+- [`body-refinement-cultivation`](knowledge/skill/body-refinement-cultivation.md) — 淬体点数存 body_refine/points 并由 BODY_D 按阶段换算成 body_refine/qi|defense|fist，战斗热路径直接读 dbase 不调 daemon
 - [`elemental-spell-casting`](knowledge/combat/elemental-spell-casting.md) — 五行法术走 SPELL_D 的 cast_spell 与 shifa 命令施展，法术元数据由各 skill 的 query_spell_info() 单真源提供
 - [`forge-crafting-system`](knowledge/architecture/forge-crafting-system.md) — 法宝炼制链路由 FORGE_D（adm/daemons/forge_d.c）配方驱动承载，成品由通用基类 d/yueguo/obj/treasure.c（继承 EQUIP）运行时生成，境界限制走 SECT_D->query_cultivation_tier，设施加成接 SECT_FACILITY_D->query_forge_bonus，材料供给接 #67 坊市 goods 表与 ECONOMY_D 定价
 - [`init-add-action-registration`](knowledge/architecture/init-add-action-registration.md) — 玩家进入房间时触发 init()，房间在此处通过 add_action() 注册命令动词，回调需返回 0（继续匹配）或 1（消费输入）
@@ -49,6 +51,7 @@
 - [`sect-facility-system`](knowledge/architecture/sect-facility-system.md) — 门派设施系统由 SECT_FACILITY_D（adm/daemons/sect_facility_d.c）配置驱动承载，18 个设施条目按 9 宗配置，消耗走 SECT_D->add_contribution 与 MONEY_D->player_pay，房间匹配用 base_name(environment(player)) 对照配置 room 字段
 
 ## feature
+- [`body-refinement-cultivation`](knowledge/skill/body-refinement-cultivation.md) — 淬体点数存 body_refine/points 并由 BODY_D 按阶段换算成 body_refine/qi|defense|fist，战斗热路径直接读 dbase 不调 daemon
 - [`call-out-timer-pattern`](knowledge/lpc/call-out-timer-pattern.md) — LPC 的 call_out(func, delay, args) 在 delay 秒后单次调用，延迟单位为秒但有精度限制
 - [`character-attribute-system`](knowledge/architecture/character-attribute-system.md) — F_ATTRIBUTE 的 query_str/int/con/dex() 组合了先天基础值、临时装备加成和技能等级加成（最低 10），并支持 Chem/HitRate/PoisonRate 等战斗修饰符
 - [`data-persistence`](knowledge/architecture/data-persistence.md) — 数据通过 save_object()/restore_object() 序列化为 .o 文件，F_SAVE 要求对象实现 query_save_file() 返回路径，按首字母分片存储于 /data/
@@ -68,6 +71,7 @@
 - [`varargs-function-pattern`](knowledge/lpc/varargs-function-pattern.md) — LPC 函数用 varargs 关键字声明可选参数，调用时未传的参数为 0，常用于 query()、do_attack() 等核心函数
 
 ## include
+- [`body-refinement-cultivation`](knowledge/skill/body-refinement-cultivation.md) — 淬体点数存 body_refine/points 并由 BODY_D 按阶段换算成 body_refine/qi|defense|fist，战斗热路径直接读 dbase 不调 daemon
 - [`combat-realm-spirit-root-damage`](knowledge/combat/combat-realm-spirit-root-damage.md) — calc_damage 在五行克制之后按 realm_power_modifier_permille 施加境界压制、对法术攻击按 spirit_root_damage_info 施加灵根倍率
 - [`combatd-attack-flow`](knowledge/combat/combatd-attack-flow.md) — COMBAT_D 的 do_attack() 通过 ap（攻击力与技能计算）、dp（防御与闪避）、pp（招架）三方判定命中，支持四种攻击类型
 - [`elemental-spell-casting`](knowledge/combat/elemental-spell-casting.md) — 五行法术走 SPELL_D 的 cast_spell 与 shifa 命令施展，法术元数据由各 skill 的 query_spell_info() 单真源提供
@@ -93,6 +97,7 @@
 - [`type-check-functions`](knowledge/lpc/type-check-functions.md) — LPC 运行时类型检查用 objectp()/stringp()/mapp()/functionp() 等函数，而非 typeof(x) == 'object'
 
 ## kungfu
+- [`body-refinement-cultivation`](knowledge/skill/body-refinement-cultivation.md) — 淬体点数存 body_refine/points 并由 BODY_D 按阶段换算成 body_refine/qi|defense|fist，战斗热路径直接读 dbase 不调 daemon
 - [`elemental-spell-casting`](knowledge/combat/elemental-spell-casting.md) — 五行法术走 SPELL_D 的 cast_spell 与 shifa 命令施展，法术元数据由各 skill 的 query_spell_info() 单真源提供
 - [`fluffos-v2019-syntax-limits`](knowledge/lpc/fluffos-v2019-syntax-limits.md) — FluffOS v2019 驱动（20230604）不支持中途声明局部变量、默认参数、0b 字面量、模板字符串、可选链、??、& 引用糖、函数指针简化赋值
 - [`foreach-loop-iteration`](knowledge/lpc/foreach-loop-iteration.md) — LPC foreach 循环可遍历数组/mapping/字符串，mapping 用 foreach(k, v in m) 同时取键值，ref var 可写回原数组

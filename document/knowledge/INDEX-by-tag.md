@@ -5,6 +5,7 @@
 - [`call-out-timer-pattern`](knowledge/lpc/call-out-timer-pattern.md) — LPC 的 call_out(func, delay, args) 在 delay 秒后单次调用，延迟单位为秒但有精度限制
 
 ## #combat
+- [`body-refinement-cultivation`](knowledge/skill/body-refinement-cultivation.md) — 淬体点数存 body_refine/points 并由 BODY_D 按阶段换算成 body_refine/qi|defense|fist，战斗热路径直接读 dbase 不调 daemon
 - [`character-attribute-system`](knowledge/architecture/character-attribute-system.md) — F_ATTRIBUTE 的 query_str/int/con/dex() 组合了先天基础值、临时装备加成和技能等级加成（最低 10），并支持 Chem/HitRate/PoisonRate 等战斗修饰符
 - [`combat-negative-damage-flip`](knowledge/pitfall/combat-negative-damage-flip.md) — COMBAT_D 中 damage < 0 时取反（damage = 0 - damage），如果吸收超过伤害量则受害者反而受到正伤害
 - [`combat-realm-spirit-root-damage`](knowledge/combat/combat-realm-spirit-root-damage.md) — calc_damage 在五行克制之后按 realm_power_modifier_permille 施加境界压制、对法术攻击按 spirit_root_damage_info 施加灵根倍率
@@ -46,6 +47,7 @@
 - [`player-login-flow`](knowledge/architecture/player-login-flow.md) — 登录流程分 login ob（验证）和 player ob（游戏体）两层，通过 exec() 转移交互连接；数据存于 /data/login/ 和 /data/user/ 按首字母分片
 
 ## #dbase
+- [`body-refinement-cultivation`](knowledge/skill/body-refinement-cultivation.md) — 淬体点数存 body_refine/points 并由 BODY_D 按阶段换算成 body_refine/qi|defense|fist，战斗热路径直接读 dbase 不调 daemon
 - [`character-attribute-system`](knowledge/architecture/character-attribute-system.md) — F_ATTRIBUTE 的 query_str/int/con/dex() 组合了先天基础值、临时装备加成和技能等级加成（最低 10），并支持 Chem/HitRate/PoisonRate 等战斗修饰符
 - [`combat-negative-damage-flip`](knowledge/pitfall/combat-negative-damage-flip.md) — COMBAT_D 中 damage < 0 时取反（damage = 0 - damage），如果吸收超过伤害量则受害者反而受到正伤害
 - [`combat-realm-spirit-root-damage`](knowledge/combat/combat-realm-spirit-root-damage.md) — calc_damage 在五行克制之后按 realm_power_modifier_permille 施加境界压制、对法术攻击按 spirit_root_damage_info 施加灵根倍率
@@ -163,6 +165,7 @@
 - [`llm-gateway-poc`](knowledge/architecture/llm-gateway-poc.md) — tools/llm/gateway.py 是 Phase 0 外挂 LLM 网关：telnet 连 5555/6666 按端口选 GBK/UTF-8 编码，ai 前缀输入经 LLM 解析、safety.py 分层过滤后回写执行
 
 ## #skill
+- [`body-refinement-cultivation`](knowledge/skill/body-refinement-cultivation.md) — 淬体点数存 body_refine/points 并由 BODY_D 按阶段换算成 body_refine/qi|defense|fist，战斗热路径直接读 dbase 不调 daemon
 - [`elemental-spell-casting`](knowledge/combat/elemental-spell-casting.md) — 五行法术走 SPELL_D 的 cast_spell 与 shifa 命令施展，法术元数据由各 skill 的 query_spell_info() 单真源提供
 - [`kungfu-system-overview`](knowledge/skill/kungfu-system-overview.md) — 武功系统在 /kungfu/ 下分 skill/（技能）、class/（门派）、special/（绝招）、condition/（内功心法）、music/（音乐）、profession/（职业）六个模块
 - [`sect-skill-learning-chain`](knowledge/skill/sect-skill-learning-chain.md) — 九宗功法学习链路=SECT_D->learn_skill 写 sect/learned 习得记录+set_skill 入技能表（kungfu/skill/<id>.c 须先实体化）；任务奖励经

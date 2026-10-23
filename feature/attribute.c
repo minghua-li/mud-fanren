@@ -272,6 +272,7 @@ int query_max_qi()
         mapping my;
         int xism_age, maxhp, addhp, lvc, lp;
         int tai_skill,huashan_skill,sep_force;
+        int body_qi;
         string force;
         object ob=this_object();
         
@@ -377,6 +378,9 @@ int query_max_qi()
 		{
 			maxhp=300000;
 		}
+//体修淬体：永久气血上限加成（#79 BODY_D 写入 body_refine/qi）
+        if ( intp(body_qi = ob->query("body_refine/qi")) && body_qi > 0 )
+        	maxhp += body_qi;
 //如果query_temp定义了临时增加的hp，则临时增加角色气血        
         if ( ob->query_temp("apply/max_qi") )
         	maxhp+=query_temp("apply/max_qi");

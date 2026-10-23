@@ -277,6 +277,9 @@
 //五行法术系统（#76：SPELL_D 施法流程，施法命令 shifa）
 #define SPELL_D               "/adm/daemons/spell_d"
 
+//体修系统（#79：BODY_D 淬体/阶段/加成，淬体命令 cuina）
+#define BODY_D                "/adm/daemons/body_d"
+
 //生活技能系统
 #define PROFESSION_D(x)	("/kungfu/profession/" + x)
 

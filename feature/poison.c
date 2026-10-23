@@ -9,6 +9,7 @@
 #define Poison_Limit 700
 #define PoisonDurLit 10 //普通攻击带毒的发作时间上限
 #include <ansi.h>
+#include <body.h>
 int LvLimit()
 {
 	return Poison_Limit;
@@ -68,7 +69,11 @@ int ObtainProof(object target,string poison_id)
 	int result;
 	target->set_temp("tmp_calc/source",poisons[poison_id]["source"]);
 	target->set_temp("tmp_calc/eff_type",poisons[poison_id]["eff_type"][random(sizeof(poisons[poison_id]["eff_type"]))]);
-	result=AdjustCoefficient(target->query_proof("AntiPoisonRate"));
+	result=target->query_proof("AntiPoisonRate");
+	//毒体（#79 万毒混元身）：淬体阶段达到毒体时额外抗毒
+	if ( (int)target->query("body_refine/stage") >= BODY_STAGE_POISON )
+		result += BODY_POISON_RESIST;
+	result=AdjustCoefficient(result);
 	target->delete_temp("tmp_calc");
 	return result;
 }
