@@ -15,6 +15,7 @@
 - [`macro-path-reference-system`](knowledge/architecture/macro-path-reference-system.md) — /include/globals.h 定义了所有关键路径宏（ROOM/NPC/COMBAT_D/SKILL_D 等），被驱动自动 include，修改后需重启游戏
 - [`new-id-rate-limit`](knowledge/pitfall/new-id-rate-limit.md) — logind.c/logind2.c 的 check_new_id_per_ip() 按 IP 统计每日新账号数（create_new_id_from_ip mapping），超过 5 个则拒绝注册
 - [`player-login-flow`](knowledge/architecture/player-login-flow.md) — 登录流程分 login ob（验证）和 player ob（游戏体）两层，通过 exec() 转移交互连接；数据存于 /data/login/ 和 /data/user/ 按首字母分片
+- [`realm-level-field-missing`](knowledge/pitfall/realm-level-field-missing.md) — 玩家境界只有 realm_index（1=炼气…8=大乘）与 realm/realm_sub 三个字段，query("realm_level") 恒为 0
 - [`sect-facility-system`](knowledge/architecture/sect-facility-system.md) — 门派设施系统由 SECT_FACILITY_D（adm/daemons/sect_facility_d.c）配置驱动承载，18 个设施条目按 9 宗配置，消耗走 SECT_D->add_contribution 与 MONEY_D->player_pay，房间匹配用 base_name(environment(player)) 对照配置 room 字段
 - [`sect-id-divergence`](knowledge/architecture/sect-id-divergence.md) — 门派 ID 以 .knowledge/factions/sects/ 九宗档案命名为权威（tianque_fort/guiling_sect 等），reputation_d.c 的 faction_info 已于 2026-08-12 对齐
 - [`sect-skill-learning-chain`](knowledge/skill/sect-skill-learning-chain.md) — 九宗功法学习链路=SECT_D->learn_skill 写 sect/learned 习得记录+set_skill 入技能表（kungfu/skill/<id>.c 须先实体化）；任务奖励经
@@ -37,9 +38,11 @@
 - [`body-refinement-cultivation`](knowledge/skill/body-refinement-cultivation.md) — 淬体点数存 body_refine/points 并由 BODY_D 按阶段换算成 body_refine/qi|defense|fist，战斗热路径直接读 dbase 不调 daemon
 - [`elemental-spell-casting`](knowledge/combat/elemental-spell-casting.md) — 五行法术走 SPELL_D 的 cast_spell 与 shifa 命令施展，法术元数据由各 skill 的 query_spell_info() 单真源提供
 - [`forge-crafting-system`](knowledge/architecture/forge-crafting-system.md) — 法宝炼制链路由 FORGE_D（adm/daemons/forge_d.c）配方驱动承载，成品由通用基类 d/yueguo/obj/treasure.c（继承 EQUIP）运行时生成，境界限制走 SECT_D->query_cultivation_tier，设施加成接 SECT_FACILITY_D->query_forge_bonus，材料供给接 #67 坊市 goods 表与 ECONOMY_D 定价
+- [`formation-dormant-without-progress-call`](knowledge/pitfall/formation-dormant-without-progress-call.md) — feature/formation.c 的 formation_active 只由 progress_formation() 置位，缺调用者时阵法永远停在布置中、全部效果休眠
 - [`init-add-action-registration`](knowledge/architecture/init-add-action-registration.md) — 玩家进入房间时触发 init()，房间在此处通过 add_action() 注册命令动词，回调需返回 0（继续匹配）或 1（消费输入）
 - [`inventory-ascii-alignment`](knowledge/pitfall/inventory-ascii-alignment.md) — cmds/usr/inventory.c 的装备界面 ASCII 人形图各部位 body art 宽度必须一致（9 字符），否则右侧装备标签逐行错位
 - [`message-system-pattern`](knowledge/architecture/message-system-pattern.md) — LPC 消息系统分三级：write() 发给当前玩家、tell_object() 发给指定对象、message_vision() 发给房间所有人（$N 自动替换为玩家名）
+- [`realm-level-field-missing`](knowledge/pitfall/realm-level-field-missing.md) — 玩家境界只有 realm_index（1=炼气…8=大乘）与 realm/realm_sub 三个字段，query("realm_level") 恒为 0
 - [`sect-facility-system`](knowledge/architecture/sect-facility-system.md) — 门派设施系统由 SECT_FACILITY_D（adm/daemons/sect_facility_d.c）配置驱动承载，18 个设施条目按 9 宗配置，消耗走 SECT_D->add_contribution 与 MONEY_D->player_pay，房间匹配用 base_name(environment(player)) 对照配置 room 字段
 - [`sect-system`](knowledge/architecture/sect-system.md) — 门派系统由 SECT_D（adm/daemons/sect_d.c）承载，玩家门派数据存 "sect/" 路径，境界门槛用 tier（境界索引*3+小阶段）比较，realm 属性可能未设置需 exp 兜底
 - [`sword-art-perform-unlock`](knowledge/skill/sword-art-perform-unlock.md) — 剑诀神通走 perform <招式槽>.<action> 经 perform_action_file 指向 kungfu/skill/<skill>/<action>.c，层数按 (lv-1)/10+1 换算
@@ -61,6 +64,7 @@
 - [`feature-move-encumbrance`](knowledge/lpc/feature-move-encumbrance.md) — F_MOVE 的 move(dest) 处理负重递归传播（add_encumbrance 沿 container 链向上累加），并检查 TotalLimit(10000)/PlayerHoldLimit(400)/killer 防躲
 - [`fluffos-v2019-syntax-limits`](knowledge/lpc/fluffos-v2019-syntax-limits.md) — FluffOS v2019 驱动（20230604）不支持中途声明局部变量、默认参数、0b 字面量、模板字符串、可选链、??、& 引用糖、函数指针简化赋值
 - [`foreach-loop-iteration`](knowledge/lpc/foreach-loop-iteration.md) — LPC foreach 循环可遍历数组/mapping/字符串，mapping 用 foreach(k, v in m) 同时取键值，ref var 可写回原数组
+- [`formation-dormant-without-progress-call`](knowledge/pitfall/formation-dormant-without-progress-call.md) — feature/formation.c 的 formation_active 只由 progress_formation() 置位，缺调用者时阵法永远停在布置中、全部效果休眠
 - [`inherit-composition-pattern`](knowledge/lpc/inherit-composition-pattern.md) — LPC 对象通过多重继承 feature/ 获得能力（inherit F_DBASE + F_MOVE + F_COMBAT），而非深层次类继承
 - [`lpc-truthiness-and-logical-return`](knowledge/lpc/lpc-truthiness-and-logical-return.md) — LPC 中空字符串和空数组是真值，&& 返回最后非零值、|| 返回第一个非零值，与 C 的 0/1 语义不同
 - [`mapping-literal-syntax`](knowledge/lpc/mapping-literal-syntax.md) — LPC mapping 字面量用 ([]) 而非 {}，键值之间用冒号而非 =>，如 ([ 'key': value, 'key2': value2 ])
@@ -78,6 +82,7 @@
 - [`forge-crafting-system`](knowledge/architecture/forge-crafting-system.md) — 法宝炼制链路由 FORGE_D（adm/daemons/forge_d.c）配方驱动承载，成品由通用基类 d/yueguo/obj/treasure.c（继承 EQUIP）运行时生成，境界限制走 SECT_D->query_cultivation_tier，设施加成接 SECT_FACILITY_D->query_forge_bonus，材料供给接 #67 坊市 goods 表与 ECONOMY_D 定价
 - [`macro-path-reference-system`](knowledge/architecture/macro-path-reference-system.md) — /include/globals.h 定义了所有关键路径宏（ROOM/NPC/COMBAT_D/SKILL_D 等），被驱动自动 include，修改后需重启游戏
 - [`mapping-literal-syntax`](knowledge/lpc/mapping-literal-syntax.md) — LPC mapping 字面量用 ([]) 而非 {}，键值之间用冒号而非 =>，如 ([ 'key': value, 'key2': value2 ])
+- [`realm-level-field-missing`](knowledge/pitfall/realm-level-field-missing.md) — 玩家境界只有 realm_index（1=炼气…8=大乘）与 realm/realm_sub 三个字段，query("realm_level") 恒为 0
 - [`sect-facility-system`](knowledge/architecture/sect-facility-system.md) — 门派设施系统由 SECT_FACILITY_D（adm/daemons/sect_facility_d.c）配置驱动承载，18 个设施条目按 9 宗配置，消耗走 SECT_D->add_contribution 与 MONEY_D->player_pay，房间匹配用 base_name(environment(player)) 对照配置 room 字段
 - [`sect-id-divergence`](knowledge/architecture/sect-id-divergence.md) — 门派 ID 以 .knowledge/factions/sects/ 九宗档案命名为权威（tianque_fort/guiling_sect 等），reputation_d.c 的 faction_info 已于 2026-08-12 对齐
 - [`sect-system`](knowledge/architecture/sect-system.md) — 门派系统由 SECT_D（adm/daemons/sect_d.c）承载，玩家门派数据存 "sect/" 路径，境界门槛用 tier（境界索引*3+小阶段）比较，realm 属性可能未设置需 exp 兜底

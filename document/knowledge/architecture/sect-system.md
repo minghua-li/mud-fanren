@@ -10,6 +10,7 @@ modules:
 - include
 related:
 - sect-skill-learning-chain
+- realm-level-field-missing
 status: current
 tags:
 - daemon

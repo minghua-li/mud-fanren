@@ -11,6 +11,8 @@
 - [`combat-realm-spirit-root-damage`](knowledge/combat/combat-realm-spirit-root-damage.md) — calc_damage 在五行克制之后按 realm_power_modifier_permille 施加境界压制、对法术攻击按 spirit_root_damage_info 施加灵根倍率
 - [`combatd-attack-flow`](knowledge/combat/combatd-attack-flow.md) — COMBAT_D 的 do_attack() 通过 ap（攻击力与技能计算）、dp（防御与闪避）、pp（招架）三方判定命中，支持四种攻击类型
 - [`elemental-spell-casting`](knowledge/combat/elemental-spell-casting.md) — 五行法术走 SPELL_D 的 cast_spell 与 shifa 命令施展，法术元数据由各 skill 的 query_spell_info() 单真源提供
+- [`formation-dormant-without-progress-call`](knowledge/pitfall/formation-dormant-without-progress-call.md) — feature/formation.c 的 formation_active 只由 progress_formation() 置位，缺调用者时阵法永远停在布置中、全部效果休眠
+- [`realm-level-field-missing`](knowledge/pitfall/realm-level-field-missing.md) — 玩家境界只有 realm_index（1=炼气…8=大乘）与 realm/realm_sub 三个字段，query("realm_level") 恒为 0
 - [`sword-art-perform-unlock`](knowledge/skill/sword-art-perform-unlock.md) — 剑诀神通走 perform <招式槽>.<action> 经 perform_action_file 指向 kungfu/skill/<skill>/<action>.c，层数按 (lv-1)/10+1 换算
 
 ## #command
@@ -62,6 +64,7 @@
 - [`new-id-rate-limit`](knowledge/pitfall/new-id-rate-limit.md) — logind.c/logind2.c 的 check_new_id_per_ip() 按 IP 统计每日新账号数（create_new_id_from_ip mapping），超过 5 个则拒绝注册
 - [`npc-create-pattern`](knowledge/npc/npc-create-pattern.md) — NPC 的 create() 中设置属性后用 setup() 初始化，carry_object(path)->wear() 穿戴装备
 - [`player-login-flow`](knowledge/architecture/player-login-flow.md) — 登录流程分 login ob（验证）和 player ob（游戏体）两层，通过 exec() 转移交互连接；数据存于 /data/login/ 和 /data/user/ 按首字母分片
+- [`realm-level-field-missing`](knowledge/pitfall/realm-level-field-missing.md) — 玩家境界只有 realm_index（1=炼气…8=大乘）与 realm/realm_sub 三个字段，query("realm_level") 恒为 0
 - [`room-create-setup-pattern`](knowledge/room/room-create-setup-pattern.md) — ROOM 的 create() 中必须在 setup() 之前依次调用 set('short', ...)、set('long', ...)、set('exits', ...)、set('objects', ...)
 - [`sect-facility-system`](knowledge/architecture/sect-facility-system.md) — 门派设施系统由 SECT_FACILITY_D（adm/daemons/sect_facility_d.c）配置驱动承载，18 个设施条目按 9 宗配置，消耗走 SECT_D->add_contribution 与 MONEY_D->player_pay，房间匹配用 base_name(environment(player)) 对照配置 room 字段
 - [`sect-id-divergence`](knowledge/architecture/sect-id-divergence.md) — 门派 ID 以 .knowledge/factions/sects/ 九宗档案命名为权威（tianque_fort/guiling_sect 等），reputation_d.c 的 faction_info 已于 2026-08-12 对齐
@@ -132,12 +135,14 @@
 - [`error-handling-crash-logging`](knowledge/architecture/error-handling-crash-logging.md) — master.c 的 log_error() 按文件所有者路由编译/运行时错误到对应巫师家目录，crash() 广播并记录日志到 /log/static/CRASHES
 - [`fluffos-v2019-syntax-limits`](knowledge/lpc/fluffos-v2019-syntax-limits.md) — FluffOS v2019 驱动（20230604）不支持中途声明局部变量、默认参数、0b 字面量、模板字符串、可选链、??、& 引用糖、函数指针简化赋值
 - [`forge-crafting-system`](knowledge/architecture/forge-crafting-system.md) — 法宝炼制链路由 FORGE_D（adm/daemons/forge_d.c）配方驱动承载，成品由通用基类 d/yueguo/obj/treasure.c（继承 EQUIP）运行时生成，境界限制走 SECT_D->query_cultivation_tier，设施加成接 SECT_FACILITY_D->query_forge_bonus，材料供给接 #67 坊市 goods 表与 ECONOMY_D 定价
+- [`formation-dormant-without-progress-call`](knowledge/pitfall/formation-dormant-without-progress-call.md) — feature/formation.c 的 formation_active 只由 progress_formation() 置位，缺调用者时阵法永远停在布置中、全部效果休眠
 - [`gb-to-utf8-noop`](knowledge/pitfall/gb-to-utf8-noop.md) — simul_efun/chinese.c 的 gb_to_utf8()/utf8_to_gb() 为空操作直接 return input，6666 端口玩家收到 GBK 编码乱码
 - [`inventory-ascii-alignment`](knowledge/pitfall/inventory-ascii-alignment.md) — cmds/usr/inventory.c 的装备界面 ASCII 人形图各部位 body art 宽度必须一致（9 字符），否则右侧装备标签逐行错位
 - [`lpc-declare-vars-at-block-start`](knowledge/lpc/lpc-declare-vars-at-block-start.md) — LPC 铁律：所有局部变量必须在函数/代码块开头（任何语句之前）声明，同一作用域不可重复声明，与 C 不同
 - [`lpc-truthiness-and-logical-return`](knowledge/lpc/lpc-truthiness-and-logical-return.md) — LPC 中空字符串和空数组是真值，&& 返回最后非零值、|| 返回第一个非零值，与 C 的 0/1 语义不同
 - [`master-valid-read-write-bypass`](knowledge/pitfall/master-valid-read-write-bypass.md) — master.c 的 valid_write()/valid_read() 首行 return 1 绕过所有文件安全校验，SECURITY_D 相关代码为死代码
 - [`new-id-rate-limit`](knowledge/pitfall/new-id-rate-limit.md) — logind.c/logind2.c 的 check_new_id_per_ip() 按 IP 统计每日新账号数（create_new_id_from_ip mapping），超过 5 个则拒绝注册
+- [`realm-level-field-missing`](knowledge/pitfall/realm-level-field-missing.md) — 玩家境界只有 realm_index（1=炼气…8=大乘）与 realm/realm_sub 三个字段，query("realm_level") 恒为 0
 - [`treemap-zero-key-overwrite`](knowledge/pitfall/treemap-zero-key-overwrite.md) — F_TREEMAP 的 _set 中 if(!map[parts[0]]) 将值为 0 的键视为不存在并被覆盖，与 F_DBASE 其他处的 undefinedp 检查不一致
 
 ## #player
