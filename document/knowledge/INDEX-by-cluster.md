@@ -60,6 +60,7 @@
 - [`room-create-setup-pattern`](knowledge/room/room-create-setup-pattern.md) — ROOM 的 create() 中必须在 setup() 之前依次调用 set('short', ...)、set('long', ...)、set('exits', ...)、set('objects', ...)
 
 ## skill
+- [`body-refinement-cultivation`](knowledge/skill/body-refinement-cultivation.md) — 淬体点数存 body_refine/points 并由 BODY_D 按阶段换算成 body_refine/qi|defense|fist，战斗热路径直接读 dbase 不调 daemon
 - [`kungfu-system-overview`](knowledge/skill/kungfu-system-overview.md) — 武功系统在 /kungfu/ 下分 skill/（技能）、class/（门派）、special/（绝招）、condition/（内功心法）、music/（音乐）、profession/（职业）六个模块
 - [`sect-skill-learning-chain`](knowledge/skill/sect-skill-learning-chain.md) — 九宗功法学习链路=SECT_D->learn_skill 写 sect/learned 习得记录+set_skill 入技能表（kungfu/skill/<id>.c 须先实体化）；任务奖励经
 - [`skill-nested-system`](knowledge/skill/skill-nested-system.md) — F_SKILL 支持用 :: 分隔符的子技能（最多 3 层），如 music::gu_qin::gaoshan_liushui，set_skill/query_skill 递归处理嵌套 mapping

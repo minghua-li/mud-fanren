@@ -2,6 +2,7 @@
 # KB Index by Kind
 
 ## architecture
+- [`body-refinement-cultivation`](knowledge/skill/body-refinement-cultivation.md) — 淬体点数存 body_refine/points 并由 BODY_D 按阶段换算成 body_refine/qi|defense|fist，战斗热路径直接读 dbase 不调 daemon
 - [`channel-system`](knowledge/architecture/channel-system.md) — CHANNEL_D 通过 channels mapping 集中管理所有聊天频道，每条频道配置消息格式、权限、颜色和匿名选项
 - [`character-attribute-system`](knowledge/architecture/character-attribute-system.md) — F_ATTRIBUTE 的 query_str/int/con/dex() 组合了先天基础值、临时装备加成和技能等级加成（最低 10），并支持 Chem/HitRate/PoisonRate 等战斗修饰符
 - [`combat-realm-spirit-root-damage`](knowledge/combat/combat-realm-spirit-root-damage.md) — calc_damage 在五行克制之后按 realm_power_modifier_permille 施加境界压制、对法术攻击按 spirit_root_damage_info 施加灵根倍率

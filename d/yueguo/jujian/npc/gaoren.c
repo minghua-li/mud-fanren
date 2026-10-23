@@ -41,6 +41,10 @@ void create()
         set_skill("sword", 200);
         set_skill("zhongjian-jianfa", 200);
         set_skill("jianxiu-chuancheng", 200);
+        // 体修路径（#79）：巨剑门体剑双修
+        set_skill("xiangjia-gong", 200);
+        set_skill("fansheng-zhenmo-gong", 200);
+        set_skill("niepan-shengti", 200);
         setup();
         carry_object("/clone/misc/cloth")->wear();
 }

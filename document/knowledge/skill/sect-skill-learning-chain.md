@@ -11,6 +11,7 @@ related:
 - sect-system
 - kungfu-system-overview
 - sword-art-perform-unlock
+- body-refinement-cultivation
 status: current
 tags:
 - skill

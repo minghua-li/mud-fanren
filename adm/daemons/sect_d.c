@@ -133,6 +133,10 @@ nosave mapping sect_config = ([
     "skills": ([
       "zhongjian-jianfa": ([ "name": "重剑剑法", "rank": 0, "cost": SECT_SKILL_COST_BASIC, "desc": "银色巨剑，一劈可破上品法器护罩" ]),
       "jianxiu-chuancheng": ([ "name": "剑修传承", "rank": 0, "cost": SECT_SKILL_COST_BASIC, "desc": "剑修立派，体剑双修" ]),
+      // 体修路径（#79）：基础炼体 → 法体双修 → 极限炼体
+      "xiangjia-gong":        ([ "name": "象甲功", "rank": 0, "cost": SECT_SKILL_COST_BASIC, "desc": "基础炼体，打熬筋骨，淬体根基（body_refine）" ]),
+      "fansheng-zhenmo-gong": ([ "name": "梵圣真魔功", "rank": 1, "cost": SECT_SKILL_COST_INNER, "desc": "法体双修，exert santou_liubi 现三头六臂法相" ]),
+      "niepan-shengti":       ([ "name": "涅槃圣体", "rank": 2, "cost": SECT_SKILL_COST_ELITE, "desc": "极限炼体，肉身近于不坏，淬体上限再进" ]),
     ]),
   ]),
   "guiling_sect": ([
@@ -151,6 +155,8 @@ nosave mapping sect_config = ([
       "anshu":         ([ "name": "暗术", "rank": 0, "cost": SECT_SKILL_COST_BASIC, "desc": "潜行暗杀类功法" ]),
       "lianshi-shu":   ([ "name": "炼尸术", "rank": 1, "cost": SECT_SKILL_COST_INNER, "desc": "炼制尸傀" ]),
       "xueling-dafa":  ([ "name": "血灵大法", "rank": 2, "cost": SECT_SKILL_COST_APEX, "desc": "《万灵真经》第一魔功，需天灵根暗灵根双修" ]),
+      // 体修·毒体（#79）：以万毒淬身，空手自带五毒、抗毒更强
+      "wandu-hunyuan-shen": ([ "name": "万毒混元身", "rank": 1, "cost": SECT_SKILL_COST_INNER, "desc": "毒体修炼，毒抗+毒攻，需极限炼体根基" ]),
     ]),
   ]),
   "yuling_sect": ([
