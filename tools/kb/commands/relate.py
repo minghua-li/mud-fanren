@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import sys
 from pathlib import Path
 
 from tools.kb.core.entry import scan_entries, save_entry
