@@ -1170,24 +1170,29 @@ mapping generate_spirit_root()
 // 返回值: 如 10000 = ×1.0
 int query_spirit_root_speed()
 {
+	int *speed_table;
+	int idx;
+	int base_speed;
+	int strength;
 	mapping root = query(SPIRIT_ROOT_DATA);
+
 	if (!mapp(root)) return ROOT_SPEED_T4; // 默认伪灵根速度
-	
-	int *speed_table = ({
+
+	speed_table = ({
 		ROOT_SPEED_T0, ROOT_SPEED_T1, ROOT_SPEED_T2,
 		ROOT_SPEED_T3, ROOT_SPEED_T4, ROOT_SPEED_T5
 	});
-	
-	int idx = root[SR_QUALITY_IDX];
+
+	idx = root[SR_QUALITY_IDX];
 	if (idx < 0 || idx >= ROOT_QUALITY_TOTAL)
 		return ROOT_SPEED_T4;
-	
-	int base_speed = speed_table[idx];
-	
+
+	base_speed = speed_table[idx];
+
 	// 灵根强度修正：强度每高1点，速度+0.5%（万分位+50）
-	int strength = root[SR_STRENGTH];
+	strength = root[SR_STRENGTH];
 	base_speed += strength * 50;
-	
+
 	return base_speed;
 }
 
@@ -1196,39 +1201,44 @@ int query_spirit_root_speed()
 string query_spirit_root_display()
 {
 	mapping root = query(SPIRIT_ROOT_DATA);
+	string quality, variant, main_el, line;
+	string *elements;
+	int strength, purity;
+	int quality_idx, star_max, star_count;
+	int speed, next_strength_req, i;
+
 	if (!mapp(root)) return "尚未检测灵根。\n";
-	
-	string quality = root[SR_QUALITY];
-	string *elements = root[SR_ELEMENTS];
-	string variant = root[SR_VARIANT];
-	int strength = root[SR_STRENGTH];
-	int purity = root[SR_PURITY];
-	string main_el = root[SR_MAIN_ELEMENT];
-	
-	string line;
+
+	quality = root[SR_QUALITY];
+	elements = root[SR_ELEMENTS];
+	variant = root[SR_VARIANT];
+	strength = root[SR_STRENGTH];
+	purity = root[SR_PURITY];
+	main_el = root[SR_MAIN_ELEMENT];
+
 	line = HIC "═══ 灵根面板 ═══" NOR "\n";
-	
+
 	// 品级显示
 	line += sprintf(" 品级：%s", quality);
 	if (variant)
 		line += sprintf("（%s）", variant);
-	
+
 	// 星级
-	int quality_idx = root[SR_QUALITY_IDX];
-	int star_max = 6;
-	int star_count = star_max - quality_idx;
+	quality_idx = root[SR_QUALITY_IDX];
+	star_max = 6;
+	star_count = star_max - quality_idx;
 	line += "（";
-	for (int i = 0; i < star_max; i++) {
+	for (i = 0; i < star_max; i++) {
 		if (i < star_count)
 			line += HIY "★" NOR;
 		else
 			line += CYN "☆" NOR;
 	}
 	line += "）\n";
-	
+
 	// 属性显示
 	line += " 属性：";
-	for (int i = 0; i < sizeof(elements); i++) {
+	for (i = 0; i < sizeof(elements); i++) {
 		if (elements[i] == main_el)
 			line += HIR "[" + elements[i] + "]" NOR;
 		else
@@ -1237,16 +1247,15 @@ string query_spirit_root_display()
 	if (variant && member_array(variant, elements) == -1)
 		line += HIM "[" + variant + "]" NOR;
 	line += "\n";
-	
+
 	// 修炼速度
-	int speed = query_spirit_root_speed();
+	speed = query_spirit_root_speed();
 	line += sprintf(" 修炼速度倍率：×%.1f（%d%%）\n", to_float(speed) / 10000.0, speed / 100);
-	
+
 	line += sprintf(" 灵根强度：%d/100\n", strength);
 	line += sprintf(" 灵根精纯度：%d%%\n", purity);
-	
+
 	// 下一级突破需求
-	int next_strength_req;
 	switch (quality_idx) {
 	case ROOT_QUALITY_T4: next_strength_req = ROOT_STRENGTH_T3_MIN; break;
 	case ROOT_QUALITY_T3: next_strength_req = ROOT_STRENGTH_T2_MIN; break;
@@ -1258,7 +1267,7 @@ string query_spirit_root_display()
 		line += sprintf(" 下一突破需求：灵根强度 ≥ %d\n", next_strength_req);
 	else if (quality_idx <= ROOT_QUALITY_T1)
 		line += " 已达先天极致，难以后天突破\n";
-	
+
 	return line;
 }
 
