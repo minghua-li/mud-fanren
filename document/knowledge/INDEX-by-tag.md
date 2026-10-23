@@ -9,8 +9,10 @@
 - [`combat-negative-damage-flip`](knowledge/pitfall/combat-negative-damage-flip.md) — COMBAT_D 中 damage < 0 时取反（damage = 0 - damage），如果吸收超过伤害量则受害者反而受到正伤害
 - [`combat-realm-spirit-root-damage`](knowledge/combat/combat-realm-spirit-root-damage.md) — calc_damage 在五行克制之后按 realm_power_modifier_permille 施加境界压制、对法术攻击按 spirit_root_damage_info 施加灵根倍率
 - [`combatd-attack-flow`](knowledge/combat/combatd-attack-flow.md) — COMBAT_D 的 do_attack() 通过 ap（攻击力与技能计算）、dp（防御与闪避）、pp（招架）三方判定命中，支持四种攻击类型
+- [`elemental-spell-casting`](knowledge/combat/elemental-spell-casting.md) — 五行法术走 SPELL_D 的 cast_spell 与 shifa 命令施展，法术元数据由各 skill 的 query_spell_info() 单真源提供
 
 ## #command
+- [`elemental-spell-casting`](knowledge/combat/elemental-spell-casting.md) — 五行法术走 SPELL_D 的 cast_spell 与 shifa 命令施展，法术元数据由各 skill 的 query_spell_info() 单真源提供
 - [`forge-crafting-system`](knowledge/architecture/forge-crafting-system.md) — 法宝炼制链路由 FORGE_D（adm/daemons/forge_d.c）配方驱动承载，成品由通用基类 d/yueguo/obj/treasure.c（继承 EQUIP）运行时生成，境界限制走 SECT_D->query_cultivation_tier，设施加成接 SECT_FACILITY_D->query_forge_bonus，材料供给接 #67 坊市 goods 表与 ECONOMY_D 定价
 - [`init-add-action-registration`](knowledge/architecture/init-add-action-registration.md) — 玩家进入房间时触发 init()，房间在此处通过 add_action() 注册命令动词，回调需返回 0（继续匹配）或 1（消费输入）
 - [`inventory-ascii-alignment`](knowledge/pitfall/inventory-ascii-alignment.md) — cmds/usr/inventory.c 的装备界面 ASCII 人形图各部位 body art 宽度必须一致（9 字符），否则右侧装备标签逐行错位
@@ -24,6 +26,7 @@
 - [`channel-system`](knowledge/architecture/channel-system.md) — CHANNEL_D 通过 channels mapping 集中管理所有聊天频道，每条频道配置消息格式、权限、颜色和匿名选项
 - [`combat-realm-spirit-root-damage`](knowledge/combat/combat-realm-spirit-root-damage.md) — calc_damage 在五行克制之后按 realm_power_modifier_permille 施加境界压制、对法术攻击按 spirit_root_damage_info 施加灵根倍率
 - [`combatd-attack-flow`](knowledge/combat/combatd-attack-flow.md) — COMBAT_D 的 do_attack() 通过 ap（攻击力与技能计算）、dp（防御与闪避）、pp（招架）三方判定命中，支持四种攻击类型
+- [`elemental-spell-casting`](knowledge/combat/elemental-spell-casting.md) — 五行法术走 SPELL_D 的 cast_spell 与 shifa 命令施展，法术元数据由各 skill 的 query_spell_info() 单真源提供
 - [`error-handling-crash-logging`](knowledge/architecture/error-handling-crash-logging.md) — master.c 的 log_error() 按文件所有者路由编译/运行时错误到对应巫师家目录，crash() 广播并记录日志到 /log/static/CRASHES
 - [`forge-crafting-system`](knowledge/architecture/forge-crafting-system.md) — 法宝炼制链路由 FORGE_D（adm/daemons/forge_d.c）配方驱动承载，成品由通用基类 d/yueguo/obj/treasure.c（继承 EQUIP）运行时生成，境界限制走 SECT_D->query_cultivation_tier，设施加成接 SECT_FACILITY_D->query_forge_bonus，材料供给接 #67 坊市 goods 表与 ECONOMY_D 定价
 - [`macro-path-reference-system`](knowledge/architecture/macro-path-reference-system.md) — /include/globals.h 定义了所有关键路径宏（ROOM/NPC/COMBAT_D/SKILL_D 等），被驱动自动 include，修改后需重启游戏
@@ -158,6 +161,7 @@
 - [`llm-gateway-poc`](knowledge/architecture/llm-gateway-poc.md) — tools/llm/gateway.py 是 Phase 0 外挂 LLM 网关：telnet 连 5555/6666 按端口选 GBK/UTF-8 编码，ai 前缀输入经 LLM 解析、safety.py 分层过滤后回写执行
 
 ## #skill
+- [`elemental-spell-casting`](knowledge/combat/elemental-spell-casting.md) — 五行法术走 SPELL_D 的 cast_spell 与 shifa 命令施展，法术元数据由各 skill 的 query_spell_info() 单真源提供
 - [`kungfu-system-overview`](knowledge/skill/kungfu-system-overview.md) — 武功系统在 /kungfu/ 下分 skill/（技能）、class/（门派）、special/（绝招）、condition/（内功心法）、music/（音乐）、profession/（职业）六个模块
 - [`sect-skill-learning-chain`](knowledge/skill/sect-skill-learning-chain.md) — 九宗功法学习链路=SECT_D->learn_skill 写 sect/learned 习得记录+set_skill 入技能表（kungfu/skill/<id>.c 须先实体化）；任务奖励经
 - [`skill-nested-system`](knowledge/skill/skill-nested-system.md) — F_SKILL 支持用 :: 分隔符的子技能（最多 3 层），如 music::gu_qin::gaoshan_liushui，set_skill/query_skill 递归处理嵌套 mapping

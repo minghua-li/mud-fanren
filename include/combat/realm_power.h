@@ -140,6 +140,21 @@ float realm_power_modifier(object att, object def)
     return realm_power_modifier_permille(att, def) / 1000.0;
 }
 
+// 组合战斗系数（千分比）：境界压制 × 灵根加成（法术）
+//   供不走 calc_damage 的伤害来源（#76 法术施法 shifa）复用同一套原语，
+//   避免法术自成一套境界/灵根口径而与普攻数值漂移。
+int combat_power_permille(object me, object victim, int is_spell, int elem)
+{
+    int pm;
+    mixed *info;
+
+    pm = realm_power_modifier_permille(me, victim);
+    if (!is_spell) return pm;
+
+    info = spirit_root_damage_info(me, elem);
+    return pm * info[0] / 1000;
+}
+
 // 是否法术攻击
 //   1) #76 法术 perform 在出手前写入 combat/spell_elem 或 combat/attack_type = "spell"
 //   2) 本次攻击的招式槽为 spells（法术槽武功，见 kungfu/skill/daomen-shufa.c 等）

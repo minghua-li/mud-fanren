@@ -8,6 +8,7 @@ modules:
 - include
 related:
 - combat-realm-spirit-root-damage
+- elemental-spell-casting
 status: current
 tags:
 - combat

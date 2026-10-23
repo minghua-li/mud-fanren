@@ -41,6 +41,9 @@ void create()
         set_skill("unarmed", 100);
         set_skill("zhubao-shu", 100);
         set_skill("zhenfa-shu", 100);
+        // 五行法术（#76）：天阙堡土行筑垒
+        set_skill("dici-shu", 100);
+        set_skill("tufang-shu", 100);
         setup();
         carry_object("/clone/misc/cloth")->wear();
 }

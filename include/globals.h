@@ -274,6 +274,9 @@
 #define PILL_D                "/adm/daemons/pill_d"
 #define DAN_BASE              "/inherit/item/dan"
 
+//五行法术系统（#76：SPELL_D 施法流程，施法命令 shifa）
+#define SPELL_D               "/adm/daemons/spell_d"
+
 //生活技能系统
 #define PROFESSION_D(x)	("/kungfu/profession/" + x)
 

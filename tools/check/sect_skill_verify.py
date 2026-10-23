@@ -128,16 +128,29 @@ for m in re.finditer(r'"([a-z][a-z0-9-]+)"\s*:\s*\(\s*\[\s*"name"\s*:\s*"([^"]+)
 print('sect_config 解析到技能条目: %d' % len(skill_defs))
 
 unique_ids = sorted(set(skill_defs.keys()))
-print('唯一 skill_id: %d' % len(unique_ids))
+
+# #62 功法树清单口径 = sect_config 技能 − #76 五行法术（法术是 #76 追加的独立交付，
+# 不并入 #62 的 26 功法清点；法术自身的清点在 tools/check/spell_verify.py）
+SPELL_IDS = set()
+if os.path.exists('adm/daemons/spell_d.c'):
+    with open('adm/daemons/spell_d.c', encoding='utf-8') as f:
+        spell_src = f.read()
+    mm = re.search(r'nosave string \*spell_ids = \(\{(.*?)\}\);', spell_src, re.S)
+    if mm:
+        SPELL_IDS = set(re.findall(r'"([a-z_]+-shu)"', mm.group(1)))
+
+skill_defs_kungfu = {k: v for k, v in skill_defs.items() if k not in SPELL_IDS}
+unique_kungfu = sorted(set(skill_defs_kungfu.keys()))
+print('唯一 skill_id: %d（其中 #76 法术 %d 个不计入功法树口径）' % (len(unique_ids), len(SPELL_IDS)))
 for sid in unique_ids:
-    print('   %-22s %s' % (sid, skill_defs[sid]))
+    print('   %-22s %s%s' % (sid, skill_defs[sid], '   [法术 #76]' if sid in SPELL_IDS else ''))
 
-ck('sect_config 技能条目数 >= 26（九宗功法树）', len(skill_defs) >= 26,
-   '实际 %d' % len(skill_defs))
-ck('唯一 skill_id 数 == 26（与票面清单一致）', len(unique_ids) == 26,
-   '实际 %d' % len(unique_ids))
+ck('sect_config 技能条目数 >= 26（九宗功法树）', len(skill_defs_kungfu) >= 26,
+   '实际 %d' % len(skill_defs_kungfu))
+ck('唯一 skill_id 数 == 26（与票面清单一致）', len(unique_kungfu) == 26,
+   '实际 %d' % len(unique_kungfu))
 
-# 2. 每个 skill_id 对应 kungfu/skill/<id>.c 存在
+# 2. 每个 skill_id 对应 kungfu/skill/<id>.c 存在（含 #76 法术）
 missing_files = [sid for sid in unique_ids if not os.path.exists('kungfu/skill/%s.c' % sid)]
 ck('26 个 kungfu/skill 文件全部落地', not missing_files, '缺失: %s' % missing_files)
 
@@ -409,9 +422,13 @@ cfg_uniq = set()
 for v in SECT_CONFIG.values():
     cfg_uniq.update(v['skills'].keys())
 ck('解析出 9 宗', len(SECT_CONFIG) == 9, '实际 %d' % len(SECT_CONFIG))
-ck('解析出 28 个配置条目（9 宗合计，共享技能各宗计一次）', cfg_total == 28, '实际 %d' % cfg_total)
-ck('唯一 skill_id 26（yushou-shu/yichong-shu 灵兽山与御灵宗共享）', len(cfg_uniq) == 26,
-   '实际 %d: %s' % (len(cfg_uniq), sorted(cfg_uniq)))
+cfg_total_kungfu = sum(1 for v in SECT_CONFIG.values()
+                       for sid in v['skills'] if sid not in SPELL_IDS)
+cfg_uniq_kungfu = set(sid for sid in cfg_uniq if sid not in SPELL_IDS)
+ck('解析出 28 个配置条目（9 宗合计，共享技能各宗计一次）', cfg_total_kungfu == 28,
+   '实际 %d（含 #76 法术共 %d）' % (cfg_total_kungfu, cfg_total))
+ck('唯一 skill_id 26（yushou-shu/yichong-shu 灵兽山与御灵宗共享）', len(cfg_uniq_kungfu) == 26,
+   '实际 %d: %s' % (len(cfg_uniq_kungfu), sorted(cfg_uniq_kungfu)))
 
 # 场景 1：炼气新入宗弟子 sect learn 长春功（rank0）→ 习得入技能表
 p = MockPlayer(realm='炼气5层', contrib=100000, rank=0)

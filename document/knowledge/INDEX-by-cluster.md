@@ -26,6 +26,7 @@
 - [`combat-negative-damage-flip`](knowledge/pitfall/combat-negative-damage-flip.md) — COMBAT_D 中 damage < 0 时取反（damage = 0 - damage），如果吸收超过伤害量则受害者反而受到正伤害
 - [`combat-realm-spirit-root-damage`](knowledge/combat/combat-realm-spirit-root-damage.md) — calc_damage 在五行克制之后按 realm_power_modifier_permille 施加境界压制、对法术攻击按 spirit_root_damage_info 施加灵根倍率
 - [`combatd-attack-flow`](knowledge/combat/combatd-attack-flow.md) — COMBAT_D 的 do_attack() 通过 ap（攻击力与技能计算）、dp（防御与闪避）、pp（招架）三方判定命中，支持四种攻击类型
+- [`elemental-spell-casting`](knowledge/combat/elemental-spell-casting.md) — 五行法术走 SPELL_D 的 cast_spell 与 shifa 命令施展，法术元数据由各 skill 的 query_spell_info() 单真源提供
 
 ## dbase
 - [`dbase-add-zero-treats-as-not-set`](knowledge/pitfall/dbase-add-zero-treats-as-not-set.md) — F_DBASE 的 add() 中用 !old 检查键是否存在，属性值为 0 时误判为未设置而调用 set() 覆盖
