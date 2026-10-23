@@ -4,6 +4,7 @@
 ## architecture
 - [`channel-system`](knowledge/architecture/channel-system.md) — CHANNEL_D 通过 channels mapping 集中管理所有聊天频道，每条频道配置消息格式、权限、颜色和匿名选项
 - [`character-attribute-system`](knowledge/architecture/character-attribute-system.md) — F_ATTRIBUTE 的 query_str/int/con/dex() 组合了先天基础值、临时装备加成和技能等级加成（最低 10），并支持 Chem/HitRate/PoisonRate 等战斗修饰符
+- [`combat-realm-spirit-root-damage`](knowledge/combat/combat-realm-spirit-root-damage.md) — calc_damage 在五行克制之后按 realm_power_modifier_permille 施加境界压制、对法术攻击按 spirit_root_damage_info 施加灵根倍率
 - [`combatd-attack-flow`](knowledge/combat/combatd-attack-flow.md) — COMBAT_D 的 do_attack() 通过 ap（攻击力与技能计算）、dp（防御与闪避）、pp（招架）三方判定命中，支持四种攻击类型
 - [`error-handling-crash-logging`](knowledge/architecture/error-handling-crash-logging.md) — master.c 的 log_error() 按文件所有者路由编译/运行时错误到对应巫师家目录，crash() 广播并记录日志到 /log/static/CRASHES
 - [`kungfu-system-overview`](knowledge/skill/kungfu-system-overview.md) — 武功系统在 /kungfu/ 下分 skill/（技能）、class/（门派）、special/（绝招）、condition/（内功心法）、music/（音乐）、profession/（职业）六个模块
@@ -24,7 +25,9 @@
 - [`dbase-path-access-pattern`](knowledge/dbase/dbase-path-access-pattern.md) — F_DBASE 的 query/set 支持路径式访问（query('apply/attack')），通过 '/' 分割 mapping 层级
 - [`feature-cleanup-lifecycle`](knowledge/lpc/feature-cleanup-lifecycle.md) — F_CLEAN_UP 在 clean_up() 中检查 interactive() 玩家、environment() 父对象和 no_clean_up 标志，决定是否销毁自身释放内存
 - [`feature-move-encumbrance`](knowledge/lpc/feature-move-encumbrance.md) — F_MOVE 的 move(dest) 处理负重递归传播（add_encumbrance 沿 container 链向上累加），并检查 TotalLimit(10000)/PlayerHoldLimit(400)/killer 防躲
+- [`foreach-loop-iteration`](knowledge/lpc/foreach-loop-iteration.md) — LPC foreach 循环可遍历数组/mapping/字符串，mapping 用 foreach(k, v in m) 同时取键值，ref var 可写回原数组
 - [`forge-crafting-system`](knowledge/architecture/forge-crafting-system.md) — 法宝炼制链路由 FORGE_D（adm/daemons/forge_d.c）配方驱动承载，成品由通用基类 d/yueguo/obj/treasure.c（继承 EQUIP）运行时生成，境界限制走 SECT_D->query_cultivation_tier，设施加成接 SECT_FACILITY_D->query_forge_bonus，材料供给接 #67 坊市 goods 表与 ECONOMY_D 定价
+- [`function-pointer-closure-syntax`](knowledge/lpc/function-pointer-closure-syntax.md) — LPC 函数指针用 (: call_other, path, 'func', args :) 语法，post_action、call_out 等回调大量依赖它，用 evaluate() 调用
 - [`inherit-composition-pattern`](knowledge/lpc/inherit-composition-pattern.md) — LPC 对象通过多重继承 feature/ 获得能力（inherit F_DBASE + F_MOVE + F_COMBAT），而非深层次类继承
 - [`init-add-action-registration`](knowledge/architecture/init-add-action-registration.md) — 玩家进入房间时触发 init()，房间在此处通过 add_action() 注册命令动词，回调需返回 0（继续匹配）或 1（消费输入）
 - [`mapping-literal-syntax`](knowledge/lpc/mapping-literal-syntax.md) — LPC mapping 字面量用 ([]) 而非 {}，键值之间用冒号而非 =>，如 ([ 'key': value, 'key2': value2 ])
@@ -35,14 +38,19 @@
 - [`sect-skill-learning-chain`](knowledge/skill/sect-skill-learning-chain.md) — 九宗功法学习链路=SECT_D->learn_skill 写 sect/learned 习得记录+set_skill 入技能表（kungfu/skill/<id>.c 须先实体化）；任务奖励经
 - [`sect-system`](knowledge/architecture/sect-system.md) — 门派系统由 SECT_D（adm/daemons/sect_d.c）承载，玩家门派数据存 "sect/" 路径，境界门槛用 tier（境界索引*3+小阶段）比较，realm 属性可能未设置需 exp 兜底
 - [`skill-nested-system`](knowledge/skill/skill-nested-system.md) — F_SKILL 支持用 :: 分隔符的子技能（最多 3 层），如 music::gu_qin::gaoshan_liushui，set_skill/query_skill 递归处理嵌套 mapping
+- [`string-array-range-indexing`](knowledge/lpc/string-array-range-indexing.md) — LPC 字符串/数组支持范围索引 str[n1..n2]、右索引 str[<n] 和切片 str[n..]，越界自动截断
+- [`switch-string-range-case`](knowledge/lpc/switch-string-range-case.md) — LPC switch 的 case 支持字符串常量匹配和数值范围匹配（case x..y），同一 switch 内可混用不同类型 case
 - [`type-check-functions`](knowledge/lpc/type-check-functions.md) — LPC 运行时类型检查用 objectp()/stringp()/mapp()/functionp() 等函数，而非 typeof(x) == 'object'
 - [`varargs-function-pattern`](knowledge/lpc/varargs-function-pattern.md) — LPC 函数用 varargs 关键字声明可选参数，调用时未传的参数为 0，常用于 query()、do_attack() 等核心函数
 
 ## pitfall
 - [`combat-negative-damage-flip`](knowledge/pitfall/combat-negative-damage-flip.md) — COMBAT_D 中 damage < 0 时取反（damage = 0 - damage），如果吸收超过伤害量则受害者反而受到正伤害
 - [`dbase-add-zero-treats-as-not-set`](knowledge/pitfall/dbase-add-zero-treats-as-not-set.md) — F_DBASE 的 add() 中用 !old 检查键是否存在，属性值为 0 时误判为未设置而调用 set() 覆盖
+- [`fluffos-v2019-syntax-limits`](knowledge/lpc/fluffos-v2019-syntax-limits.md) — FluffOS v2019 驱动（20230604）不支持中途声明局部变量、默认参数、0b 字面量、模板字符串、可选链、??、& 引用糖、函数指针简化赋值
 - [`gb-to-utf8-noop`](knowledge/pitfall/gb-to-utf8-noop.md) — simul_efun/chinese.c 的 gb_to_utf8()/utf8_to_gb() 为空操作直接 return input，6666 端口玩家收到 GBK 编码乱码
 - [`inventory-ascii-alignment`](knowledge/pitfall/inventory-ascii-alignment.md) — cmds/usr/inventory.c 的装备界面 ASCII 人形图各部位 body art 宽度必须一致（9 字符），否则右侧装备标签逐行错位
+- [`lpc-declare-vars-at-block-start`](knowledge/lpc/lpc-declare-vars-at-block-start.md) — LPC 铁律：所有局部变量必须在函数/代码块开头（任何语句之前）声明，同一作用域不可重复声明，与 C 不同
+- [`lpc-truthiness-and-logical-return`](knowledge/lpc/lpc-truthiness-and-logical-return.md) — LPC 中空字符串和空数组是真值，&& 返回最后非零值、|| 返回第一个非零值，与 C 的 0/1 语义不同
 - [`master-valid-read-write-bypass`](knowledge/pitfall/master-valid-read-write-bypass.md) — master.c 的 valid_write()/valid_read() 首行 return 1 绕过所有文件安全校验，SECURITY_D 相关代码为死代码
 - [`new-id-rate-limit`](knowledge/pitfall/new-id-rate-limit.md) — logind.c/logind2.c 的 check_new_id_per_ip() 按 IP 统计每日新账号数（create_new_id_from_ip mapping），超过 5 个则拒绝注册
 - [`treemap-zero-key-overwrite`](knowledge/pitfall/treemap-zero-key-overwrite.md) — F_TREEMAP 的 _set 中 if(!map[parts[0]]) 将值为 0 的键视为不存在并被覆盖，与 F_DBASE 其他处的 undefinedp 检查不一致

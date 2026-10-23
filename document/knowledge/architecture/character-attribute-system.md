@@ -1,12 +1,20 @@
 ---
-id: character-attribute-system
-claim: "F_ATTRIBUTE 的 query_str/int/con/dex() 组合了先天基础值、临时装备加成和技能等级加成（最低 10），并支持 Chem/HitRate/PoisonRate 等战斗修饰符"
-tags: [combat, dbase, player]
-modules: [feature, adm-daemons]
+claim: F_ATTRIBUTE 的 query_str/int/con/dex() 组合了先天基础值、临时装备加成和技能等级加成（最低 10），并支持 Chem/HitRate/PoisonRate
+  等战斗修饰符
 cluster: architecture
+id: character-attribute-system
 kind: architecture
+modules:
+- feature
+- adm-daemons
+related:
+- combat-realm-spirit-root-damage
 status: current
-verified: "2026-06-29"
+tags:
+- combat
+- dbase
+- player
+verified: '2026-06-29'
 ---
 
 ## Why

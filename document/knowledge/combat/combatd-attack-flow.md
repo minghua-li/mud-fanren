@@ -1,12 +1,19 @@
 ---
-id: combatd-attack-flow
-claim: "COMBAT_D 的 do_attack() 通过 ap（攻击力与技能计算）、dp（防御与闪避）、pp（招架）三方判定命中，支持四种攻击类型"
-tags: [combat, daemon, dbase]
-modules: [adm-daemons, include]
+claim: COMBAT_D 的 do_attack() 通过 ap（攻击力与技能计算）、dp（防御与闪避）、pp（招架）三方判定命中，支持四种攻击类型
 cluster: combat
+id: combatd-attack-flow
 kind: architecture
+modules:
+- adm-daemons
+- include
+related:
+- combat-realm-spirit-root-damage
 status: current
-verified: "2026-06-29"
+tags:
+- combat
+- daemon
+- dbase
+verified: '2026-06-29'
 ---
 
 ## Why

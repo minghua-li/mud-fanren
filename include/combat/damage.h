@@ -1,3 +1,5 @@
+#include <combat/realm_power.h>  // 境界压制 / 灵根加成（#78）
+
 mixed calc_damage(object me,object victim,object weapon,mapping my,mapping your,mapping action)
 {
     int damage_bonus,defense_factor,damage;
@@ -192,6 +194,61 @@ mixed calc_damage(object me,object victim,object weapon,mapping my,mapping your,
         }
     }
     
+    // ===== 境界压制修正 =====
+    // 基于 1F §4.1 与 02-战斗机制与平衡.md §2.1 境界压制系数表：
+    //   同境界 1.0；小阶段每差 1 档 1.2/0.85（累计上限 1.44）；大境界每差 1 档 2.0/0.5；
+    //   越级 2 大境界及以上 0.25 下限。任一方未声明境界（如历史 NPC）→ 中性 1.0。
+    {
+        int realm_pm;
+
+        realm_pm = realm_power_modifier_permille(me, victim);
+        if (realm_pm != REALM_SUP_SAME)
+        {
+            damage = damage * realm_pm / 1000;
+            if ((me->query("env/combat") == "verbose") && wizardp(me))
+                tell_object(me, sprintf("damage step realm: realm_pm is %d\n", realm_pm));
+
+            if (realm_pm >= 1500)
+                result += HIR "【境界压制】你以高境界之威压住对方，出手间天地灵气倒卷，伤害大增！\n" NOR;
+            else if (realm_pm > REALM_SUP_SAME)
+                result += HIY "【境界略优】你的境界略高于对方，招式运转更见圆熟。\n" NOR;
+            else if (realm_pm <= 600)
+                result += HIC "【境界压制】你越级而战，境界差距令灵力运转窒涩，伤害大减！\n" NOR;
+            else
+                result += CYN "【境界略逊】你境界稍逊，出手威力打了折扣。\n" NOR;
+        }
+    }
+
+    // ===== 灵根法术加成 =====
+    // 基于 02-战斗机制与平衡.md §2.2 灵根加成系数表：基础倍率 + 同系加成（按灵根强度折算）
+    // 异系惩罚。仅对法术攻击生效（#76 法术 perform 经 combat/spell_elem 声明元素，
+    // 或本次招式槽为 spells），物理/剑诀伤害不受灵根倍率影响，避免改写既有武学平衡。
+    if (combat_is_spell_attack(me) || combat_is_spell_slot(attack_skill))
+    {
+        int att_elem, root_pm;
+        mixed *root_info;
+
+        att_elem = combat_attack_element(me);
+        root_info = spirit_root_damage_info(me, att_elem);
+        root_pm = root_info[0];
+
+        if (root_pm != 1000)
+        {
+            damage = damage * root_pm / 1000;
+            if ((me->query("env/combat") == "verbose") && wizardp(me))
+                tell_object(me, sprintf("damage step root: root_pm is %d, same=%d, quality=%d\n",
+                    root_pm, root_info[1], root_info[2]));
+
+            if (root_info[1])
+                result += HIG "【灵根共鸣】" + query_element_color(att_elem) + query_element_name(att_elem) +
+                    NOR + "属性法术与你的灵根相合，威力大增！\n" NOR;
+            else if (root_pm > 1000)
+                result += HIG "【灵根加持】灵根与你施展的法术同气相求。\n" NOR;
+            else if (root_pm < 1000)
+                result += CYN "【灵根相斥】此法属性与你灵根不合，威力受损。\n" NOR;
+        }
+    }
+
     damage=special_armor_effect(victim,me,damage);
     //whuan,这里注意，调用对手的盔甲特效
     if( damage < 0 ) 
