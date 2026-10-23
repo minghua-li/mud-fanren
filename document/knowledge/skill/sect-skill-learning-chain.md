@@ -10,6 +10,7 @@ modules:
 related:
 - sect-system
 - kungfu-system-overview
+- sword-art-perform-unlock
 status: current
 tags:
 - skill

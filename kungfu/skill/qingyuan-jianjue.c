@@ -39,6 +39,14 @@ int valid_enable(string usage)
     return usage == "sword";
 }
 
+// 剑诀神通（#77）：perform sword.<action> → 本目录下的神通文件
+//   层数解锁见 1F §2.2：剑芒/护体剑气（第1-4层）、剑影分光术/巨剑术（第6-9层）、
+//   大庚剑阵（第10层以上）；层数与境界门槛的公共校验在 jianjue.h
+string perform_action_file(string action)
+{
+    return __DIR__ "qingyuan-jianjue/" + action;
+}
+
 mapping *action = ({
 ([      "action": "$N剑诀一引，一道青色剑芒破空而出，直刺$n$l，凌厉无匹",
         "dodge": -10,

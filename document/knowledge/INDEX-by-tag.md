@@ -10,6 +10,7 @@
 - [`combat-realm-spirit-root-damage`](knowledge/combat/combat-realm-spirit-root-damage.md) — calc_damage 在五行克制之后按 realm_power_modifier_permille 施加境界压制、对法术攻击按 spirit_root_damage_info 施加灵根倍率
 - [`combatd-attack-flow`](knowledge/combat/combatd-attack-flow.md) — COMBAT_D 的 do_attack() 通过 ap（攻击力与技能计算）、dp（防御与闪避）、pp（招架）三方判定命中，支持四种攻击类型
 - [`elemental-spell-casting`](knowledge/combat/elemental-spell-casting.md) — 五行法术走 SPELL_D 的 cast_spell 与 shifa 命令施展，法术元数据由各 skill 的 query_spell_info() 单真源提供
+- [`sword-art-perform-unlock`](knowledge/skill/sword-art-perform-unlock.md) — 剑诀神通走 perform <招式槽>.<action> 经 perform_action_file 指向 kungfu/skill/<skill>/<action>.c，层数按 (lv-1)/10+1 换算
 
 ## #command
 - [`elemental-spell-casting`](knowledge/combat/elemental-spell-casting.md) — 五行法术走 SPELL_D 的 cast_spell 与 shifa 命令施展，法术元数据由各 skill 的 query_spell_info() 单真源提供
@@ -97,6 +98,7 @@
 - [`simul-efun-global-functions`](knowledge/architecture/simul-efun-global-functions.md) — simul_efun.c 中定义的函数对所有对象全局可见（无需 inherit），包括 message_vision/find_player/wizhood/utf8_to_gb 等核心函数
 - [`string-array-range-indexing`](knowledge/lpc/string-array-range-indexing.md) — LPC 字符串/数组支持范围索引 str[n1..n2]、右索引 str[<n] 和切片 str[n..]，越界自动截断
 - [`switch-string-range-case`](knowledge/lpc/switch-string-range-case.md) — LPC switch 的 case 支持字符串常量匹配和数值范围匹配（case x..y），同一 switch 内可混用不同类型 case
+- [`sword-art-perform-unlock`](knowledge/skill/sword-art-perform-unlock.md) — 剑诀神通走 perform <招式槽>.<action> 经 perform_action_file 指向 kungfu/skill/<skill>/<action>.c，层数按 (lv-1)/10+1 换算
 - [`type-check-functions`](knowledge/lpc/type-check-functions.md) — LPC 运行时类型检查用 objectp()/stringp()/mapp()/functionp() 等函数，而非 typeof(x) == 'object'
 - [`varargs-function-pattern`](knowledge/lpc/varargs-function-pattern.md) — LPC 函数用 varargs 关键字声明可选参数，调用时未传的参数为 0，常用于 query()、do_attack() 等核心函数
 
@@ -165,3 +167,4 @@
 - [`kungfu-system-overview`](knowledge/skill/kungfu-system-overview.md) — 武功系统在 /kungfu/ 下分 skill/（技能）、class/（门派）、special/（绝招）、condition/（内功心法）、music/（音乐）、profession/（职业）六个模块
 - [`sect-skill-learning-chain`](knowledge/skill/sect-skill-learning-chain.md) — 九宗功法学习链路=SECT_D->learn_skill 写 sect/learned 习得记录+set_skill 入技能表（kungfu/skill/<id>.c 须先实体化）；任务奖励经
 - [`skill-nested-system`](knowledge/skill/skill-nested-system.md) — F_SKILL 支持用 :: 分隔符的子技能（最多 3 层），如 music::gu_qin::gaoshan_liushui，set_skill/query_skill 递归处理嵌套 mapping
+- [`sword-art-perform-unlock`](knowledge/skill/sword-art-perform-unlock.md) — 剑诀神通走 perform <招式槽>.<action> 经 perform_action_file 指向 kungfu/skill/<skill>/<action>.c，层数按 (lv-1)/10+1 换算

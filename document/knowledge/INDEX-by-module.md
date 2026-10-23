@@ -40,6 +40,7 @@
 - [`message-system-pattern`](knowledge/architecture/message-system-pattern.md) — LPC 消息系统分三级：write() 发给当前玩家、tell_object() 发给指定对象、message_vision() 发给房间所有人（$N 自动替换为玩家名）
 - [`sect-facility-system`](knowledge/architecture/sect-facility-system.md) — 门派设施系统由 SECT_FACILITY_D（adm/daemons/sect_facility_d.c）配置驱动承载，18 个设施条目按 9 宗配置，消耗走 SECT_D->add_contribution 与 MONEY_D->player_pay，房间匹配用 base_name(environment(player)) 对照配置 room 字段
 - [`sect-system`](knowledge/architecture/sect-system.md) — 门派系统由 SECT_D（adm/daemons/sect_d.c）承载，玩家门派数据存 "sect/" 路径，境界门槛用 tier（境界索引*3+小阶段）比较，realm 属性可能未设置需 exp 兜底
+- [`sword-art-perform-unlock`](knowledge/skill/sword-art-perform-unlock.md) — 剑诀神通走 perform <招式槽>.<action> 经 perform_action_file 指向 kungfu/skill/<skill>/<action>.c，层数按 (lv-1)/10+1 换算
 
 ## d-areas
 - [`forge-crafting-system`](knowledge/architecture/forge-crafting-system.md) — 法宝炼制链路由 FORGE_D（adm/daemons/forge_d.c）配方驱动承载，成品由通用基类 d/yueguo/obj/treasure.c（继承 EQUIP）运行时生成，境界限制走 SECT_D->query_cultivation_tier，设施加成接 SECT_FACILITY_D->query_forge_bonus，材料供给接 #67 坊市 goods 表与 ECONOMY_D 定价
@@ -102,6 +103,7 @@
 - [`skill-nested-system`](knowledge/skill/skill-nested-system.md) — F_SKILL 支持用 :: 分隔符的子技能（最多 3 层），如 music::gu_qin::gaoshan_liushui，set_skill/query_skill 递归处理嵌套 mapping
 - [`string-array-range-indexing`](knowledge/lpc/string-array-range-indexing.md) — LPC 字符串/数组支持范围索引 str[n1..n2]、右索引 str[<n] 和切片 str[n..]，越界自动截断
 - [`switch-string-range-case`](knowledge/lpc/switch-string-range-case.md) — LPC switch 的 case 支持字符串常量匹配和数值范围匹配（case x..y），同一 switch 内可混用不同类型 case
+- [`sword-art-perform-unlock`](knowledge/skill/sword-art-perform-unlock.md) — 剑诀神通走 perform <招式槽>.<action> 经 perform_action_file 指向 kungfu/skill/<skill>/<action>.c，层数按 (lv-1)/10+1 换算
 
 ## quest
 - [`quest-system`](knowledge/architecture/quest-system.md) — 任务系统在 /quest/ 下按门派/区域分目录组织，标准模式是守护进程（aquest/bquest）加数字后缀，区域级任务直接放在命名目录下

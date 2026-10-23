@@ -41,6 +41,7 @@
 - [`skill-nested-system`](knowledge/skill/skill-nested-system.md) — F_SKILL 支持用 :: 分隔符的子技能（最多 3 层），如 music::gu_qin::gaoshan_liushui，set_skill/query_skill 递归处理嵌套 mapping
 - [`string-array-range-indexing`](knowledge/lpc/string-array-range-indexing.md) — LPC 字符串/数组支持范围索引 str[n1..n2]、右索引 str[<n] 和切片 str[n..]，越界自动截断
 - [`switch-string-range-case`](knowledge/lpc/switch-string-range-case.md) — LPC switch 的 case 支持字符串常量匹配和数值范围匹配（case x..y），同一 switch 内可混用不同类型 case
+- [`sword-art-perform-unlock`](knowledge/skill/sword-art-perform-unlock.md) — 剑诀神通走 perform <招式槽>.<action> 经 perform_action_file 指向 kungfu/skill/<skill>/<action>.c，层数按 (lv-1)/10+1 换算
 - [`type-check-functions`](knowledge/lpc/type-check-functions.md) — LPC 运行时类型检查用 objectp()/stringp()/mapp()/functionp() 等函数，而非 typeof(x) == 'object'
 - [`varargs-function-pattern`](knowledge/lpc/varargs-function-pattern.md) — LPC 函数用 varargs 关键字声明可选参数，调用时未传的参数为 0，常用于 query()、do_attack() 等核心函数
 
