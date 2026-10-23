@@ -35,6 +35,9 @@ nosave mapping sect_config = ([
     "skills": ([
       "shuangxiu-zhishu": ([ "name": "双修之术", "rank": 0, "cost": SECT_SKILL_COST_BASIC, "desc": "合修功法，阴阳相济，精进法力" ]),
       "xuanyue-xiyin-gong": ([ "name": "玄月吸阴功", "rank": 1, "cost": SECT_SKILL_COST_INNER, "desc": "阴系双修秘术，与合欢宗同源" ]),
+      // 五行法术（#76）：掩月宗以水月一脉见长
+      "bingjian-shu": ([ "name": "冰箭术", "rank": 0, "cost": SECT_SKILL_COST_BASIC, "desc": "聚水成冰，寒箭破空，附减速（初级下阶·水）" ]),
+      "liusha-shu":   ([ "name": "流沙术", "rank": 0, "cost": SECT_SKILL_COST_BASIC, "desc": "水灵搅动地气，流沙陷足（初级下阶·水）" ]),
     ]),
   ]),
   "huangfeng_valley": ([
@@ -55,6 +58,10 @@ nosave mapping sect_config = ([
       "guiyuan-gong":    ([ "name": "归元功", "rank": 1, "cost": SECT_SKILL_COST_INNER, "desc": "防御功法，归元灵甲" ]),
       "huanling-jue":    ([ "name": "幻灵决", "rank": 2, "cost": SECT_SKILL_COST_ELITE, "desc": "幻术功法，幻影分身" ]),
       "ningyuan-gong":   ([ "name": "凝元功", "rank": 2, "cost": SECT_SKILL_COST_ELITE, "desc": "辅助功法，聚灵术" ]),
+      // 五行法术（#76）：黄枫谷真阳诀火系、长春功木系
+      "huodan-shu":   ([ "name": "火弹术", "rank": 0, "cost": SECT_SKILL_COST_BASIC, "desc": "凝火成弹，触物即燃，附灼烧（初级下阶·火）" ]),
+      "huohua-shu":   ([ "name": "火花术", "rank": 1, "cost": SECT_SKILL_COST_INNER, "desc": "漫天火星，久燃不熄（初级中阶·火）" ]),
+      "chanrao-shu":  ([ "name": "缠绕术", "rank": 1, "cost": SECT_SKILL_COST_INNER, "desc": "木灵化藤，缠敌四肢（初级中阶·木）" ]),
     ]),
   ]),
   "lingshou_mountain": ([
@@ -95,6 +102,8 @@ nosave mapping sect_config = ([
     "skills": ([
       "daofa-chuancheng": ([ "name": "刀法传承", "rank": 0, "cost": SECT_SKILL_COST_BASIC, "desc": "刀意速攻，刀法凶悍" ]),
       "lianqi-shu":       ([ "name": "炼器术", "rank": 0, "cost": SECT_SKILL_COST_BASIC, "desc": "炼器工艺七派突出" ]),
+      // 五行法术（#76）：化刀坞金行刀意
+      "jinren-shu":  ([ "name": "金刃术", "rank": 0, "cost": SECT_SKILL_COST_BASIC, "desc": "凝金气为薄刃，专破护体真气（初级下阶·金）" ]),
     ]),
   ]),
   "tianque_fort": ([
@@ -108,6 +117,9 @@ nosave mapping sect_config = ([
     "skills": ([
       "zhubao-shu": ([ "name": "筑堡术", "rank": 0, "cost": SECT_SKILL_COST_BASIC, "desc": "筑堡建州，城防建造" ]),
       "zhenfa-shu": ([ "name": "阵法术", "rank": 0, "cost": SECT_SKILL_COST_BASIC, "desc": "门派阵法布设" ]),
+      // 五行法术（#76）：天阙堡土行筑垒
+      "dici-shu":    ([ "name": "地刺术", "rank": 1, "cost": SECT_SKILL_COST_INNER, "desc": "引地脉石刺破土穿敌（初级中阶·土）" ]),
+      "tufang-shu":  ([ "name": "土墙术", "rank": 2, "cost": SECT_SKILL_COST_ELITE, "desc": "聚土成墙，厚土护身（初级上阶·土）" ]),
     ]),
   ]),
   "jujian_gate": ([

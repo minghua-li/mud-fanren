@@ -42,6 +42,9 @@ void create()
         set_skill("unarmed", 200);
         set_skill("shuangxiu-zhishu", 200);
         set_skill("xuanyue-xiyin-gong", 200);
+        // 五行法术（#76）：掩月宗水月一脉
+        set_skill("bingjian-shu", 200);
+        set_skill("liusha-shu", 200);
         setup();
         carry_object("/clone/misc/cloth")->wear();
 }

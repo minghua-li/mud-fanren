@@ -47,6 +47,10 @@ void create()
         set_skill("guiyuan-gong", 200);
         set_skill("huanling-jue", 200);
         set_skill("ningyuan-gong", 200);
+        // 五行法术（#76）：火系真阳诀、木系长春功一脉
+        set_skill("huodan-shu", 200);
+        set_skill("huohua-shu", 200);
+        set_skill("chanrao-shu", 200);
         setup();
         carry_object("/clone/misc/cloth")->wear();
 }

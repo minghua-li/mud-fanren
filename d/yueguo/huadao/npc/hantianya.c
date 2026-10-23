@@ -41,6 +41,8 @@ void create()
         set_skill("blade", 100);
         set_skill("daofa-chuancheng", 100);
         set_skill("lianqi-shu", 100);
+        // 五行法术（#76）：化刀坞金行刀意
+        set_skill("jinren-shu", 100);
         setup();
         carry_object("/clone/misc/cloth")->wear();
 }
