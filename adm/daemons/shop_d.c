@@ -144,6 +144,7 @@ mixed *query_available_items(object player, string faction)
     {
         mixed *item = item_catalog[i];
         if (item[8] != faction) continue;
+        if (!file_exists(item[3] + ".c")) continue;   // 源文件不存在的条目不展示
         if (level >= item[5])   // 声望等级满足
             result += ({ item });
     }
@@ -173,7 +174,7 @@ int query_stock(string item_id)
 // ======== 购买逻辑 ========
 
 // 尝试购买物品
-// 返回值: 1=成功, -1=声望等级不足, -2=声望值不足, -3=灵石不足, -4=库存不足, -5=死敌无法交易
+// 返回值: 1=成功, -1=声望等级不足, -2=声望值不足, -3=灵石不足, -4=库存不足, -5=死敌无法交易, -6=对象生成失败(不扣费)
 varargs int buy_item(object player, string item_id, int quantity)
 {
     mixed *item = get_item_by_id(item_id);
@@ -209,7 +210,20 @@ varargs int buy_item(object player, string item_id, int quantity)
     int balance = player->query("balance");
     if (balance < final_price) return -3;
 
-    // 6. 执行购买
+    // 6. 预生成对象：生成失败则不扣费、不交付（-6）
+    object *obs = allocate(quantity);
+    for (int i = 0; i < quantity; i++)
+    {
+        obs[i] = new(item[3]);
+        if (!obs[i])
+        {
+            for (int j = 0; j < i; j++)
+                destruct(obs[j]);
+            return -6;
+        }
+    }
+
+    // 7. 执行购买
     // 扣声望
     if (rep_cost > 0)
         REPUTATION_D->deduct_reputation(player, faction, rep_cost * quantity);
@@ -220,6 +234,27 @@ varargs int buy_item(object player, string item_id, int quantity)
     // 扣库存
     if (stock != -1)
         runtime_stock[item_id] -= quantity;
+
+    // 8. 交付给玩家：参数化法宝基类（如 /d/yueguo/obj/treasure）的
+    //    名称/ID/价值由商品目录补上；交付失败则整体回滚扣减
+    for (int i = 0; i < quantity; i++)
+    {
+        if (!stringp(obs[i]->query("name")) || !obs[i]->query("name"))
+            obs[i]->set_name(item[1], ({ item[0] }));
+        if (!obs[i]->query("value"))
+            obs[i]->set("value", price);
+        if (!obs[i]->move(player))
+        {
+            for (int j = 0; j < quantity; j++)
+                destruct(obs[j]);
+            if (rep_cost > 0)
+                REPUTATION_D->add_reputation(player, faction, rep_cost * quantity);
+            player->add("balance", final_price);
+            if (stock != -1)
+                runtime_stock[item_id] += quantity;
+            return -6;
+        }
+    }
 
     // 记录最后互动
     player->set(REP_PATH_LAST_INTERACT + "/" + faction, time());

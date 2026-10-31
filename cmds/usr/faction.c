@@ -397,10 +397,7 @@ int buy_item(object me, string arg)
         mapping fi = REPUTATION_D->get_faction_info(target_id);
         string faction_name = fi ? fi["name"] : target_id;
 
-        // 实际物品给予（需在对应NPC处调用）
-        tell_object(me, HIG "你成功从" + faction_name + "购买了" + item_name + NOR "\n");
-        // 实际应由商店NPC调用此接口，传入物品生成函数
-        write(HIG "购买成功！请在对应商店NPC处领取物品。\n" NOR);
+        tell_object(me, HIG "你成功从" + faction_name + "购买了" + item_name + "，物品已放入你的背包。\n" NOR);
         return 1;
     }
     case -1:
@@ -413,6 +410,8 @@ int buy_item(object me, string arg)
         return notify_fail("该物品库存不足。\n");
     case -5:
         return notify_fail("该势力与你处于敌对状态，无法交易。\n");
+    case -6:
+        return notify_fail("该物品暂时无法从商店取得（物品数据缺失），未扣除任何费用。\n");
     default:
         return notify_fail("购买失败（未知错误）。\n");
     }
