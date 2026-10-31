@@ -30,6 +30,10 @@ inherit F_SAVE;
 //     未落地，/clone/book 既有书籍教授的是无关旧技能，改指会货不对板）+ 符箓/
 //     空间袋/入场券 5（符箓、灵石袋、拍卖令类实体本仓不存在）
 //   - 丹药 13 条维持 #73 改指 /clone/pill/* 不动
+// #64 收口补丁（2026-10-31，复审指出「货不对板」）：
+//   - 庚精改指 /d/yueguo/tainan/obj/gengjing：真实材料实体（is_material=1，
+//     坊市 fangshi.c 在售，FORGE_D 配方 gengjingfeijian 用料），原指 treasure 基类无 is_material、不能入炼器配方
+//   - 天玄石移除：全仓无对应真实材料实体（仅本目录一行提及），treasure 基类非材料，同名挂接即货不对板
 nosave mixed *item_catalog = ({
   // ===================== 黄枫谷 =====================
   // -- 基础 --
@@ -43,9 +47,8 @@ nosave mixed *item_catalog = ({
   ({"hfg_swd2", "中阶飞剑", "weapon", "/clone/weapon/jian", 30000, REP_LEVEL_TRUST, 500, SHOP_TIER_ADVANCED, "huangfeng_valley", "中阶法器飞剑", 10}),
   ({"hfg_pill3", "凝丹丸", "pill", "/clone/pill/ningdan", 25000, REP_LEVEL_TRUST, 400, SHOP_TIER_ADVANCED, "huangfeng_valley", "筑基期辅助丹药", 15}),
   ({"hfg_item1", "灵晶", "item", "/d/yueguo/obj/treasure", 20000, REP_LEVEL_TRUST, 300, SHOP_TIER_ADVANCED, "huangfeng_valley", "蕴含精纯灵力的水晶", 20}),
-  ({"hfg_mat1", "天玄石", "item", "/d/yueguo/obj/treasure", 40000, REP_LEVEL_TRUST, 600, SHOP_TIER_ADVANCED, "huangfeng_valley", "稀有的炼器材料", 10}),
   // -- 核心 --
-  ({"hfg_mat2", "庚精", "item", "/d/yueguo/obj/treasure", 150000, REP_LEVEL_RESPECT, 3000, SHOP_TIER_CORE, "huangfeng_valley", "稀有炼器至宝", 5}),
+  ({"hfg_mat2", "庚精", "item", "/d/yueguo/tainan/obj/gengjing", 150000, REP_LEVEL_RESPECT, 3000, SHOP_TIER_CORE, "huangfeng_valley", "稀有炼器至宝", 5}),
   ({"hfg_item2", "秘境传送卷", "item", "/d/yueguo/obj/treasure", 100000, REP_LEVEL_RESPECT, 2000, SHOP_TIER_CORE, "huangfeng_valley", "通往黄枫谷秘境的卷轴", 3}),
   // -- 秘密 --
   ({"hfg_swd3", "大衍神剑", "weapon", "/clone/weapon/yitianjian", 500000, REP_LEVEL_ADORE, 20000, SHOP_TIER_SECRET, "huangfeng_valley", "大衍神君传承飞剑", 1}),
