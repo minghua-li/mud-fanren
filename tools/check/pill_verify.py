@@ -313,7 +313,10 @@ rrd = readf('adm/daemons/root_refine_d.c')
 qm_raw = func_body_raw(rrd, 'query_major_breakthrough_probability')
 qm = strip_lpc(qm_raw)
 ck('大境界概率读 pill_bonus（#73 接线）', 'query_temp("breakthrough/pill_bonus")' in qm_raw)
-ck('大境界概率把 pill_bonus 加进概率', 'prob += pill_bonus' in qm_raw)
+# 本项查 qm（strip_lpc 剥行注释/块注释后的骨架）而非 qm_raw 原文：
+# 复审实测洞——把该行改成注释（而非删除）时原文仍含字面量、字符串守卫恒绿；
+# 剥注释后注释形态不再命中 → 注释掉/删除该行都会转红。
+ck('大境界概率把 pill_bonus 加进概率（未被注释/删除）', 'prob += pill_bonus' in qm)
 ck('大境界概率保留 aux_bonus', 'query_temp("breakthrough/aux_bonus")' in qm_raw)
 
 # tupo.c：成功后清理 pill_bonus
