@@ -152,6 +152,9 @@ sect-quest-system -> 02-任务链与奖励曲线 : 奖励四渠道与活跃度�
 sect-quest-system -> sects/README : 9 宗任务链与事件按九宗档案「宗门事件与任务链」节逐宗取材
 sect-quest-system -> teleport-network : 驻地场景挂接（sect_areas）依赖 #58 九宗驻地目录落地
 sect-quest-system -> 1D-门派种族声望 : 事件/任务声望奖励走 REPUTATION_D（含正魔互斥）
+main-quest-system -> 1G-任务副本奇遇 : 主线节点按 1G §二 第零章/第一章任务表逐段取材
+main-quest-system -> sect-quest-system : 同走 quest_chain_d 框架，主线 QUEST_TYPE_MAIN 难度系数 2.5，宗门 QUEST_TYPE_SIDE 1.5
+main-quest-system -> teleport-network : 主线目标房间依赖 #67 越国世俗区与 #58 九宗驻地地图
 pill-system  ->  1E-法宝丹药经济 : 1E §2 丹药体系 + §4.1 数据结构 的 LPC 落地
 pill-system  ->  realm-storage-convention : 筑基丹经 breakthrough/pill_bonus temp 接 #61 突破概率（realm 修炼系统接口）
 pill-system  ->  sect-facility-system : 炼丹成功率消费 #60 query_danfang_bonus 丹房加成钩子
