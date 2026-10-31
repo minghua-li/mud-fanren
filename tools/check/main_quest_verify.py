@@ -567,6 +567,9 @@ def run_all(src, label="真实交付"):
     check("场景4 mq_1_6 声望渠道(huangfeng_valley)", "huangfeng_valley" in blk16)
     check("场景4 mq_1_7 贡献渠道(contribution)", "contribution" in blk17)
     check("场景4 mq_1_7 物品渠道(lingzhi)", "/clone/drug/lingzhi" in blk17)
+    blk19 = QUEST_DEFS["mq_1_9"]["rewards_blk"] if QUEST_DEFS["mq_1_9"] else ""
+    # #98：血色禁地节点关键物品奖励由 baicao-dan 近似替换为真实筑基丹（#73 clone/pill/zhuji）
+    check("场景4 mq_1_9 物品渠道(筑基丹 zhuji)", "/clone/pill/zhuji" in blk19)
     check("场景4 mq_1_8 功法渠道(qingyuan-jianjue)", "qingyuan-jianjue" in blk18)
     # 物品文件真实存在（LPC new() 引用不带 .c，存在性检查补 .c）
     item_missing = []

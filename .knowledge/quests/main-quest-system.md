@@ -45,9 +45,9 @@
 - **重写主线时废弃旧实现**：旧 main_quest_d.c 是自成一体的简化框架（quest_chapters/quest_nodes + 自己的 accept/complete/reward + `get_player_realm_index` 读 level/combat_exp 兜底，未接 #61 真实 realm），c1 要求与 #59 框架挂接 → 整文件重写为「注册器 + 接口」形态。**旧玩家数据（main_quest/* 属性）作废**，进度迁移到 quest_chain/*（游戏未正式运营，无真实存量玩家）。
 - **主线任务 ID 前缀 `mq_`**：避免与宗门任务（yanyue_quest_1 等）在 quest_chain_d 全局模板表冲突。
 - **chapter 字段必须显式写**：register_quest 不校验多余键但原样存储；complete_node 读 `quest_defs[node_id]["chapter"]` 做章节完成检测，缺键会 LPC 取 0 误判为第零章。
-- **award_chapter_reward 用真实物品路径**：旧实现引用 `/clone/pill/huang_long_dan`、`zhu_ji_dan` 等**不存在路径**（clone/pill 目录整个没有）——改为 `/clone/drug/baicao-dan`、`/clone/drug/lingzhi`（存在）。后续做主线章节奖励/奇遇奖励一律先 `ls clone/drug/` 核实。
+- **主线物品奖励一律先核实对象真实存在**：#65 旧实现引用 `/clone/pill/huang_long_dan`、`zhu_ji_dan` 等**不存在路径**（当时 clone/pill 目录整个没有）——交付时改为 `/clone/drug/baicao-dan`、`/clone/drug/lingzhi`（存在）。**#73 已落地 clone/pill 丹药实体（16 种，含筑基丹 `zhuji.c`，接 #61 突破成功率）后**，#98 将血色禁地节点 mq_1_9 的关键物品奖励由 baicao-dan 近似替换为真实筑基丹 `/clone/pill/zhuji`（对齐 02 §2.3 越国篇关键物品口径）；章节里程碑 item（第零章 baicao-dan / 第一章 lingzhi）维持交付口径。后续做主线/奇遇物品奖励先 `ls clone/drug/` 与 `ls clone/pill/` 核实。
 - 主线任务不驱动 streak（只读 streak 加成），与宗门任务（report 后 update_daily_streak）区分——主线是剧情推进，不参与每日活跃度。
 
 ## 六、验证
 
-`python3 tools/check/main_quest_verify.py`：50 断言，四部分（静态：17 任务定义/房间路径/realm_range/前置无环/括号配对/键一致性守卫；行为模拟：第零章全走→跨章解锁→第一章炼气段→境界门槛拦截→突破后续接→全 17 节点→剧情入宗后贡献/功法可达→**入宗门禁保真度（炼气1层被拒/手动补入成功/realm 缺失放行兜底，审查第 3 轮 P1 新增）**；LPC 原文守卫；真实突变 4 组：改坏房间路径/删任务定义/放宽境界门槛/删 mq_1_6 入宗接线各转红）。可复跑，供采纳 check 复用（架构师登记时直接 `python3 tools/check/main_quest_verify.py`）。
+`python3 tools/check/main_quest_verify.py`：53 断言（交付基线 52，#98 增 1 条 mq_1_9 筑基丹渠道断言），四部分（静态：17 任务定义/房间路径/realm_range/前置无环/括号配对/键一致性守卫；行为模拟：第零章全走→跨章解锁→第一章炼气段→境界门槛拦截→突破后续接→全 17 节点→剧情入宗后贡献/功法可达→**入宗门禁保真度（炼气1层被拒/手动补入成功/realm 缺失放行兜底，审查第 3 轮 P1 新增）**；LPC 原文守卫；真实突变 4 组：改坏房间路径/删任务定义/放宽境界门槛/删 mq_1_6 入宗接线各转红）。可复跑，供采纳 check 复用（架构师登记时直接 `python3 tools/check/main_quest_verify.py`）。

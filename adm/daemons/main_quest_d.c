@@ -15,7 +15,7 @@
 //   灵石     → MONEY_D->pay_player（1 灵石 = 100 文）
 //   声望     → REPUTATION_D->add_reputation（黄枫谷/掩月宗声望）
 //   门派贡献 → SECT_D->add_contribution（需已入宗）
-//   物品     → new() + move(player)（真实物品路径：baicao-dan/lingzhi）
+//   物品     → new() + move(player)（真实物品路径：lingzhi/baicao-dan；#98 血色禁地节点换真实筑基丹 /clone/pill/zhuji）
 //   功法     → 本门功法写 sect/learned 免贡献解锁（grant_skill，黄枫谷青元剑诀）
 //
 // 境界门槛（c3，复用 quest_chain_d 统一境界索引）：
@@ -172,8 +172,8 @@ nosave mapping quest_defs = ([
         "prerequisites": ([ "quests": ({ "mq_1_8" }) ]),
         "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/huangfeng/shanmen", "amount": 1 ]) }),
         "rewards": ([ "exp": 3000, "coin": 400,
-                      "items": ({ "/clone/drug/baicao-dan" }) ]),
-        "description": "筑基中期，你获得进入血色禁地的资格。禁地每六十年开启一次，内部灵药遍地、妖兽成群，是筑基丹材料的主产地。前往黄枫谷山门集结，随队进入禁地采药历练。",
+                      "items": ({ "/clone/pill/zhuji" }) ]),
+        "description": "筑基中期，你获得进入血色禁地的资格。禁地每六十年开启一次，内部灵药遍地、妖兽成群，是筑基丹材料的主产地。前往黄枫谷山门集结，随队进入禁地采药历练，得筑基丹一颗。",
     ]),
     "mq_1_10": ([
         "id": "mq_1_10", "chain_id": "chain_main_1",
