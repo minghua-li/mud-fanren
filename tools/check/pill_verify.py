@@ -294,6 +294,12 @@ db_raw = func_body_raw(dan, 'do_eat_breakthrough')
 db = strip_lpc(db_raw)
 ck('突破丹写 pill_bonus', 'add_temp("breakthrough/pill_bonus"' in db_raw)
 ck('突破丹叠加上限', 'PILL_BREAK_MAX_STACK' in db and 'max_bonus' in db)
+# include/pill.h：叠加上限常量的「值」本身（名字出现 ≠ 值正确）
+pill_h = readf('include/pill.h')
+m_stack = re.search(r'#define\s+PILL_BREAK_MAX_STACK\s+(\d+)', pill_h)
+ck('include/pill.h 定义 PILL_BREAK_MAX_STACK', m_stack is not None)
+PILL_BREAK_MAX_STACK = int(m_stack.group(1)) if m_stack else 0
+ck('PILL_BREAK_MAX_STACK 值 = 3', PILL_BREAK_MAX_STACK == 3, 'got %d' % PILL_BREAK_MAX_STACK)
 ck('突破丹境界校验', 'query_player_realm_index' in db_raw and 'target - 1' in db_raw)
 dx_raw = func_body_raw(dan, 'do_eat_xiuwei')
 dx = strip_lpc(dx_raw)
@@ -307,6 +313,7 @@ rrd = readf('adm/daemons/root_refine_d.c')
 qm_raw = func_body_raw(rrd, 'query_major_breakthrough_probability')
 qm = strip_lpc(qm_raw)
 ck('大境界概率读 pill_bonus（#73 接线）', 'query_temp("breakthrough/pill_bonus")' in qm_raw)
+ck('大境界概率把 pill_bonus 加进概率', 'prob += pill_bonus' in qm_raw)
 ck('大境界概率保留 aux_bonus', 'query_temp("breakthrough/aux_bonus")' in qm_raw)
 
 # tupo.c：成功后清理 pill_bonus
@@ -439,7 +446,7 @@ def eat_breakthrough(me, target_stage, effect):
         return 0, '境界不适用'
     if cur <= 0:
         return 0, '未入道'
-    max_bonus = effect * 3
+    max_bonus = effect * PILL_BREAK_MAX_STACK
     cur_bonus = me.temp.get('breakthrough/pill_bonus', 0)
     if cur_bonus + effect > max_bonus:
         return 0, '已达上限'
@@ -451,9 +458,9 @@ ok, why = eat_breakthrough(me, zhuji_stage, zhuji_effect)   # 筑基丹（实体
 ck('炼气期服筑基丹成功', ok == 1 and me.temp['breakthrough/pill_bonus'] == zhuji_effect)
 ok, why = eat_breakthrough(me, zhuji_stage, zhuji_effect)
 ok2, why2 = eat_breakthrough(me, zhuji_stage, zhuji_effect)
-ck('叠加 3 颗=%d' % (zhuji_effect * 3), me.temp['breakthrough/pill_bonus'] == zhuji_effect * 3)
+ck('叠加 %d 颗=%d' % (PILL_BREAK_MAX_STACK, zhuji_effect * PILL_BREAK_MAX_STACK), me.temp['breakthrough/pill_bonus'] == zhuji_effect * PILL_BREAK_MAX_STACK)
 ok, why = eat_breakthrough(me, zhuji_stage, zhuji_effect)
-ck('第 4 颗被上限拦截', ok == 0 and me.temp['breakthrough/pill_bonus'] == zhuji_effect * 3)
+ck('第 4 颗被上限拦截', ok == 0 and me.temp['breakthrough/pill_bonus'] == zhuji_effect * PILL_BREAK_MAX_STACK)
 me2 = Player(2)  # 筑基期
 ok, why = eat_breakthrough(me2, zhuji_stage, zhuji_effect)
 ck('筑基期服筑基丹被拒', ok == 0 and '境界不适用' in why)

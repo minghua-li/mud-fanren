@@ -9,6 +9,10 @@
       扣费后 move(player) 交付、交付失败回滚；query_available_items 用 file_exists
       过滤源文件不存在的条目
   三、突变实证：把一条目录改回死路径 /obj/weapon/* → 守卫红
+  四、购买失败两类拆分契约：buy_item 存在 return -7（交付失败）、faction.c 存在
+      case -7，且 -6/-7 两条提示分别含「商品数据异常」/「背包无法容纳」（均明示
+      「未扣除任何费用」）
+  五、突变实证：把 -7 改回 -6（shop_d.c 与 faction.c 两处）→ 守卫必须红
 退出码：0 全绿，1 有失败
 """
 import os
@@ -92,6 +96,40 @@ def extract_func(src, name):
     return src[i:]
 
 
+def case_block(src, code):
+    """截取 switch 内某返回码的 case 块：自 case <code>: 起，到下一个 case/default 止"""
+    i = src.find('case %d:' % code)
+    if i == -1:
+        return None
+    end = len(src)
+    for token in ('case ', 'default:'):
+        j = src.find(token, i + 1)
+        if j != -1 and j < end:
+            end = j
+    return src[i:end]
+
+
+def split_guard(shop_src, fac_src):
+    """-6/-7 拆分契约：返回失败消息列表（空 = 绿）。对任意 shop_d.c / faction.c 原文可重跑"""
+    bad = []
+    buy = extract_func(shop_src, 'buy_item')
+    if 'return -7' not in buy:
+        bad.append('buy_item 缺少 return -7（交付失败分支丢失或被改回 -6）')
+    if 'case -7:' not in fac_src:
+        bad.append('faction.c 缺少 case -7 分支')
+    b6 = case_block(fac_src, -6)
+    b7 = case_block(fac_src, -7)
+    if not (b6 and '商品数据异常' in b6):
+        bad.append('faction.c case -6 提示缺「商品数据异常」')
+    if not (b6 and '未扣除任何费用' in b6):
+        bad.append('faction.c case -6 提示缺「未扣除任何费用」')
+    if not (b7 and '背包无法容纳' in b7):
+        bad.append('faction.c case -7 提示缺「背包无法容纳」')
+    if not (b7 and '未扣除任何费用' in b7):
+        bad.append('faction.c case -7 提示缺「未扣除任何费用」')
+    return bad
+
+
 print('═══ 一、目录完整性（shop_d.c 对象路径） ═══')
 shop = readf('adm/daemons/shop_d.c')
 paths = catalog_paths(shop)
@@ -151,6 +189,28 @@ else:
     else:
         err('突变失败：改回死路径后守卫仍绿')
 shutil.rmtree(mut_dir, ignore_errors=True)
+
+print('\n═══ 四、购买失败两类拆分契约（-6 数据异常 / -7 背包无法容纳） ═══')
+fac = readf('cmds/usr/faction.c')
+bad3 = split_guard(shop, fac)
+if not bad3:
+    ok('buy_item 存在 return -7；faction.c 存在 case -7；两条提示分别含「商品数据异常」/「背包无法容纳」且均明示「未扣除任何费用」')
+else:
+    for b in bad3:
+        err(b)
+
+print('\n═══ 五、突变实证（-6/-7 拆分守卫非恒真） ═══')
+# 突变：把 -7 拆分改回旧写法（buy_item 的 return -7 与 faction.c 的 case -7 一律改回 -6）
+m_shop = shop.replace('return -7', 'return -6')
+m_fac = fac.replace('case -7:', 'case -6:')
+if m_shop == shop or m_fac == fac:
+    err('突变注入失败：未找到可改回的 -7')
+else:
+    bad4 = split_guard(m_shop, m_fac)
+    if bad4:
+        ok('-7 改回 -6 → 守卫红（%d 条失败消息）: %s' % (len(bad4), ' | '.join(bad4)))
+    else:
+        err('突变失败：-7 改回 -6 后拆分守卫仍绿（守卫恒真）')
 
 print('\n═══════════════════════════════════')
 print('断言总数: %d, 失败: %d' % (oks, fails))
