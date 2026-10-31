@@ -169,7 +169,8 @@ int query_stock(string item_id)
 // ======== 购买逻辑 ========
 
 // 尝试购买物品
-// 返回值: 1=成功, -1=声望等级不足, -2=声望值不足, -3=灵石不足, -4=库存不足, -5=死敌无法交易, -6=对象生成失败(不扣费)
+// 返回值: 1=成功, -1=声望等级不足, -2=声望值不足, -3=灵石不足, -4=库存不足, -5=死敌无法交易,
+//         -6=对象生成失败(商品数据异常,不扣费), -7=对象生成成功但交付失败(整体回滚,无净扣费)
 varargs int buy_item(object player, string item_id, int quantity)
 {
     mixed *item = get_item_by_id(item_id);
@@ -231,7 +232,7 @@ varargs int buy_item(object player, string item_id, int quantity)
         runtime_stock[item_id] -= quantity;
 
     // 8. 交付给玩家：参数化法宝基类（如 /d/yueguo/obj/treasure）的
-    //    名称/ID/价值由商品目录补上；交付失败则整体回滚扣减
+    //    名称/ID/价值由商品目录补上；交付失败则整体回滚扣减（-7，无净扣费）
     for (int i = 0; i < quantity; i++)
     {
         if (!stringp(obs[i]->query("name")) || !obs[i]->query("name"))
@@ -247,7 +248,7 @@ varargs int buy_item(object player, string item_id, int quantity)
             player->add("balance", final_price);
             if (stock != -1)
                 runtime_stock[item_id] += quantity;
-            return -6;
+            return -7;
         }
     }
 

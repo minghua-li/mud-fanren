@@ -411,7 +411,9 @@ int buy_item(object me, string arg)
     case -5:
         return notify_fail("该势力与你处于敌对状态，无法交易。\n");
     case -6:
-        return notify_fail("该物品暂时无法从商店取得（物品数据缺失），未扣除任何费用。\n");
+        return notify_fail("该商品数据异常，暂时无法从商店取得。未扣除任何费用。\n");
+    case -7:
+        return notify_fail("你的背包无法容纳该物品，本次购买已取消。未扣除任何费用。\n");
     default:
         return notify_fail("购买失败（未知错误）。\n");
     }
