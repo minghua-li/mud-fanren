@@ -13,7 +13,7 @@ updated: 2026-10-31
 ## 目录不变式（item_catalog）
 
 - 行格式固定 11 字段：`({ id, name, type, path, price, rep_req, rep_cost, tier, faction, desc, stock })`，stock `-1` 无限。
-- **path 必须是真实存在的 .c**：`/obj/weapon`、`/obj/armor`、`/obj/item`、`/obj/skill` 四个目录本仓不存在——历史 33 条悬空引用已在 #64/#97 逐条判定：21 条改指既有实体（武器 8 → `/clone/weapon/*`、护甲 4 → `/clone/armor/*`、法宝杂物 9 → `/d/yueguo/obj/treasure` 参数化法宝基类），12 条移除（技能书 7：对应功法内容未落地；符箓/空间袋/入场券 5：本仓无对应实体）。新增商品先确认实体存在。
+- **path 必须是真实存在的 .c**：`/obj/weapon`、`/obj/armor`、`/obj/item`、`/obj/skill` 四个目录本仓不存在——历史 33 条悬空引用已在 #64/#97 逐条判定：21 条改指既有实体（武器 8 → `/clone/weapon/*`、护甲 4 → `/clone/armor/*`、法宝杂物 9 → `/d/yueguo/obj/treasure` 参数化法宝基类；其中庚精后在 #64 收口轮再改指真实材料实体 `/d/yueguo/tainan/obj/gengjing`——treasure 基类无 `is_material`，不能入 FORGE_D 炼器配方，同名挂接即货不对板），13 条移除（技能书 7：对应功法内容未落地；符箓/空间袋/入场券 5：本仓无对应实体；天玄石 1：无对应真实材料实体，收口轮移除）。新增商品先确认实体存在。
 - `tools/check/shop_verify.py` 守卫零 MISS（解析全部路径断言存在 + 购买交付原文守卫 + 突变实证）；改目录前后重跑。
 
 ## 购买交付契约（buy_item）
