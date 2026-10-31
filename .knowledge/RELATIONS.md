@@ -158,3 +158,6 @@ pill-system  ->  sect-facility-system : 炼丹成功率消费 #60 query_danfang_
 sect-skill-cultivation-chain  ->  realm-storage-convention : 修炼链路依赖 #61 境界/修为体系与 realm 存储约定
 sect-skill-cultivation-chain  ->  sect-quest-system : #59 任务奖励 grant_skill 是习得路径之一，与修炼链路衔接
 sect-skill-cultivation-chain  ->  sect-system : 门派功法清单动态取自 SECT_D（sect_config），与 #57 门派系统契约一致
+pill-system  ->  reputation-shop : shop_d 商品目录的 13 条丹药引用与购买交付链路（预生成+move、-6 不扣费）见 reputation-shop
+reputation-shop  ->  pill-system : shop_d 商品目录的 13 条丹药引用与购买交付同文件，丹药侧细节在 pill-system
+reputation-shop  ->  1D-门派种族声望 : 声望商店是声望系统（等级/折扣/声望消耗）的消费入口

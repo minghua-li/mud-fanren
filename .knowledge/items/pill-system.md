@@ -2,7 +2,7 @@
 id: pill-system
 title: 丹药炼制系统（LPC 实现版）
 tags: [pill, danfang, economy, breakthrough]
-updated: 2026-08-13
+updated: 2026-10-31
 ---
 
 # 丹药炼制系统（LPC 实现版）
@@ -50,10 +50,10 @@ updated: 2026-08-13
 
 - 炼制成功 `new(pill_path)` move 到玩家（获得）；ITEM 继承天然支持背包/交易/服用消耗。
 - PILL_D create() 将成品注册到 ECONOMY_D（`pill_<id>` 类型，base=value/100 灵石），refine_pill 成功时 `record_sale` 记账。
-- **shop_d 断链修复**：#35 商品表 13 个丹药引用 `/obj/remedy/*`、`/obj/nicheng/shouwan` 全 MISS → 改指 `/clone/pill/*`（16 个丹药实体在 clone/pill/）。
+- **shop_d 断链修复**：#35 商品表 13 个丹药引用 `/obj/remedy/*`、`/obj/nicheng/shouwan` 全 MISS → 改指 `/clone/pill/*`（16 个丹药实体在 clone/pill/）；#64/#97 又把其余 33 条悬空引用逐条判定（21 改指既有实体、12 移除，守卫见 reputation-shop）。
 
 ## 已知边界（checklist_gaps）
 
-- shop_d 购买链路「扣款后待 NPC 领物」未实现（#35 框架既有缺口，所有商品通用，非本票）。
+- shop_d 购买链路曾是「扣款后待 NPC 领物」且领取流程不存在（#35 框架既有缺口）——#64 已改为 buy_item 预生成 + 直接 move 给玩家（交付契约见 reputation-shop）。
 - 丹毒只累积与提示，未做修炼效率惩罚层（02 §5 完整机制待后续）。
 - 丹炉维度未落地（1E §2.3 三要素中炼丹术/火候/年份/丹房加成已落地；丹炉需物品系统支撑，留待后续）。
