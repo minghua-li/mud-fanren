@@ -39,6 +39,7 @@
 #define OBJ_CRAFT               7   // 制造/炼制指定物品
 #define OBJ_USE                 8   // 使用指定物品
 #define OBJ_EXPLORE             9   // 探索指定区域数量
+#define OBJ_SURVIVE             10  // 存活于指定试炼（读取玩家对象上的存活标记，target=标记路径）
 
 // ─── 刷新类型 ───
 #define REFRESH_ONCE            0   // 一次性

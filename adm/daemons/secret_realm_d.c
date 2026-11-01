@@ -455,47 +455,49 @@ int cleanup_expired_instances()
 
 // ======== 秘境生成逻辑 ============================================
 
-// 生成秘境层内的怪物配置
-// 返回怪物数组：({ ({ "monster_id", "monster_name", level, hp }), ... })
-mixed generate_layer_mobs(string realm_id, int layer)
+// 按房间 sr_mobs 表生成真实怪物实体（#108 c2）：
+// 房间持有 ({ 真实 NPC 文件路径: 数量 }) 表，已生成的跳过、只补差额。
+// 不再使用程序化泛名占位生成（#31 旧 generate_layer_mobs 已移除）。
+// 返回本次实际新生成的对象数组（可能为空）。
+object *spawn_layer_mobs(object room)
 {
-    mapping realm;
-    int mob_count, base_level, i;
-    mixed *mobs = ({});
-    
-    if (undefinedp(realms[realm_id]))
-        return ({});
-    
-    realm = realms[realm_id];
-    
-    // 随层数递增的怪物数量和强度
-    mob_count = 2 + layer + random(3);
-    base_level = realm[SR_FIELD_DIFFICULTY] * 10 + layer * 2;
-    
-    for (i = 0; i < mob_count; i++)
+    mapping mob_table;
+    string *paths;
+    string path;
+    object *inv;
+    object *spawned = ({});
+    object ob;
+    int i, j, have;
+
+    if (!objectp(room))
+        return spawned;
+
+    mob_table = room->query("sr_mobs");
+    if (!mapp(mob_table))
+        return spawned;
+
+    inv = all_inventory(room);
+    paths = keys(mob_table);
+    for (i = 0; i < sizeof(paths); i++)
     {
-        mixed *mob = ({
-            sprintf("sr_mob_%s_l%d_%d", realm_id, layer, i),
-            sprintf("秘境守卫-%s第%d层", realm[SR_FIELD_NAME], layer),
-            base_level + random(5),
-            100 + realm[SR_FIELD_DIFFICULTY] * 50 + layer * 30,
-        });
-        mobs += ({ mob });
+        path = paths[i];
+        have = 0;
+        for (j = 0; j < sizeof(inv); j++)
+        {
+            if (base_name(inv[j]) == path)
+                have++;
+        }
+        for (j = have; j < mob_table[path]; j++)
+        {
+            ob = new(path);
+            if (!objectp(ob))
+                continue;
+            ob->move(room);
+            spawned += ({ ob });
+        }
     }
-    
-    // 每 3 层生成 BOSS
-    if (layer % 3 == 0)
-    {
-        mixed *boss = ({
-            sprintf("sr_boss_%s_l%d", realm_id, layer),
-            sprintf("秘境统领-%s第%d层", realm[SR_FIELD_NAME], layer),
-            base_level + 10 + random(5),
-            500 + realm[SR_FIELD_DIFFICULTY] * 200 + layer * 100,
-        });
-        mobs += ({ boss });
-    }
-    
-    return mobs;
+
+    return spawned;
 }
 
 // 为玩家/队伍生成秘境地图（当前层布局说明文本）
@@ -548,85 +550,201 @@ string generate_layer_description(string realm_id, int layer)
 
 // ======== 探索逻辑 ================================================
 
-// 执行探索动作
+// 执行探索动作（#108 c4：改接真实战斗系统）
+// 按玩家所在房间的 sr_mobs 表生成真实怪物实体，并对房间内全部试炼妖兽
+// 发起真实战斗（F_ATTACK fight_ob 开局，回合/伤害/击杀结算走既有战斗系统
+// —— #63 产物的 COMBAT_D 奖励链路，include/combat/reward.h）。
+// 不再使用随机数模拟击杀数/经验（#31 旧模拟段已移除）。
 // 返回探索结果文本
 string do_explore(object me, string inst_id)
 {
     mapping inst;
-    mixed *mobs;
-    int mob_count, killed, reward_exp, i;
+    object room;
+    object *inv;
+    object *mobs;
+    object mob;
+    int layer, i;
     string result;
-    
+
     if (undefinedp(instances[inst_id]))
         return "你的秘境实例已不存在。\n";
-    
+
     inst = instances[inst_id];
-    
+
     if (inst["status"] != SR_STATUS_ACTIVE)
         return "该秘境当前无法探索。\n";
-    
+
     // 检查玩家是否在实例成员中
     if (member_array(me->query("id"), inst["members"]) == -1)
         return "你并非这个秘境实例的成员。\n";
-    
-    // 生成当前层怪物
-    mobs = generate_layer_mobs(inst["realm_id"], inst["layer"]);
-    mob_count = sizeof(mobs);
-    
-    // 模拟战斗结果：计算击杀数量
-    killed = mob_count / 2 + random(mob_count / 2 + 1);
-    if (killed > mob_count)
-        killed = mob_count;
-    
-    // 计算探索积分
-    inst["score"] += killed * 10;
-    
-    // 生成探索结果文本
-    result = sprintf(
-        HIY "╔══════════════════════════════╗\n" NOR
-        HIY "║  " HIC "秘境探索 - 第 %d 层" HIY "          ║\n" NOR
-        HIY "╚══════════════════════════════╝\n" NOR
-        "\n"
-        "你在此层遭遇了 %d 个守护者。\n"
-        "经过一番激战，你击败了其中 %d 个。\n"
-        "\n",
-        inst["layer"], mob_count, killed
-    );
-    
-    // BOSS 战
-    if (inst["layer"] % 3 == 0)
+
+    room = environment(me);
+    if (!objectp(room))
+        return "你此刻并不在禁地之中。\n";
+
+    layer = (int)room->query("sr_layer");
+    if (layer <= 0)
+        return "此处未挂接试炼路线，无法在此开始试炼。\n";
+
+    // 记录到达的最深层（供结算进度使用）
+    if (layer > (int)inst["layer"])
+        inst["layer"] = layer;
+
+    // 补全本房间缺失的真实怪物实体（房间 sr_mobs 表持有）
+    spawn_layer_mobs(room);
+
+    // 收集房间内全部本秘境的试炼妖兽（含此前生成未清完的）
+    inv = all_inventory(room);
+    mobs = ({});
+    for (i = 0; i < sizeof(inv); i++)
     {
-        result += HIR "在层底你遭遇了秘境统领！经过苦战，你成功击败了它！\n" NOR;
-        inst["score"] += 50;
+        if (inv[i]->query("sr_realm") == inst["realm_id"])
+            mobs += ({ inv[i] });
     }
-    
-    // 通过奖励
-    reward_exp = 100 + inst["layer"] * 50 + random(100);
-    result += sprintf(
-        "\n"
-        "当前层探索完成！获得经验：%d\n"
-        "累计积分：%d\n"
-        "\n"
-        "你可以继续深入下一层。\n",
-        reward_exp, inst["score"]
-    );
-    
-    // 记录奖励
-    inst["rewards"] += ({ ([
-        "layer" : inst["layer"],
-        "exp"   : reward_exp,
-        "score" : killed * 10 + (inst["layer"] % 3 == 0 ? 50 : 0),
-    ]) });
-    
-    inst["layer"]++;
-    
-    // 检查是否超过最大层数
-    if (inst["layer"] > inst["max_layers"])
+
+    if (sizeof(mobs) == 0)
+        return "本层妖物已清。你可以继续深入，或退出秘境。\n";
+
+    // 接真实战斗：对每只妖兽发起战斗（战斗回合、伤害公式、击杀奖励
+    // 全部由既有战斗系统处理；击杀时 NPC 的 winner_reward 掉落真实物品
+    // 并回调 on_mob_defeated 做试炼结算）
+    result = HIY "你踏入了禁地深处的迷障，本层的妖兽拦住了去路：\n" NOR;
+    for (i = 0; i < sizeof(mobs); i++)
     {
-        result += "\n" HIW "你已到达秘境最深处！秘境即将关闭并进行结算。\n" NOR;
-        inst["expires"] = time();  // 触发结算
+        mob = mobs[i];
+        result += "  " + mob->name() + "\n";
     }
-    
+    for (i = 0; i < sizeof(mobs); i++)
+    {
+        mob = mobs[i];
+        if (!mob->is_fighting(me))
+            me->fight_ob(mob);
+    }
+    result += "\n";
+
+    return result;
+}
+
+// 试炼妖兽被击杀时的结算挂接（#108 c6 写入端）
+// 由 d/xuejin/npc/*.c 的 winner_reward（战斗系统战胜判定回调）调用：
+// - 累加实例积分（sr_score）；
+// - 击杀 BOSS（sr_boss=1，墨蛟）= 试炼存活 → 写入持久存活标记，
+//   读取端：主线 mq_1_9 的 OBJ_SURVIVE 目标（main_quest_d quest_progress）
+//   与九宗晋升门槛（sect_d promote）。
+int on_mob_defeated(object victim, object killer)
+{
+    string realm_id;
+    string inst_id;
+    mapping inst;
+    int score;
+
+    if (!objectp(victim) || !objectp(killer))
+        return 0;
+
+    realm_id = victim->query("sr_realm");
+    if (!stringp(realm_id) || realm_id == "")
+        return 0;
+
+    inst_id = query_player_instance(killer, realm_id);
+    if (!stringp(inst_id) || inst_id == "")
+        return 0;
+
+    inst = instances[inst_id];
+    score = (int)victim->query("sr_score");
+    if (score <= 0)
+        score = 10;
+    inst["score"] += score;
+
+    if ((int)victim->query("sr_boss") == 1)
+        mark_trial_survivors(killer, victim, realm_id);
+
+    return 1;
+}
+
+// 试炼存活标记写入（#108 c6）：击杀 BOSS 的存活玩家 + 同处一室的其他存活
+// 玩家，均持久写入 "secret_realm/<realm_id>/survived" 时间戳标记。
+void mark_trial_survivors(object killer, object victim, string realm_id)
+{
+    object room;
+    object *inv;
+    string flag;
+    int i;
+
+    flag = "secret_realm/" + realm_id + "/survived";
+
+    if (objectp(killer) && userp(killer) && living(killer))
+    {
+        killer->set(flag, time());
+        tell_object(killer, HIG "你活下来了。" + realms[realm_id][SR_FIELD_NAME] +
+                    "的试炼刻进了你的修行——各派的长老都记得这份战功。\n" NOR);
+    }
+
+    room = environment(victim);
+    if (!objectp(room))
+        return;
+
+    inv = all_inventory(room);
+    for (i = 0; i < sizeof(inv); i++)
+    {
+        if (userp(inv[i]) && living(inv[i]) && inv[i] != killer)
+        {
+            inv[i]->set(flag, time());
+            tell_object(inv[i], HIG "你活下来了。" + realms[realm_id][SR_FIELD_NAME] +
+                        "的试炼刻进了你的修行。\n" NOR);
+        }
+    }
+}
+
+// 查询玩家在指定秘境的活跃实例 ID（无则返回空串）
+string query_player_instance(object me, string realm_id)
+{
+    string *ids;
+    int i;
+
+    if (!objectp(me) || !stringp(realm_id))
+        return "";
+
+    ids = keys(instances);
+    for (i = 0; i < sizeof(ids); i++)
+    {
+        mapping inst = instances[ids[i]];
+        if (inst["realm_id"] == realm_id &&
+            inst["status"] == SR_STATUS_ACTIVE &&
+            member_array(me->query("id"), inst["members"]) != -1)
+        {
+            return ids[i];
+        }
+    }
+
+    return "";
+}
+
+// 退出秘境（#108 c7）：结算并销毁实例，把玩家送回注册出口（真实房间路径）
+string do_exit(object me, string realm_id)
+{
+    string inst_id, result = "";
+    string exit_path;
+    mapping realm;
+
+    if (!objectp(me) || undefinedp(realms[realm_id]))
+        return "该秘境不存在。\n";
+
+    realm = realms[realm_id];
+    exit_path = realm[SR_FIELD_EXIT];
+
+    inst_id = query_player_instance(me, realm_id);
+    if (stringp(inst_id) && inst_id != "")
+    {
+        result += settle_instance(inst_id);
+        destroy_instance(inst_id);
+    }
+
+    if (stringp(exit_path) && exit_path != "" && objectp(load_object(exit_path)))
+    {
+        me->move(exit_path);
+        result += "你回到了" + realm[SR_FIELD_NAME] + "的入口。\n";
+    }
+
     return result;
 }
 
@@ -687,17 +805,15 @@ varargs string settle_instance(string inst_id, int forced)
     
     realm = realms[inst["realm_id"]];
     
-    // 计算总奖励
-    total_exp = 0;
-    for (i = 0; i < sizeof(inst["rewards"]); i++)
-    {
-        if (mapp(inst["rewards"][i]))
-            total_exp += inst["rewards"][i]["exp"];
-    }
-    
+    // 计算总奖励（#108：探索已改接真实战斗，不再逐层模拟经验；
+    // 结算基础改按注册块奖励表，按层完成度与难度缩放）
+    total_exp = (int)realm[SR_FIELD_REWARDS]["exp"];
+    if (total_exp <= 0)
+        total_exp = 500;
+
     // 层数完成度加成
-    total_exp = total_exp * inst["layer"] / inst["max_layers"];
-    
+    total_exp = total_exp * (int)inst["layer"] / (int)inst["max_layers"];
+
     // 难度加成
     total_exp = total_exp * (2 + realm[SR_FIELD_DIFFICULTY]) / 2;
     
@@ -715,7 +831,7 @@ varargs string settle_instance(string inst_id, int forced)
         "获得经验：%d\n"
         "\n",
         realm[SR_FIELD_NAME],
-        inst["layer"] - 1,  // 当前 layer 已自增，所以减 1
+        inst["layer"],  // #108：layer = 到达的最深层（不再自增）
         total_score,
         total_exp
     );
@@ -730,11 +846,12 @@ varargs string settle_instance(string inst_id, int forced)
     }
     
     // 发放奖励
+    string reward_item = realm[SR_FIELD_REWARDS]["item"];
     for (i = 0; i < sizeof(inst["members"]); i++)
     {
         object player;
         player = find_player(inst["members"][i]);
-        
+
         if (objectp(player))
         {
             // 发放经验
@@ -744,6 +861,14 @@ varargs string settle_instance(string inst_id, int forced)
                         player->query("secret_realm/score/" + inst["realm_id"]) + total_score);
             // 累加秘境积分
             realm_points[inst["members"][i]] += total_score;
+            // 发放物品（#108 c3：注册块奖励物品为真实实体路径，如黄龙草；
+            // 路径无效时 new 返回 0，静默跳过，不影响其他奖励）
+            if (stringp(reward_item) && reward_item != "")
+            {
+                object reward = new(reward_item);
+                if (objectp(reward))
+                    reward->move(player);
+            }
         }
     }
     
@@ -907,28 +1032,38 @@ int close_timed_realm(string realm_id)
 void load_default_realms()
 {
     // ---- 剧情秘境：血色禁地 ----
+    // #108 三层内容落地：
+    // - 状态转正：register_realm 统一置 CLOSED，故注册后经既有开放机制
+    //   set_realm_status 转为 SR_STATUS_OPEN（玩家可经入口真实进入）；
+    // - 出口改指真实入口房间（/d/xuejin/rukou，行走成环：入口→外围→中层→核心→巢窟→入口）；
+    // - 层数对齐 1G §3.2.1 三层环形结构（原 5 层为 #31 占位）；
+    // - 冷却由周改日：一次性剧情试炼，死亡/退出后需当日可重试，周冷却会把主线卡死一周；
+    // - 奖励物品改指真实实体黄龙草（#67 已合入主干，筑基丹主药，不造同名占位）。
+    // 怪物表不在此注册：三层房间各自 set("sr_mobs", ...) 持有本层真实 NPC 实体表，
+    // do_explore 按所在房间生成并接真实战斗（见 d/xuejin/ 各房间文件）。
     register_realm(([
         SR_FIELD_ID          : "blood_forbidden",
         SR_FIELD_NAME        : "血色禁地",
         SR_FIELD_TYPE        : SR_TYPE_STORY,
         SR_FIELD_DIFFICULTY  : SR_DIFFICULTY_NORMAL,
         SR_FIELD_RESET       : SR_RESET_ONCE,
-        SR_FIELD_STATUS      : SR_STATUS_CLOSED,
+        SR_FIELD_STATUS      : SR_STATUS_OPEN,
         SR_FIELD_ENTRY       : "/d/xuejin/rukou",
-        SR_FIELD_EXIT        : "/d/yue/npc/obj/blood_forbidden_exit",
+        SR_FIELD_EXIT        : "/d/xuejin/rukou",
         SR_FIELD_MIN_REALM_INDEX : 2,   // 筑基（#61 境界体系）
         SR_FIELD_MIN_REALM_SUB   : 1,   // 中期起
         SR_FIELD_ITEM_REQ    : "",
         SR_FIELD_TEAM_REQ    : 1,
         SR_FIELD_DURATION    : 7200, // 2 小时
-        SR_FIELD_CD          : SR_CD_WEEKLY,
-        SR_FIELD_LAYERS      : 5,
+        SR_FIELD_CD          : SR_CD_DAILY,
+        SR_FIELD_LAYERS      : 3,
         SR_FIELD_REWARDS     : ([
             "exp"       : 2000,
             "potential" : 500,
-            "item"      : "/d/yue/obj/condensing_herb",
+            "item"      : "/d/yueguo/tainan/obj/huanglongcao",
         ]),
     ]));
+    set_realm_status("blood_forbidden", SR_STATUS_OPEN);
 
     // ---- 限时秘境：虚天殿 ----
     register_realm(([

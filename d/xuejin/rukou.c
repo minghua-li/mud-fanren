@@ -15,8 +15,11 @@ void create()
 都有人带着凝液草活着回来。
 LONG );
         set("exits", ([
+                "north" : "/d/xuejin/waiwei",
                 "south" : "/d/yueguo/transmit",
         ]));
+        // 血色禁地入口（第 0 层=入口层，sr_layer 0 表示不挂接试炼路线）
+        set("sr_layer", 0);
 
         setup();
 }

@@ -225,10 +225,12 @@ class MockPlayer:
             return 0
         if k == QUEST_CHAIN_LAST_DAY:
             return 0
-        return None
+        # 任意属性兜底（如 #108 试炼存活标记 secret_realm/blood_forbidden/survived）
+        return self.db.get(k)
 
     def set(self, k, v):
         self.db["quest_chain"][k.split("/")[-1]] = v
+        self.db[k] = v  # 任意属性持久化（对齐 LPC DBASE 语义）
 
     def add(self, k, v):
         if k == "combat_exp":
@@ -338,7 +340,8 @@ def assign_quest(qid, player):
     return True
 
 def quest_progress(qid, player):
-    """OBJ_REACH 按当前位置判定（忠实翻译 main_quest_d.quest_progress）。"""
+    """OBJ_REACH 按当前位置判定、OBJ_SURVIVE 按存活标记判定
+    （忠实翻译 main_quest_d.quest_progress，含 #108 存活类目标分支）。"""
     active = player.query(QUEST_CHAIN_ACTIVE)
     if not active or qid not in active:
         return False
@@ -352,6 +355,10 @@ def quest_progress(qid, player):
         cur = progress.get(key, 0)
         amount = 1
         if otype in ("OBJ_REACH", "OBJ_TALK") and target and here.startswith(target):
+            cur = amount
+            progress[key] = cur
+        elif otype == "OBJ_SURVIVE" and target and (player.query(target) or 0) > 0:
+            # #108：存活标记由 secret_realm_d.mark_trial_survivors 持久写入
             cur = amount
             progress[key] = cur
         if cur < amount:
@@ -389,6 +396,11 @@ def run_chain(player, chain, start_realm=None):
             break  # 境界门槛拦截
         # 到达目标
         player.set_location(quest_target(qid))
+        # 模拟试炼（#108：带 OBJ_SURVIVE 目标的节点=进禁地→击杀 BOSS→
+        # 守护进程写入存活标记；此处按真实链路结果落标记）
+        for otype, target in QUEST_DEFS[qid]["obj_list"]:
+            if otype == "OBJ_SURVIVE" and target:
+                player.set(target, 1)
         if not quest_progress(qid, player):
             break
         if not complete_quest(qid, player):
@@ -442,8 +454,11 @@ def run_all(src, label="真实交付"):
             continue
         for otype, target in t["obj_list"]:
             if otype in ("OBJ_REACH", "OBJ_TALK"):
-                rel = target.lstrip("/") + ".c"
-                if not os.path.exists(os.path.join(ROOT, rel)):
+                rel = target.lstrip("/")
+                # 目标为房间文件（.c）或真实区域目录前缀（#108：
+                # mq_1_9 OBJ_REACH /d/xuejin 按区域前缀判定）
+                if not os.path.exists(os.path.join(ROOT, rel + ".c")) and \
+                        not os.path.isdir(os.path.join(ROOT, rel)):
                     missing_rooms.append((qid, target))
     check("目标房间文件全部存在", not missing_rooms, str(missing_rooms))
 
@@ -748,8 +763,11 @@ def _run_mut(mutated_src):
             continue
         for otype, target in t["obj_list"]:
             if otype in ("OBJ_REACH", "OBJ_TALK"):
-                rel = target.lstrip("/") + ".c"
-                if not os.path.exists(os.path.join(ROOT, rel)):
+                rel = target.lstrip("/")
+                # 目标为房间文件（.c）或真实区域目录前缀（#108：
+                # mq_1_9 OBJ_REACH /d/xuejin 按区域前缀判定）
+                if not os.path.exists(os.path.join(ROOT, rel + ".c")) and \
+                        not os.path.isdir(os.path.join(ROOT, rel)):
                     missing_rooms.append((qid, target))
     mcheck("目标房间文件全部存在", not missing_rooms)
     bad_range = [(q, t["realm_range"]) for q, t in defs.items()

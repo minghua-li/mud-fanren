@@ -175,6 +175,21 @@ nosave mapping sect_config = ([
   ]),
 ]);
 
+// ─── 血禁试炼晋升门槛（#108 c6 读取端） ───
+// 依据九宗档案「十三、仕途晋升」表的「晋升事件」列（.knowledge/factions/sects/）：
+// 越国七派中晋升事件含「血禁试炼」的阶位，晋升前须已存活血色禁地试炼
+// （存活标记写入端：secret_realm_d mark_trial_survivors，持久属性
+//  secret_realm/blood_forbidden/survived）。天阙堡（内门晋升事件=阵法修习）
+// 与天罗六宗不在此列。键=当前阶位索引（promote[rank] 为升到 rank+1 的门槛）。
+nosave mapping xuejin_trial_gate = ([
+    "huangfeng_valley"  : ([ 0 : "血禁试炼存活" ]),  // 外门→内门（门槛：筑基+贡献）
+    "yanyue_sect"       : ([ 0 : "血禁试炼存活" ]),  // 外门→内门（门槛：炼气后期+贡献）
+    "qingxu_sect"       : ([ 1 : "血禁试炼存活" ]),  // 内门→真传（门槛：筑基期）
+    "jujian_gate"       : ([ 0 : "血禁试炼" ]),      // 外门→内门
+    "huadao_dock"       : ([ 0 : "血禁试炼" ]),      // 外门→内门
+    "lingshou_mountain" : ([ 0 : "血禁试炼驱兽" ]),  // 外门→内门
+]);
+
 void create()
 {
     seteuid(getuid());
@@ -623,6 +638,18 @@ int promote(object player)
     {
         tell_object(player, sprintf(HIR "贡献不足：晋升" + cfg["ranks"][rank + 1] +
                     "需门派贡献%d（当前%d）。\n" NOR, need_contrib, contrib));
+        return 0;
+    }
+
+    // 血禁试炼门槛（#108 c6 读取端）：本阶位晋升事件为血禁试炼（见
+    // xuejin_trial_gate，依据九宗档案「仕途晋升」表），须已存活血色禁地试炼
+    mapping gate = xuejin_trial_gate[sect_id];
+    if (mapp(gate) && !undefinedp(gate[rank]) &&
+        !(int)player->query("secret_realm/blood_forbidden/survived"))
+    {
+        tell_object(player, HIR "门规所限：晋升" + cfg["ranks"][rank + 1] +
+                    "须先存活血色禁地试炼（输入 jindi enter 进入试炼，" +
+                    "击杀巢窟深处的墨蛟并活着回来）。\n" NOR);
         return 0;
     }
 

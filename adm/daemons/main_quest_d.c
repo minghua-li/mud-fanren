@@ -170,10 +170,17 @@ nosave mapping quest_defs = ([
         "name": "血色禁地试炼", "type": QUEST_TYPE_MAIN, "refresh": REFRESH_ONCE,
         "realm_range": ({ 1, 2 }),
         "prerequisites": ([ "quests": ({ "mq_1_8" }) ]),
-        "objectives": ({ ([ "type": OBJ_REACH, "target": "/d/yueguo/huangfeng/shanmen", "amount": 1 ]) }),
+        // #108 c6：真进副本且存活才完成——
+        // ① OBJ_REACH /d/xuejin：实际进入血色禁地（前缀匹配，任一层房间均算）；
+        // ② OBJ_SURVIVE：试炼存活标记（写入端：secret_realm_d 击杀墨蛟时
+        //    mark_trial_survivors 持久写入 secret_realm/blood_forbidden/survived）。
+        "objectives": ({
+            ([ "type": OBJ_REACH, "target": "/d/xuejin", "amount": 1 ]),
+            ([ "type": OBJ_SURVIVE, "target": "secret_realm/blood_forbidden/survived", "amount": 1 ]),
+        }),
         "rewards": ([ "exp": 3000, "coin": 400,
                       "items": ({ "/clone/pill/zhuji" }) ]),
-        "description": "筑基中期，你获得进入血色禁地的资格。禁地每六十年开启一次，内部灵药遍地、妖兽成群，是筑基丹材料的主产地。前往黄枫谷山门集结，随队进入禁地采药历练，得筑基丹一颗。",
+        "description": "筑基中期，你获得进入血色禁地的资格。禁地每六十年开启一次，内部灵药遍地、妖兽成群，是筑基丹材料的主产地。输入 jindi enter 进入禁地，穿过外围迷瘴森林、中层遗迹广场，在核心巢窟击败盘踞的墨蛟并活着回来——试炼存活，方得筑基丹一颗。",
     ]),
     "mq_1_10": ([
         "id": "mq_1_10", "chain_id": "chain_main_1",
@@ -528,6 +535,16 @@ int quest_progress(object player, string quest_id)
         if ((obj["type"] == OBJ_REACH || obj["type"] == OBJ_TALK) &&
             stringp(target) && target != "" && stringp(here) &&
             strsrch(here, target) == 0)
+        {
+            cur = amount;
+            progress[key] = cur;
+        }
+
+        // 存活类目标（#108 c6）：读取玩家对象上的试炼存活标记
+        // （写入端：secret_realm_d mark_trial_survivors，击杀 BOSS 时持久写入）
+        else if (obj["type"] == OBJ_SURVIVE &&
+                 stringp(target) && target != "" &&
+                 (int)player->query(target) > 0)
         {
             cur = amount;
             progress[key] = cur;
