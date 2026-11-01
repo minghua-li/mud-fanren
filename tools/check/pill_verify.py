@@ -67,6 +67,42 @@ def strip_lpc(src):
     return ''.join(out)
 
 
+def strip_lpc_comments(src):
+    """去 // 行注释与 /* */ 块注释，但保留字符串字面量内容。
+    strip_lpc 会把字符串内容一并剥空（query_temp("x") → query_temp()），
+    因此「带字符串实参的调用」这类字面量断言须查本函数产物，
+    才能在目标语句被注释掉（而非删除）时如实转红。"""
+    out = []
+    i = 0
+    n = len(src)
+    while i < n:
+        c = src[i]
+        if c == '"':
+            j = i + 1
+            while j < n:
+                if src[j] == '\\':
+                    j += 2
+                    continue
+                if src[j] == '"':
+                    break
+                j += 1
+            end = j + 1 if j < n else n
+            out.append(src[i:end])
+            i = end
+            continue
+        if c == '/' and i + 1 < n and src[i + 1] == '/':
+            j = src.find('\n', i)
+            i = n if j == -1 else j
+            continue
+        if c == '/' and i + 1 < n and src[i + 1] == '*':
+            j = src.find('*/', i + 2)
+            i = n if j == -1 else j + 2
+            continue
+        out.append(c)
+        i += 1
+    return ''.join(out)
+
+
 def check_parens(path):
     """括号配对状态机（含 @LONG heredoc 感知）"""
     try:
@@ -312,12 +348,15 @@ ck('疗伤丹回血', 'receive_curing' in dh)
 rrd = readf('adm/daemons/root_refine_d.c')
 qm_raw = func_body_raw(rrd, 'query_major_breakthrough_probability')
 qm = strip_lpc(qm_raw)
-ck('大境界概率读 pill_bonus（#73 接线）', 'query_temp("breakthrough/pill_bonus")' in qm_raw)
-# 本项查 qm（strip_lpc 剥行注释/块注释后的骨架）而非 qm_raw 原文：
-# 复审实测洞——把该行改成注释（而非删除）时原文仍含字面量、字符串守卫恒绿；
+qm_c = strip_lpc_comments(qm_raw)
+# 本组三项一律查剥注释后的文本而非 qm_raw 原文：
+# 复审实测洞（#64 收口 / #104）——把对应行改成注释（而非删除）时原文仍含字面量、字符串守卫恒绿；
 # 剥注释后注释形态不再命中 → 注释掉/删除该行都会转红。
+# 字符串字面量断言（query_temp 调用，实参是识别该语句的身份）查 qm_c（仅剥注释、保留字符串实参）；
+# 纯代码断言（prob += pill_bonus，不含字符串）查 qm（strip_lpc 骨架，字符串内容被剥空）。
+ck('大境界概率读 pill_bonus（#73 接线，未被注释/删除）', 'query_temp("breakthrough/pill_bonus")' in qm_c)
 ck('大境界概率把 pill_bonus 加进概率（未被注释/删除）', 'prob += pill_bonus' in qm)
-ck('大境界概率保留 aux_bonus', 'query_temp("breakthrough/aux_bonus")' in qm_raw)
+ck('大境界概率保留 aux_bonus（未被注释/删除）', 'query_temp("breakthrough/aux_bonus")' in qm_c)
 
 # tupo.c：成功后清理 pill_bonus
 tp = readf('cmds/usr/tupo.c')
