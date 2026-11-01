@@ -631,7 +631,12 @@ string do_explore(object me, string inst_id)
 // - 击杀 BOSS（sr_boss=1，墨蛟）= 试炼存活 → 写入持久存活标记，
 //   读取端：主线 mq_1_9 的 OBJ_SURVIVE 目标（main_quest_d quest_progress）
 //   与九宗晋升门槛（sect_d promote）。
-int on_mob_defeated(object victim, object killer)
+// 形参顺序契约（审查第 1 轮修复）：与调用方 winner_reward(killer, victim)
+// 的传参顺序一致——实参 1=killer（击杀者/玩家），实参 2=victim（被击杀 NPC）。
+// NPC 侧 winner_reward 由 reward.h 的 victim->winner_reward(killer, victim)
+// 调用（killer=玩家，victim=NPC），故守护进程此处 killer 形参恒为玩家、
+// victim 形参恒为 NPC（sr_realm/sr_score/sr_boss 均挂在 NPC 上）。
+int on_mob_defeated(object killer, object victim)
 {
     string realm_id;
     string inst_id;

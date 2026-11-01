@@ -35,8 +35,9 @@
   十一、状态转正+进出命令（#108 c7）：注册状态 OPEN 且注册后经既有机制
       set_realm_status 转正；出口路径指向真实房间；cmds/usr/jindi.c 提供
       enter/exit/explore/info 并调用守护进程校验/创建/探索/退出接口
-  十二~十五、突变实证（#108）：房间出口改死路径 / sr_mobs 改死路径 /
-      删除存活标记写入行 / 状态改回 CLOSED → 守卫必须红
+  十二~十六、突变实证（#108）：房间出口改死路径 / sr_mobs 改死路径 /
+      删除存活标记写入行 / 状态改回 CLOSED / on_mob_defeated 形参顺序写反
+      → 守卫必须红
 退出码：0 全绿，1 有失败
 """
 import os
@@ -461,6 +462,14 @@ def npc_entity_guard(npc_rel, expect_layer, is_boss):
         bad.append('%s 缺 winner_reward 掉落回调（战斗系统战胜判定挂接）' % npc_rel)
     if 'SECRET_REALM_D->on_mob_defeated(' not in src:
         bad.append('%s 未通知守护进程击杀结算（on_mob_defeated 挂接缺失）' % npc_rel)
+    # 调用点实参顺序断言（审查第 1 轮修复）：on_mob_defeated 的实参必须与
+    # winner_reward 形参同序（实参 1=killer 玩家侧、实参 2=victim NPC 侧），
+    # 与守护进程签名（形参 2 上查 sr_realm）构成完整语义闭环。
+    wr_sig = re.search(r'winner_reward\s*\(\s*object\s+(\w+)\s*,\s*object\s+(\w+)\s*\)', src)
+    call = re.search(r'SECRET_REALM_D->on_mob_defeated\(\s*(\w+)\s*,\s*(\w+)\s*\)', src)
+    if wr_sig and call and (call.group(1) != wr_sig.group(1) or call.group(2) != wr_sig.group(2)):
+        bad.append('%s on_mob_defeated 调用实参顺序与 winner_reward 形参顺序不一致'
+                   '（killer/victim 颠倒 → 守护进程结算断链）' % npc_rel)
     return bad
 
 
@@ -496,6 +505,22 @@ def combat_guard(daemon_src):
             bad.append('on_mob_defeated 未按 killer 查活跃实例')
         if 'sr_boss' not in on_mob:
             bad.append('on_mob_defeated 未处理 BOSS（sr_boss）击杀')
+        # 接线语义断言（审查第 1 轮修复）：调用链
+        #   reward.h victim->winner_reward(killer, victim)  → NPC 形参
+        #   killer=玩家 / victim=NPC → 调用 on_mob_defeated(killer, victim)
+        #   → 守护进程形参 1=玩家、形参 2=NPC。
+        # 守护进程内 sr_realm 查询必须落在**第二个形参**（NPC 侧）；
+        # 若形参顺序写反，玩家对象无 sr_realm，结算/存活写入运行时恒不可达。
+        sig = re.search(r'on_mob_defeated\s*\(\s*object\s+(\w+)\s*,\s*object\s+(\w+)\s*\)', on_mob)
+        q = re.search(r'(\w+)->query\("sr_realm"\)', on_mob)
+        if not sig:
+            bad.append('on_mob_defeated 签名非常规 object,object 双形参，无法校验调用顺序')
+        elif not q:
+            bad.append('on_mob_defeated 未查询 sr_realm（结算挂接缺失）')
+        elif q.group(1) != sig.group(2):
+            bad.append('on_mob_defeated 在形参 %s（调用点=玩家侧）上查询 sr_realm：'
+                       '实参顺序与形参顺序相反，存活写入运行时永不执行（死条件）'
+                       % q.group(1))
     mark = extract_func_def(daemon_src, 'mark_trial_survivors')
     if not mark:
         bad.append('mark_trial_survivors 存活标记写入端未找到')
@@ -741,6 +766,20 @@ else:
         ok('注册状态改回 CLOSED → 守卫红（%d 条失败消息）' % len(m6_bad))
     else:
         err('突变失败：状态改回 CLOSED 后守卫仍绿（守卫恒真）')
+
+print('\n═══ 十六、突变实证（on_mob_defeated 形参顺序写反 → 应红） ═══')
+mut7 = daemon.replace(
+    'int on_mob_defeated(object killer, object victim)',
+    'int on_mob_defeated(object victim, object killer)')
+if mut7 == daemon:
+    err('突变注入失败：未找到 on_mob_defeated 签名行')
+else:
+    m7_bad = combat_guard(mut7)
+    if m7_bad:
+        ok('on_mob_defeated 形参顺序写反（实参/形参颠倒）→ 守卫红（%d 条失败消息）'
+           % len(m7_bad))
+    else:
+        err('突变失败：形参顺序写反后守卫仍绿（守卫恒真，接线语义断链不可检出）')
 
 print('\n═══════════════════════════════════')
 print('断言总数: %d, 失败: %d' % (oks, fails))

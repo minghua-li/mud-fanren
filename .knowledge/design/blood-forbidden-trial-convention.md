@@ -17,6 +17,7 @@ updated: 2026-11-01
 ## 「试炼存活」标记（主线与晋升共用的持久状态）
 
 - **写入端**：BOSS 墨蛟（`set("sr_boss", 1)`）被击杀时，`secret_realm_d.mark_trial_survivors` 给击杀者 + 同室存活玩家持久写入 `secret_realm/blood_forbidden/survived` = time()（玩家对象属性，跨会话持久）。
+- **形参顺序契约（#108 审查第 1 轮踩坑）**：调用链 reward.h `victim->winner_reward(killer, victim)`（killer=玩家、victim=NPC）→ NPC 内回调 `on_mob_defeated(killer, victim)` → 守护进程签名必须为 `on_mob_defeated(object killer, object victim)`（形参 1=玩家、形参 2=NPC）。sr_realm/sr_score/sr_boss 全挂在 NPC 上：形参顺序写反会让结算在第一个检查处静默 return，而文本层面（调用点字符串在位）静态全绿——`secret_realm_verify.py` 已断言「守护进程在第二个形参上查 sr_realm」+「NPC 调用实参与 winner_reward 形参同序」，并配对应突变实证。
 - **读取端**：
   - 主线 mq_1_9 目标 = `OBJ_REACH "/d/xuejin"`（区域前缀判定）+ `OBJ_SURVIVE "secret_realm/blood_forbidden/survived"`（新目标类型，`include/quest_chain.h` `OBJ_SURVIVE 10`；`main_quest_d.quest_progress` 读 `(int)player->query(target) > 0`）。
   - 九宗晋升：`sect_d.c` 的 `xuejin_trial_gate`（键=当前阶位索引，值=晋升事件名，依九宗档案「仕途晋升」表）+ `promote()` 读取存活标记做门槛。
