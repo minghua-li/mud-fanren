@@ -287,14 +287,21 @@ varargs int add_reputation(object player, string faction, int amount, string rea
 }
 
 // 减少声望（消耗）
-varargs int deduct_reputation(object player, string faction, int amount)
+// reason 可选：传入非空时写一条审计日志（与 refund_reputation 同一日志流，
+// DEDUCT 标记区分扣/退）；不传则不写日志，既有调用方语义不变
+varargs int deduct_reputation(object player, string faction, int amount, string reason)
 {
+    int now;
     int current = player->query(REP_PATH_FACTION + "/" + faction);
 
     if (current < amount) return 0;
 
+    now = time();
     player->add(REP_PATH_FACTION + "/" + faction, -amount);
-    player->set(REP_PATH_LAST_INTERACT + "/" + faction, time());
+    player->set(REP_PATH_LAST_INTERACT + "/" + faction, now);
+    if (reason)
+        log_file("reputation", sprintf("%s %s %s DEDUCT %s %+d\n",
+                  ctime(now), player->query("id"), faction, reason, -amount));
     return 1;
 }
 
