@@ -103,3 +103,4 @@
 - `pill-system` — PILL_D 丹方/成功率/品质/炼丹术等级、clone/pill 丹药实体、筑基丹接 breakthrough/pill_bonus 突破、shop_d 13 个 MISS 引用改指 /clone/pill/* — items/pill-system.md
 - `sect-skill-cultivation-chain` — 九宗 force/knowledge 类功法修炼链路：习得→learn 传功 NPC→xiulian/效果，传功 NPC 契约与 valid_xiulian sect 分支 — skill/sect-skill-cultivation-chain.md
 - `reputation-shop` — shop_d 目录不变式（path 必须真实存在，庚精改指真实材料实体、天玄石移除，shop_verify 守卫零 MISS）+ buy_item 预生成→扣费→move 交付、-6/-7 两类失败拆分不扣费 — factions/reputation-shop.md
+- `tools-check-guard-convention` — tools/check 静态守卫：字符串存在断言必须查 strip_lpc 剥注释后的骨架而非原文——否则目标行被注释掉（非删除）时守卫恒绿；#64 复审实测洞，pill_verify 已修（bd8e0b24） — tech/tools-check-guard-convention.md

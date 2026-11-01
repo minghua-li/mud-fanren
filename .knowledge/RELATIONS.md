@@ -161,3 +161,5 @@ sect-skill-cultivation-chain  ->  sect-system : 门派功法清单动态取自 S
 pill-system  ->  reputation-shop : shop_d 商品目录的 13 条丹药引用与购买交付链路（预生成+move、-6 不扣费）见 reputation-shop
 reputation-shop  ->  pill-system : shop_d 商品目录的 13 条丹药引用与购买交付同文件，丹药侧细节在 pill-system
 reputation-shop  ->  1D-门派种族声望 : 声望商店是声望系统（等级/折扣/声望消耗）的消费入口
+tools-check-guard-convention  ->  pill-system : pill_verify 大境界概率 pill_bonus 断言（#64 修复）是本约定的实例
+tools-check-guard-convention  ->  reputation-shop : shop_verify 同属 tools/check 守卫族，同法适用
