@@ -13,6 +13,15 @@
       case -7，且 -6/-7 两条提示分别含「商品数据异常」/「背包无法容纳」（均明示
       「未扣除任何费用」）
   五、突变实证：把 -7 改回 -6（shop_d.c 与 faction.c 两处）→ 守卫必须红
+  六、#105 退款专用裸回补契约：reputation_d.c 存在 refund_reputation
+      (object player, string faction, int amount, string reason)，函数体不触
+      每日上限/势力互斥、强制写审计日志且强制 reason；buy_item 回滚分支改用
+      该接口、不再出现 add_reputation
+  七、突变实证：把 buy_item 回滚改回 add_reputation（普通加声望）→ 守卫必须红
+  八、#105 c6 扣费侧留痕契约：deduct_reputation 支持可选 reason 参数、传 reason
+      时写一条带 DEDUCT 标记的审计日志（与退款侧同一日志流、标记区分扣/退）；
+      buy_item 扣费处传 reason（含商品名与数量）；不传则不写日志、其他调用方语义不变
+  九、突变实证：把 buy_item 扣费处原因去掉 → 扣费侧留痕守卫必须红
 退出码：0 全绿，1 有失败
 """
 import os
@@ -130,6 +139,108 @@ def split_guard(shop_src, fac_src):
     return bad
 
 
+def refund_guard(shop_src, rep_src):
+    """#105 退款专用裸回补契约：返回失败消息列表（空 = 绿）。对任意原文可重跑。
+    断言 refund_reputation 四参签名（reason 强制）、不触每日上限、不触势力互斥、
+    强制写审计日志，且 buy_item 回滚分支改用该接口、不再调普通 add_reputation
+    （后者受每日上限钳制并触发互斥副作用，正是本票要消灭的不对称）。"""
+    bad = []
+    buy = extract_func(shop_src, 'buy_item')
+    ref = extract_func(rep_src, 'refund_reputation')
+    if not ref:
+        bad.append('reputation_d.c 缺少退款专用裸回补接口 refund_reputation')
+    else:
+        if not ref.startswith('refund_reputation(object player, string faction, int amount, string reason)'):
+            bad.append('refund_reputation 签名不是 (object player, string faction, int amount, string reason)')
+        if 'query_daily_cap' in ref:
+            bad.append('refund_reputation 触发了每日声望上限（退款回补不应受限）')
+        if 'apply_mutex' in ref:
+            bad.append('refund_reputation 触发了势力互斥副作用（扣费侧不触发，回补侧必须对称不触发）')
+        if 'log_file("reputation"' not in ref:
+            bad.append('refund_reputation 未强制写审计日志')
+        if '!stringp(reason)' not in ref and '!sizeof(reason)' not in ref:
+            bad.append('refund_reputation 未强制 reason（审计留痕必需）')
+    if 'refund_reputation(' not in buy:
+        bad.append('buy_item 回滚分支未改用 refund_reputation 退款接口')
+    if 'add_reputation(' in buy:
+        bad.append('buy_item 仍在调普通 add_reputation（受每日上限钳制并触发互斥副作用，应改用 refund_reputation）')
+    return bad
+
+
+def extract_call(src, marker):
+    """自 marker 起截取完整调用：marker 后第一个 '(' 起，圆括号配平到匹配闭括号"""
+    i = src.find(marker)
+    if i == -1:
+        return ''
+    j = src.find('(', i)
+    if j == -1:
+        return ''
+    depth = 0
+    for k in range(j, len(src)):
+        if src[k] == '(':
+            depth += 1
+        elif src[k] == ')':
+            depth -= 1
+            if depth == 0:
+                return src[i:k + 1]
+    return src[i:]
+
+
+def top_level_args(call_text):
+    """按最外层逗号切分 call_text 最外层括号内的实参列表，返回 strip 后列表"""
+    i = call_text.find('(')
+    j = call_text.rfind(')')
+    if i == -1 or j <= i:
+        return []
+    body = call_text[i + 1:j]
+    args, depth, buf = [], 0, ''
+    for ch in body:
+        if ch == '(':
+            depth += 1
+        elif ch == ')':
+            depth -= 1
+        if ch == ',' and depth == 0:
+            args.append(buf)
+            buf = ''
+        else:
+            buf += ch
+    if buf or args:
+        args.append(buf)
+    return [a.strip() for a in args]
+
+
+def deduct_guard(shop_src, rep_src):
+    """#105 c6 扣费侧留痕契约：返回失败消息列表（空 = 绿）。对任意原文可重跑。
+    断言 deduct_reputation 支持可选 reason 参数（任务奖励等既有调用方不传即不写日志、
+    语义不变），传 reason 时写带 DEDUCT 标记的审计日志（与 refund_reputation 同一
+    日志流、标记区分扣/退），且 buy_item 扣费处传 reason（含商品名与数量，
+    玩家投诉「买东西丢声望」时可按条核对具体哪次购买）。"""
+    bad = []
+    buy = extract_func(shop_src, 'buy_item')
+    ded = extract_func(rep_src, 'deduct_reputation')
+    if not ded:
+        bad.append('reputation_d.c 缺少声望扣减接口 deduct_reputation')
+    else:
+        brace = ded.find('{')
+        sig = ded[:brace] if brace != -1 else ded
+        if 'string reason' not in sig:
+            bad.append('deduct_reputation 不支持可选 reason 参数（签名缺第 4 参 string reason）')
+        if 'log_file("reputation"' not in ded:
+            bad.append('deduct_reputation 传 reason 时未写审计日志')
+        if 'DEDUCT' not in ded:
+            bad.append('deduct_reputation 审计日志缺 DEDUCT 标记（与退款侧同流无法区分扣/退）')
+    call = extract_call(buy, 'deduct_reputation(player, faction')
+    if not call:
+        bad.append('buy_item 无 deduct_reputation 扣费调用')
+    else:
+        args = top_level_args(call)
+        if len(args) != 4:
+            bad.append('buy_item 扣费处 deduct_reputation 未传第 4 参 reason（实见 %d 参）' % len(args))
+        elif 'item_name' not in args[3] or 'quantity' not in args[3]:
+            bad.append('buy_item 扣费处 reason 缺商品名或数量（审计无法定位具体购买）')
+    return bad
+
+
 print('═══ 一、目录完整性（shop_d.c 对象路径） ═══')
 shop = readf('adm/daemons/shop_d.c')
 paths = catalog_paths(shop)
@@ -163,10 +274,10 @@ if 'move(player)' in buy:
 else:
     err('buy_item 未 move(player) 交付')
 
-if 'add_reputation(player, faction' in buy:
-    ok('交付失败回滚声望扣减')
+if 'refund_reputation(player, faction' in buy:
+    ok('交付失败回滚用 refund_reputation 退款专用裸回补接口')
 else:
-    err('交付失败缺少回滚（add_reputation 回补）')
+    err('交付失败缺少回滚（应调 refund_reputation 裸回补）')
 
 qai = extract_func(shop, 'query_available_items')
 if 'file_exists' in qai:
@@ -211,6 +322,47 @@ else:
         ok('-7 改回 -6 → 守卫红（%d 条失败消息）: %s' % (len(bad4), ' | '.join(bad4)))
     else:
         err('突变失败：-7 改回 -6 后拆分守卫仍绿（守卫恒真）')
+
+print('\n═══ 六、#105 退款专用裸回补契约（refund_reputation） ═══')
+rep = readf('adm/daemons/reputation_d.c')
+bad5 = refund_guard(shop, rep)
+if not bad5:
+    ok('refund_reputation 四参签名（reason 强制）、不触每日上限/势力互斥、强制写审计日志；buy_item 回滚改用该接口且不再出现 add_reputation')
+else:
+    for b in bad5:
+        err(b)
+
+print('\n═══ 七、突变实证（回滚改回普通加声望接口应红） ═══')
+m_shop2 = shop.replace('refund_reputation(player, faction, rep_cost * quantity,',
+                       'add_reputation(player, faction, rep_cost * quantity)')
+if m_shop2 == shop:
+    err('突变注入失败：未找到 buy_item 回滚处的 refund_reputation 调用')
+else:
+    bad6 = refund_guard(m_shop2, rep)
+    if bad6:
+        ok('回滚改回 add_reputation → 守卫红（%d 条失败消息）' % len(bad6))
+    else:
+        err('突变失败：回滚改回 add_reputation 后退款契约守卫仍绿（守卫恒真）')
+
+print('\n═══ 八、#105 c6 扣费侧留痕契约（deduct_reputation reason/日志） ═══')
+bad7 = deduct_guard(shop, rep)
+if not bad7:
+    ok('deduct_reputation 支持可选 reason 参数且传时写 DEDUCT 标记审计日志；buy_item 扣费处传 reason（商品名+数量）；不传不写日志、其他调用方语义不变')
+else:
+    for b in bad7:
+        err(b)
+
+print('\n═══ 九、突变实证（扣费处原因去掉应红） ═══')
+call_full = extract_call(extract_func(shop, 'buy_item'), 'deduct_reputation(player, faction')
+m_shop3 = shop.replace(call_full, 'deduct_reputation(player, faction, rep_cost * quantity)') if call_full else shop
+if m_shop3 == shop:
+    err('突变注入失败：buy_item 扣费处未找到带 reason 的 deduct_reputation 调用')
+else:
+    bad8 = deduct_guard(m_shop3, rep)
+    if bad8:
+        ok('扣费处原因去掉 → 扣费侧留痕守卫红（%d 条失败消息）: %s' % (len(bad8), ' | '.join(bad8)))
+    else:
+        err('突变失败：扣费处原因去掉后留痕守卫仍绿（守卫恒真）')
 
 print('\n═══════════════════════════════════')
 print('断言总数: %d, 失败: %d' % (oks, fails))

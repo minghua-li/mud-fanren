@@ -223,9 +223,10 @@ varargs int buy_item(object player, string item_id, int quantity)
     }
 
     // 7. 执行购买
-    // 扣声望
+    // 扣声望（传 reason 留审计日志，与回滚侧 REFUND 同流可对账，#105）
     if (rep_cost > 0)
-        REPUTATION_D->deduct_reputation(player, faction, rep_cost * quantity);
+        REPUTATION_D->deduct_reputation(player, faction, rep_cost * quantity,
+                sprintf("商店购买 %s x%d", item_name, quantity));
 
     // 扣灵石
     player->add("balance", -final_price);
@@ -247,7 +248,8 @@ varargs int buy_item(object player, string item_id, int quantity)
             for (int j = 0; j < quantity; j++)
                 destruct(obs[j]);
             if (rep_cost > 0)
-                REPUTATION_D->add_reputation(player, faction, rep_cost * quantity);
+                REPUTATION_D->refund_reputation(player, faction, rep_cost * quantity,
+                        sprintf("商店购买失败回滚 %s x%d", item_name, quantity));
             player->add("balance", final_price);
             if (stock != -1)
                 runtime_stock[item_id] += quantity;
