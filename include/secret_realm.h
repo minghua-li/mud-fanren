@@ -61,8 +61,10 @@
 #define SR_FIELD_STATUS      "status"        // 当前状态
 #define SR_FIELD_ENTRY       "entry"         // 入口房间路径
 #define SR_FIELD_EXIT        "exit"          // 出口房间路径
-#define SR_FIELD_MIN_LEVEL   "min_level"     // 最低境界要求
-#define SR_FIELD_MAX_LEVEL   "max_level"     // 最高境界限制
+#define SR_FIELD_MIN_LEVEL   "min_level"     // 最低境界要求（旧 level 数值口径）
+#define SR_FIELD_MAX_LEVEL   "max_level"     // 最高境界限制（旧 level 数值口径）
+#define SR_FIELD_MIN_REALM_INDEX "min_realm_index" // #61 境界体系：最低大境界索引（0=凡人 1=炼气 2=筑基 3=结丹...）
+#define SR_FIELD_MIN_REALM_SUB   "min_realm_sub"   // #61 境界体系：同大境界内最低子阶段（0=初期 1=中期 2=后期），大境界更高者直接放行
 #define SR_FIELD_ITEM_REQ    "item_req"      // 所需物品（"物品路径:数量"）
 #define SR_FIELD_TEAM_REQ    "team_req"      // 组队要求
 #define SR_FIELD_DURATION    "duration"      // 持续时间（秒）

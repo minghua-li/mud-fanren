@@ -106,3 +106,4 @@
 - `sect-skill-cultivation-chain` — 九宗 force/knowledge 类功法修炼链路：习得→learn 传功 NPC→xiulian/效果，传功 NPC 契约与 valid_xiulian sect 分支 — skill/sect-skill-cultivation-chain.md
 - `reputation-shop` — shop_d 目录不变式（path 必须真实存在，庚精改指真实材料实体、天玄石移除，shop_verify 守卫零 MISS）+ buy_item 预生成→扣费→move 交付、-6/-7 两类失败拆分不扣费 — factions/reputation-shop.md
 - `tools-check-guard-convention` — tools/check 静态守卫：字符串存在断言必须查 strip_lpc 剥注释后的骨架而非原文——否则目标行被注释掉（非删除）时守卫恒绿；#64 复审实测洞，pill_verify 已修（bd8e0b24） — tech/tools-check-guard-convention.md
+- `secret-realm-entry-standard` — 血色禁地(blood_forbidden)秘境进入境界=筑基中期起（realm_index>=2 且同大境界子阶段>=中期，更高大境界放行）；02-区域游戏玩法「炼气期」判旧、守护进程旧 MIN_LEVEL/level 数值非口径依据；门槛判定走 ROOT_REFINE_D 读 realm_index/子阶段，LPC 判缺键须用 undefinedp（intp(0) 为真会放开门槛） — design/secret-realm-entry-standard.md

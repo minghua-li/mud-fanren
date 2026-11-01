@@ -166,3 +166,5 @@ reputation-shop  ->  pill-system : shop_d 商品目录的 13 条丹药引用与�
 reputation-shop  ->  1D-门派种族声望 : 声望商店是声望系统（等级/折扣/声望消耗）的消费入口
 tools-check-guard-convention  ->  pill-system : pill_verify 大境界概率 pill_bonus 断言（#64 修复）是本约定的实例
 tools-check-guard-convention  ->  reputation-shop : shop_verify 同属 tools/check 守卫族，同法适用
+secret-realm-entry-standard  ->  realm-storage-convention : 境界读取与子阶段接口的约定出处（ROOT_REFINE_D 统一读、realm_index/realm_sub 存储）
+secret-realm-entry-standard  ->  main-quest-system : 口径依据之一：主线 mq_1_9 血色禁地试炼的 realm_range 与描述

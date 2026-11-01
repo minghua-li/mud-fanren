@@ -142,6 +142,22 @@ int query_realm_status(string id)
 
 // ======== 进入条件校验 ============================================
 
+// #61 境界体系门槛校验（realm_index/realm_sub 口径）：
+// 大境界高于 min_idx 直接放行；同大境界要求子阶段 >= min_sub
+// （0=初期 1=中期 2=后期），如 min_idx=2/min_sub=1 即「筑基中期起」。
+// 境界读取统一走 ROOT_REFINE_D（#61 境界存储约定，见
+// .knowledge/cultivation/realm-storage-convention），不另造读取。
+int check_realm_gate(object me, int min_idx, int min_sub)
+{
+    int idx = ROOT_REFINE_D->query_player_realm_index(me);
+
+    if (idx > min_idx)
+        return 1;
+    if (idx < min_idx)
+        return 0;
+    return ROOT_REFINE_D->query_player_sub_stage(me) >= min_sub;
+}
+
 // 检查玩家能否进入指定秘境
 // 返回 0=可进入, 正数=错误码
 int check_entry_condition(object me, string realm_id)
@@ -165,15 +181,28 @@ int check_entry_condition(object me, string realm_id)
         return 3;  // 未开放
     
     // 检查境界要求
-    min_lv = realm[SR_FIELD_MIN_LEVEL];
-    max_lv = realm[SR_FIELD_MAX_LEVEL];
-    cur_lv = me->query("level");
-    
-    if (cur_lv < min_lv)
-        return 10;  // 境界不足
-    
-    if (max_lv > 0 && cur_lv > max_lv)
-        return 11;  // 超出境界上限
+    // 注册了 min_realm_index 的秘境走 #61 境界体系（realm_index/realm_sub，
+    // 如血色禁地=筑基中期起）；未注册的沿用旧 level 数值口径。
+    // 注意：缺键在 LPC 中取 0 且 intp(0) 为真，必须用 undefinedp 判存在，
+    // 否则全部秘境误走 0=凡人档、门槛被放开。
+    if (!undefinedp(realm[SR_FIELD_MIN_REALM_INDEX]))
+    {
+        if (!check_realm_gate(me, realm[SR_FIELD_MIN_REALM_INDEX],
+                              realm[SR_FIELD_MIN_REALM_SUB]))
+            return 10;  // 境界不足
+    }
+    else
+    {
+        min_lv = realm[SR_FIELD_MIN_LEVEL];
+        max_lv = realm[SR_FIELD_MAX_LEVEL];
+        cur_lv = me->query("level");
+
+        if (cur_lv < min_lv)
+            return 10;  // 境界不足
+
+        if (max_lv > 0 && cur_lv > max_lv)
+            return 11;  // 超出境界上限
+    }
     
     // 检查物品要求
     item_req = realm[SR_FIELD_ITEM_REQ];
@@ -885,10 +914,10 @@ void load_default_realms()
         SR_FIELD_DIFFICULTY  : SR_DIFFICULTY_NORMAL,
         SR_FIELD_RESET       : SR_RESET_ONCE,
         SR_FIELD_STATUS      : SR_STATUS_CLOSED,
-        SR_FIELD_ENTRY       : "/d/yue/npc/obj/blood_forbidden_entry",
+        SR_FIELD_ENTRY       : "/d/xuejin/rukou",
         SR_FIELD_EXIT        : "/d/yue/npc/obj/blood_forbidden_exit",
-        SR_FIELD_MIN_LEVEL   : 5,    // 炼气期
-        SR_FIELD_MAX_LEVEL   : 15,   // 筑基以下
+        SR_FIELD_MIN_REALM_INDEX : 2,   // 筑基（#61 境界体系）
+        SR_FIELD_MIN_REALM_SUB   : 1,   // 中期起
         SR_FIELD_ITEM_REQ    : "",
         SR_FIELD_TEAM_REQ    : 1,
         SR_FIELD_DURATION    : 7200, // 2 小时
