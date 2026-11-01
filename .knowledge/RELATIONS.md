@@ -169,3 +169,4 @@ tools-check-guard-convention  ->  reputation-shop : shop_verify 同属 tools/che
 secret-realm-entry-standard  ->  realm-storage-convention : 境界读取与子阶段接口的约定出处（ROOT_REFINE_D 统一读、realm_index/realm_sub 存储）
 secret-realm-entry-standard  ->  main-quest-system : 口径依据之一：主线 mq_1_9 血色禁地试炼的 realm_range 与描述
 reputation-shop  ->  pill-system : shop_d 商品目录的 13 条丹药引用与购买交付链路同文件，丹药侧细节在 pill-system
+blood-forbidden-trial-convention  ->  secret-realm-entry-standard : 同秘境：本约定引用其进入境界口径

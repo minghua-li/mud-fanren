@@ -107,3 +107,4 @@
 - `reputation-shop` — shop_d 目录不变式 + buy_item 预生成→扣费→move 交付（-6/-7 不扣费）+ 声望扣费/回退不对称：refund_reputation 退款裸回补契约（不触上限与互斥、强制审计日志） — factions/reputation-shop.md
 - `tools-check-guard-convention` — tools/check 静态守卫：字符串存在断言必须查 strip_lpc 剥注释后的骨架而非原文——否则目标行被注释掉（非删除）时守卫恒绿；#64 复审实测洞，pill_verify 已修（bd8e0b24） — tech/tools-check-guard-convention.md
 - `secret-realm-entry-standard` — 血色禁地(blood_forbidden)秘境进入境界=筑基中期起（realm_index>=2 且同大境界子阶段>=中期，更高大境界放行）；02-区域游戏玩法「炼气期」判旧、守护进程旧 MIN_LEVEL/level 数值非口径依据；门槛判定走 ROOT_REFINE_D 读 realm_index/子阶段，LPC 判缺键须用 undefinedp（intp(0) 为真会放开门槛） — design/secret-realm-entry-standard.md
+- `blood-forbidden-trial-convention` — 血色禁地三层环形房间各持 sr_mobs 怪物表；「试炼存活」=持久标记 secret_realm/blood_forbidden/survived，写入端 mark_trial_survivors（击杀 sr_boss）、读取端 mq_1_9 OBJ_SURVIVE + sect_d promote 门槛；开放靠注册后 set_realm_status。 — design/blood-forbidden-trial-convention.md
