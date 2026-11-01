@@ -27,6 +27,7 @@ updated: 2026-11-01
 
 - `register_realm()` 注册后**强制置 `SR_STATUS_CLOSED`**（守护进程统一行为，勿改）；要转正开放，注册块写 `SR_FIELD_STATUS: SR_STATUS_OPEN` 之后，在 `load_default_realms()` 里补一次既有机制调用 `set_realm_status("<id>", SR_STATUS_OPEN)`。
 - 进入走玩家命令（`cmds/usr/jindi.c`：`jindi enter/exit/explore/info`），门槛校验 = `check_entry_condition`（开放状态 + 境界门槛，口径见 [[secret-realm-entry-standard]]）。
+- **`check_entry_condition` 返回值契约（#108 审查第 2 轮踩坑）**：返回 **0=可进入、正数=错误码**（1 玩家/2 不存在/3 未开放/10 境界不足/11 超限/20 缺物品/30 冷却），**不是 1=成功**。调用方必须 `int code = check_entry_condition(...); if (code != 0) 拒绝`；取反（`!check_entry_condition(...)`）会把合格玩家拒掉、放走不合格玩家（`create_instance` 自身不校验门槛，命令层是唯一门禁）。`entry_fail_reason(int errcode)` 只收错误码单 int 形参。`secret_realm_verify.py` command_guard 已断言 jindi.c 对 9 个守护进程接口的调用点实参个数 + 取反极性，并配突变实证。
 
 ## 冷却口径
 

@@ -35,9 +35,9 @@
   十一、状态转正+进出命令（#108 c7）：注册状态 OPEN 且注册后经既有机制
       set_realm_status 转正；出口路径指向真实房间；cmds/usr/jindi.c 提供
       enter/exit/explore/info 并调用守护进程校验/创建/探索/退出接口
-  十二~十六、突变实证（#108）：房间出口改死路径 / sr_mobs 改死路径 /
-      删除存活标记写入行 / 状态改回 CLOSED / on_mob_defeated 形参顺序写反
-      → 守卫必须红
+  十二~十七、突变实证（#108）：房间出口改死路径 / sr_mobs 改死路径 /
+      删除存活标记写入行 / 状态改回 CLOSED / on_mob_defeated 形参顺序写反 /
+      enter 门槛取反+错传实参 → 守卫必须红
 退出码：0 全绿，1 有失败
 """
 import os
@@ -612,13 +612,48 @@ def status_guard(daemon_src):
     return bad
 
 
-def command_guard():
+def _call_args(src, func):
+    """抽取 src 中所有 srd->func(...) 调用的实参串列表（首个括号配对截取）。"""
+    out = []
+    for m in re.finditer(re.escape('srd->') + re.escape(func) + r'\(', src):
+        i = m.end() - 1  # 指向 '('
+        depth = 0
+        j = i
+        while j < len(src):
+            if src[j] == '(':
+                depth += 1
+            elif src[j] == ')':
+                depth -= 1
+                if depth == 0:
+                    break
+            j += 1
+        out.append(src[i + 1:j])
+    return out
+
+
+def _top_commas(argstr):
+    """统计实参串顶层逗号数（深度 0），用于判实参个数。"""
+    n = 0
+    depth = 0
+    for c in argstr:
+        if c in '([{':
+            depth += 1
+        elif c in ')]}':
+            depth -= 1
+        elif c == ',' and depth == 0:
+            n += 1
+    return n
+
+
+def command_guard(src):
     """进出命令契约（#108 c7）：cmds/usr/jindi.c 提供 enter/exit/explore/info
-    并调用守护进程真实接口（校验/创建/探索/结算退出）。"""
+    并调用守护进程真实接口（校验/创建/探索/结算退出）。
+    审查第 2 轮补强：不仅查 token 在位，还查
+    ① 调用实参个数与守护进程形参一致（entry_fail_reason/query_layer_info
+       各 1 参，其余 2 参——多传/错传是运行时 too-many-arguments 或落 default）；
+    ② check_entry_condition 极性：契约 0=可进入、正数=错误码，故禁止取反
+       （!check_entry_condition(...) 会把合格玩家拒掉、放走不合格玩家）。"""
     bad = []
-    if not os.path.isfile(COMMAND_REL):
-        return ['玩家命令 %s 不存在（无真实进入/退出命令）' % COMMAND_REL]
-    src = readf(COMMAND_REL)
     for token in ('check_entry_condition(', 'create_instance(',
                   'do_explore(', 'do_exit(', 'query_player_instance('):
         if token not in src:
@@ -626,6 +661,29 @@ def command_guard():
     for sub in ('"enter"', '"exit"', '"explore"', '"info"'):
         if sub not in src:
             bad.append('%s 缺 %s 子命令' % (COMMAND_REL, sub))
+    # ① 实参个数契约
+    arity = {
+        'check_entry_condition': 2,
+        'create_instance': 2,
+        'do_explore': 2,
+        'do_exit': 2,
+        'query_player_instance': 2,
+        'entry_fail_reason': 1,
+        'query_layer_info': 1,
+        'query_realm': 1,
+        'query_realm_status': 1,
+    }
+    for func, want in arity.items():
+        for argstr in _call_args(src, func):
+            n = _top_commas(argstr) + 1
+            if n != want:
+                bad.append('%s 调用 %s 实参 %d 个（守护进程形参 %d 个）：'
+                           '%s——多传/错传为运行时错误'
+                           % (COMMAND_REL, func, n, want, argstr.strip()))
+    # ② check_entry_condition 极性（0=可进入，禁止取反）
+    if re.search(r'!\s*srd->\s*check_entry_condition\s*\(', src):
+        bad.append('%s 用取反判定 check_entry_condition（契约 0=可进入、正数=错误码，'
+                   '取反会把合格玩家拒掉、放走不合格玩家）' % COMMAND_REL)
     return bad
 
 
@@ -702,8 +760,10 @@ else:
 
 print('\n═══ 十一、状态转正+零悬空+进出命令（#108 c5/c7） ═══')
 sbad = [b for b in status_guard(daemon) if '奖励物品' not in b]
-cbad2 = command_guard()
-sbad += cbad2
+if os.path.isfile(COMMAND_REL):
+    sbad += command_guard(readf(COMMAND_REL))
+else:
+    sbad.append('玩家命令 %s 不存在（无真实进入/退出命令）' % COMMAND_REL)
 if not sbad:
     ok('blood_forbidden 状态经既有机制转正为 OPEN；入口/出口路径零悬空；'
        'LAYERS=3 对齐三层；jindi 命令提供 enter/exit/explore/info 并调用'
@@ -780,6 +840,27 @@ else:
            % len(m7_bad))
     else:
         err('突变失败：形参顺序写反后守卫仍绿（守卫恒真，接线语义断链不可检出）')
+
+print('\n═══ 十七、突变实证（enter 门槛取反+错传实参 → 应红） ═══')
+jindi_raw = readf(COMMAND_REL) if os.path.isfile(COMMAND_REL) else ''
+# 注入审查第 2 轮发现的真实缺陷形态：取反判定 + entry_fail_reason 错传 2 参
+mut8 = jindi_raw.replace(
+    'int code = srd->check_entry_condition(me, realm_id);\n'
+    '        if (code != 0)\n'
+    '        {\n'
+    '            write(srd->entry_fail_reason(code));',
+    'if (!srd->check_entry_condition(me, realm_id))\n'
+    '        {\n'
+    '            write(srd->entry_fail_reason(me, realm_id));')
+if mut8 == jindi_raw:
+    err('突变注入失败：未找到 jindi.c enter 门槛校验段')
+else:
+    m8_bad = command_guard(mut8)
+    if m8_bad:
+        ok('enter 门槛取反 + entry_fail_reason 错传实参 → 守卫红（%d 条失败消息）'
+           % len(m8_bad))
+    else:
+        err('突变失败：enter 门槛取反/错传实参后守卫仍绿（守卫恒真）')
 
 print('\n═══════════════════════════════════')
 print('断言总数: %d, 失败: %d' % (oks, fails))

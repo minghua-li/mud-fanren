@@ -1,4 +1,4 @@
-// secret_realm.c
+// jindi.c
 // 秘境试炼玩家命令（#108 c7：血色禁地真实进入/退出/探索）
 // 用法：jindi                - 查看可用秘境
 //       jindi enter          - 进入血色禁地（校验开放状态与境界门槛）
@@ -75,10 +75,14 @@ int main(object me, string arg)
             return 1;
         }
 
-        // 开放状态 + 境界门槛校验（#61 境界体系，筑基中期起）
-        if (!srd->check_entry_condition(me, realm_id))
+        // 开放状态 + 境界门槛校验（#61 境界体系，筑基中期起）。
+        // 契约（审查第 2 轮修复）：check_entry_condition 返回 0=可进入、
+        // 正数=错误码（非 1=成功），故必须判 code != 0 拒绝，
+        // entry_fail_reason 只收错误码单 int 形参。
+        int code = srd->check_entry_condition(me, realm_id);
+        if (code != 0)
         {
-            write(srd->entry_fail_reason(me, realm_id));
+            write(srd->entry_fail_reason(code));
             return 1;
         }
 
@@ -140,7 +144,7 @@ int main(object me, string arg)
             return 1;
         }
 
-        write(srd->query_layer_info(me, inst_id));
+        write(srd->query_layer_info(inst_id));
         return 1;
     }
 
