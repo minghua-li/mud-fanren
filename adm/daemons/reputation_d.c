@@ -298,6 +298,27 @@ varargs int deduct_reputation(object player, string faction, int amount)
     return 1;
 }
 
+// 退款专用裸回补（deduct_reputation 的逆操作，#105）
+// 与扣费路径语义对称：不查每日声望上限、不触发势力互斥扣减，
+// 强制写审计日志（reason 必填，缺失则拒绝并返回 0，不落日志、不改动）
+int refund_reputation(object player, string faction, int amount, string reason)
+{
+    int now, new_val;
+
+    if (!objectp(player)) return 0;
+    if (!stringp(faction) || !sizeof(faction)) return 0;
+    if (amount <= 0) return 0;
+    if (!stringp(reason) || !sizeof(reason)) return 0;  // reason 强制（审计留痕）
+
+    now = time();
+    new_val = player->add(REP_PATH_FACTION + "/" + faction, amount);
+    player->set(REP_PATH_LAST_INTERACT + "/" + faction, now);
+    log_file("reputation", sprintf("%s %s %s REFUND %s %+d\n",
+              ctime(now), player->query("id"), faction, reason, amount));
+
+    return new_val;
+}
+
 // 应用互斥关系
 string *apply_mutex(object player, string faction, int amount)
 {

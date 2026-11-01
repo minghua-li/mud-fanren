@@ -247,7 +247,8 @@ varargs int buy_item(object player, string item_id, int quantity)
             for (int j = 0; j < quantity; j++)
                 destruct(obs[j]);
             if (rep_cost > 0)
-                REPUTATION_D->add_reputation(player, faction, rep_cost * quantity);
+                REPUTATION_D->refund_reputation(player, faction, rep_cost * quantity,
+                        sprintf("商店购买失败回滚 %s x%d", item_name, quantity));
             player->add("balance", final_price);
             if (stock != -1)
                 runtime_stock[item_id] += quantity;
